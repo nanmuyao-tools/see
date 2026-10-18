@@ -11,7 +11,10 @@ from .extract import build_client, extract
 
 def run(cfg: Config) -> None:
     print(f"[1/4] 抓取 {cfg.source}，最多 {cfg.limit} 条 …")
-    items = sources.fetch(cfg.source, cfg.limit)
+    try:
+        items = sources.fetch(cfg.source, cfg.limit)
+    except OSError as e:  # 网络不通、DNS 失败、超时等
+        sys.exit(f"抓取 {cfg.source} 失败，请检查网络：{e}")
     print(f"      抓到 {len(items)} 条")
 
     coll = store.connect(cfg.mongo_uri, cfg.db_name)

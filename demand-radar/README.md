@@ -87,10 +87,9 @@ demand_radar/
     hackernews.py   # Hacker News 官方 API
 Dockerfile
 docker-compose.yml  # app + mongo + ollama 一键编排
-docker/entrypoint.sh
+docker/entrypoint.py
 ```
 
 ## 状态
 
 MVP 骨架。判断标准：自己看输出的清单，是否觉得「这些点子真能做」。是则加数据源、加聚类、加看板；否则调 prompt / schema / 过滤策略。
-```

@@ -87,7 +87,7 @@ HN 官方 API 拉最近 N 条帖子（Ask HN / Show HN / 评论）
 
 要点：
 
-- **模型自动拉取**：app 的 `docker/entrypoint.sh` 先等 ollama 就绪，再调 `/api/pull` 拉模型（首次慢，之后走缓存卷），然后运行。
+- **模型自动拉取**：app 的 `docker/entrypoint.py` 先等 ollama 就绪，再调 `/api/pull` 拉模型（首次慢，之后走缓存卷），然后运行。
 - **容器间地址靠环境变量注入**：`MONGO_URI=mongodb://mongo:27017`、`OLLAMA_BASE_URL=http://ollama:11434/v1`。配置优先级为 命令行 > 环境变量 > 默认值。
 - **全本地**：默认不暴露端口，数据不出本机，无 API 费用。
 - **低配 / 已有环境**：可把模型换成 `qwen2.5:3b`；或注释掉 ollama 服务、指向宿主机已装的 Ollama。
