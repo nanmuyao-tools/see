@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 
 class Demand(BaseModel):
@@ -24,6 +24,19 @@ class Demand(BaseModel):
         ge=0.0, le=1.0,
         description="对『这是一个真实、可做的需求』的信心，0 到 1 之间的小数，如 0.8。",
     )
+
+    # 小模型常见的输出偏差，在校验前纠正，避免整条白白重试失败
+    @field_validator("need", "domain", "pain_point", mode="before")
+    @classmethod
+    def _none_to_empty(cls, v):
+        return "" if v is None else v  # 「留空」被理解成 null
+
+    @field_validator("confidence", mode="before")
+    @classmethod
+    def _percent_to_ratio(cls, v):
+        if isinstance(v, (int, float)) and 1 < v <= 100:
+            return v / 100  # 按百分制给出，如 80
+        return v
 
 
 @dataclass

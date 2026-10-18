@@ -162,6 +162,38 @@ class GithubTest(unittest.TestCase):
         self.assertEqual(g.call_args[0][1]["Authorization"], "Bearer t")
 
 
+class DemandModelTest(unittest.TestCase):
+    """小模型的常见输出偏差，实测中出现过。"""
+
+    def test_null_text_fields_become_empty(self):
+        from demand_radar.models import Demand
+        d = Demand.model_validate({"is_request": False, "need": None, "domain": None,
+                                   "pain_point": None, "buildable": False, "confidence": 0.1})
+        self.assertEqual((d.need, d.domain, d.pain_point), ("", "", ""))
+
+    def test_percent_confidence_is_normalized(self):
+        from demand_radar.models import Demand
+        d = Demand.model_validate({"is_request": True, "need": "x", "domain": "x",
+                                   "pain_point": "", "buildable": True, "confidence": 80})
+        self.assertAlmostEqual(d.confidence, 0.8)
+
+
+class ReasonTest(unittest.TestCase):
+    def test_extracts_last_instructor_error(self):
+        from demand_radar.cli import _reason
+        e = Exception("<failed_attempts>\n<generation>x</generation>\n</failed_attempts>\n"
+                      "<last_exception>\n  1 validation error for Demand\nneed\n"
+                      "  Input should be a valid string\n"
+                      "    For further information visit https://errors.pydantic.dev/x\n"
+                      "</last_exception>")
+        self.assertEqual(_reason(e),
+                         "1 validation error for Demand / need / Input should be a valid string")
+
+    def test_plain_error(self):
+        from demand_radar.cli import _reason
+        self.assertEqual(_reason(OSError("timed out")), "timed out")
+
+
 class FetchAllTest(unittest.TestCase):
     def test_one_source_failure_does_not_stop_others(self):
         ok = [SourceItem("s", "1", "t", "", "u"), SourceItem("s", "1", "t", "", "u")]  # 重复

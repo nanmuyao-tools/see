@@ -9,6 +9,15 @@ from .config import Config
 from .extract import build_client, extract
 
 
+def _reason(e: Exception) -> str:
+    """一行可读的失败原因。instructor 的异常带完整重试记录，取最后一次的错误。"""
+    s = str(e)
+    if "<last_exception>" in s:
+        s = s.split("<last_exception>", 1)[1].split("</last_exception>", 1)[0]
+    lines = [ln.strip() for ln in s.splitlines() if ln.strip() and "errors.pydantic.dev" not in ln]
+    return " / ".join(lines)[:200] or type(e).__name__
+
+
 def run(cfg: Config) -> None:
     conf = sources.load_config(cfg.sources_file)
     names = sources.enabled(conf) if cfg.source == "all" else cfg.source.split(",")
@@ -31,8 +40,7 @@ def run(cfg: Config) -> None:
         try:
             demand = extract(client, item)
         except Exception as e:  # 单条失败不中断整批
-            reason = str(e).splitlines()[0][:200]  # instructor 会附带完整重试记录，只取首行
-            print(f"      跳过 {item.external_id}: {reason}", file=sys.stderr)
+            print(f"      跳过 {item.external_id}: {_reason(e)}", file=sys.stderr)
             continue
         store.save(coll, item, demand)
         new += 1
