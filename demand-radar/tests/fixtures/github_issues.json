@@ -1,0 +1,22 @@
+{
+ "total_count": 2,
+ "incomplete_results": false,
+ "items": [
+  {
+   "number": 1234,
+   "title": "Feature request: dark mode for the settings page",
+   "body": "It would be great to have <b>dark mode</b> in settings.\n\nMany users asked for this.",
+   "html_url": "https://github.com/example/app/issues/1234",
+   "repository_url": "https://api.github.com/repos/example/app",
+   "reactions": {"+1": 321, "-1": 0, "heart": 12}
+  },
+  {
+   "number": 7,
+   "title": "Support exporting to CSV",
+   "body": null,
+   "html_url": "https://github.com/other/tool/issues/7",
+   "repository_url": "https://api.github.com/repos/other/tool",
+   "reactions": {"+1": 88}
+  }
+ ]
+}

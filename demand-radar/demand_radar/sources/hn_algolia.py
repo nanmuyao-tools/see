@@ -1,0 +1,42 @@
+"""Hacker News 全文搜索（Algolia 官方 API，公开、无需 key）。
+
+按短语精确搜索帖子和评论，比抓 Ask HN 首页的信噪比高得多。
+文档：https://hn.algolia.com/api
+"""
+
+from __future__ import annotations
+
+import urllib.parse
+
+from ..models import SourceItem
+from .http import clean, get_json
+
+API = "https://hn.algolia.com/api/v1/search_by_date"
+
+
+def parse(data: dict) -> list[SourceItem]:
+    items: list[SourceItem] = []
+    for h in data.get("hits", []):
+        if h.get("comment_text"):  # 评论：标题用所在帖子的标题
+            title = clean(h.get("story_title"), 300)
+            text = clean(h["comment_text"])
+        else:
+            title = clean(h.get("title"), 300)
+            text = clean(h.get("story_text"))
+        items.append(SourceItem(
+            source="hackernews",
+            external_id=str(h["objectID"]),
+            title=title,
+            text=text,
+            url=f"https://news.ycombinator.com/item?id={h['objectID']}",
+            score=h.get("points") or 0,
+        ))
+    return items
+
+
+def fetch(limit: int, conf: dict) -> list[SourceItem]:
+    items: list[SourceItem] = []
+    for q in conf.get("queries", []):
+        params = {"query": f'"{q}"', "tags": "(story,comment)", "hitsPerPage": limit}
+        items += parse(get_json(f"{API}?{urllib.parse.urlencode(params)}"))
+    return items

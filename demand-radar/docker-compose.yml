@@ -33,11 +33,15 @@ services:
       OLLAMA_BASE_URL: "http://ollama:11434/v1"    # Instructor 调用用
       OLLAMA_MODEL: "qwen2.5:7b"                    # 内存小可改 qwen2.5:3b
       DR_PROVIDER: "ollama/qwen2.5:7b"
-      DR_LIMIT: "30"
+      DR_LIMIT: "10"                                 # 每个源/查询最多抓多少条
       DR_MIN_CONFIDENCE: "0.5"
       DR_OUTPUT: "out/demands.md"
+      # 可选：提高限额。不设也能用
+      GITHUB_TOKEN: "${GITHUB_TOKEN:-}"            # GitHub 搜索：10 → 30 次/分钟
+      SE_API_KEY: "${SE_API_KEY:-}"                # StackExchange：300 → 1 万次/天
     volumes:
       - ./out:/app/out          # 需求清单输出到宿主机 ./out
+      - ./sources.toml:/app/sources.toml:ro   # 改数据源无需重建镜像
 
 volumes:
   mongo-data:

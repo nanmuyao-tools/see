@@ -40,6 +40,7 @@ def save(coll, item: SourceItem, d: Demand) -> None:
         "external_id": item.external_id,
         "title": item.title,
         "url": item.url,
+        "score": item.score,
         **d.model_dump(),
     }
     # 重复抓取时覆盖更新
@@ -47,12 +48,12 @@ def save(coll, item: SourceItem, d: Demand) -> None:
 
 
 def top_demands(coll, min_confidence: float) -> list[dict]:
-    """取出通过过滤的需求，按可信度降序。"""
+    """取出通过过滤的需求，按可信度降序，可信度相同时按热度降序。"""
     cursor = coll.find(
         {
             "is_request": True,
             "buildable": True,
             "confidence": {"$gte": min_confidence},
         }
-    ).sort("confidence", -1)
+    ).sort([("confidence", -1), ("score", -1)])
     return list(cursor)

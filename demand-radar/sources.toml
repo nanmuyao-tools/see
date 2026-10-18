@@ -1,0 +1,45 @@
+# 数据源配置。加源只改这个文件；Docker 部署时挂载进容器，改完无需重建镜像。
+# 每个源的抓取条数由 --limit 控制（RSS 按每个订阅、HN/GitHub 按每个查询计）。
+
+# StackExchange 软件推荐站：几乎每条都是「有没有能做 X 的软件」
+# 不带 key 每天 300 次请求；设置环境变量 SE_API_KEY 可提高到每天 1 万次
+[softwarerecs]
+enabled = true
+sites = ["softwarerecs"]
+
+# Hacker News 全文搜索（帖子 + 评论），按短语精确匹配
+[hn_algolia]
+enabled = true
+queries = [
+  "I wish there was",
+  "is there a tool",
+  "is there an app",
+  "someone should build",
+  "would pay for",
+]
+
+# GitHub issues：点赞多的 feature request = 很多人想要、项目一直没做
+# 不带 token 每分钟 10 次搜索；设置 GITHUB_TOKEN 可提高到每分钟 30 次
+[github]
+enabled = true
+queries = [
+  "is:issue is:open label:enhancement reactions:>50",
+  'is:issue is:open "feature request" in:title reactions:>20',
+]
+
+# RSS / Atom 订阅，加一个 [[rss]] 块就是加一个源
+[[rss]]
+name = "reddit/SomebodyMakeThis"
+url = "https://www.reddit.com/r/SomebodyMakeThis/new/.rss"
+
+[[rss]]
+name = "reddit/macapps"
+url = "https://www.reddit.com/r/macapps/search.rss?q=%22is+there+an+app%22&restrict_sr=1&sort=new"
+
+[[rss]]
+name = "reddit/androidapps"
+url = "https://www.reddit.com/r/androidapps/search.rss?q=%22is+there+an+app%22&restrict_sr=1&sort=new"
+
+[[rss]]
+name = "reddit/software"
+url = "https://www.reddit.com/r/software/search.rss?q=%22looking+for%22&restrict_sr=1&sort=new"

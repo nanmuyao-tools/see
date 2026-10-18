@@ -1,0 +1,67 @@
+{
+ "items": [
+  {
+   "tags": [
+    "editor",
+    "health",
+    "code-generation",
+    "human-resources"
+   ],
+   "owner": {
+    "account_id": 2932158,
+    "reputation": 1,
+    "user_id": 107803,
+    "user_type": "registered",
+    "profile_image": "https://i.sstatic.net/AHlRH.jpg?s=256",
+    "display_name": "Scrooge McDuck",
+    "link": "https://softwarerecs.stackexchange.com/users/107803/scrooge-mcduck"
+   },
+   "is_answered": false,
+   "view_count": 67,
+   "closed_date": 1792156467,
+   "answer_count": 0,
+   "score": -1,
+   "last_activity_date": 1791986413,
+   "creation_date": 1791985571,
+   "last_edit_date": 1791986413,
+   "question_id": 95691,
+   "link": "https://softwarerecs.stackexchange.com/questions/95691/does-anything-similar-to-a-live-dna-editor-exist",
+   "closed_reason": "Not suitable for this site",
+   "title": "Does anything similar to a live DNA editor exist?",
+   "body": "<p>I do remember to have read full human DNA has been trascribed.</p>\n<p>I have no idea at which point people paid to work on that,\nif there were people paid to work on that,\nare or were at translating it into human readable language\nnor I know at which point they are at editing human beings DNA live\nwith something akin to a text editor, so I was wondering if\nplease the person or the group who first are gonna come out\nwith any of that may inform everybody here in this Q&amp;A.</p>\n<p>I'm not sure I should tell why specifically I may want\nto have a live DNA text editor.</p>\n<p>I can imagine lots of applications, from fixing\na root canal to live longer, to fix problems\nof an human being instance's body irregularities,\nmake employees work harder for a longer time,\nhave soldiers not be scared by unspeakable horrors,\nstuff like that.</p>\n"
+  },
+  {
+   "tags": [
+    "usb",
+    "printing",
+    "scanning",
+    "health"
+   ],
+   "owner": {
+    "account_id": 2932158,
+    "reputation": 1,
+    "user_id": 107803,
+    "user_type": "registered",
+    "profile_image": "https://i.sstatic.net/AHlRH.jpg?s=256",
+    "display_name": "Scrooge McDuck",
+    "link": "https://softwarerecs.stackexchange.com/users/107803/scrooge-mcduck"
+   },
+   "is_answered": false,
+   "view_count": 119,
+   "closed_date": 1791982503,
+   "answer_count": 0,
+   "score": -6,
+   "last_activity_date": 1791984086,
+   "creation_date": 1791972542,
+   "last_edit_date": 1791984086,
+   "question_id": 95689,
+   "link": "https://softwarerecs.stackexchange.com/questions/95689/is-there-a-program-which-destroys-cancer",
+   "closed_reason": "Not suitable for this site",
+   "title": "Is there a program which destroys cancer?",
+   "body": "<p>I was wondering if somebody had invented some software I can install on my computer\nwhich paired with some cheap hardware it can destroy cancer cells with a great accuracy (&gt;98% precision per unit of volume at the appropriately lengths).</p>\n<p>As for the hardware device I'm thinking about some cheap USB ray beamer of sort.</p>\n<p>I'd like to spend like less than $100 because I don't think\na person's life is worth so much.</p>\n<p>I think nobody should try to edit the above statement including\nmy opinion on human's life worth, as I personally see it necessary\nto assume as a point of view for the resolution of the problem\nI'm posing to you today.</p>\n<p>This question is not a joke and it's obvious both its\nvery useful to answer and can indeed be answered because\nall the money in the world wouldn't have bought let's say a\nlaser in 1920 but now you can get one quite cheap.</p>\n<p>Note: the question has been moved to the <a href=\"https://hardwarerecs.stackexchange.com/questions/19433/is-there-a-good-cheap-cancer-destroyer-for-around-than-less-than-100\">hardware recommendations\nStack Exchange</a>.</p>\n"
+  }
+ ],
+ "has_more": true,
+ "quota_max": 300,
+ "quota_remaining": 192
+}

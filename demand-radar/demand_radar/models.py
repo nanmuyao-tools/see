@@ -30,8 +30,9 @@ class Demand(BaseModel):
 class SourceItem:
     """数据源抓取到的一条原始内容，送去抽取前的统一形态。"""
 
-    source: str          # 来源名，如 hackernews
+    source: str          # 来源名，如 hackernews、github、reddit/macapps
     external_id: str     # 源内唯一 id
     title: str
     text: str
     url: str             # 原帖链接
+    score: int = 0       # 热度：GitHub 点赞、HN 得分、StackExchange 投票；RSS 无此信息为 0

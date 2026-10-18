@@ -10,11 +10,14 @@ from .extract import build_client, extract
 
 
 def run(cfg: Config) -> None:
-    print(f"[1/4] 抓取 {cfg.source}，最多 {cfg.limit} 条 …")
-    try:
-        items = sources.fetch(cfg.source, cfg.limit)
-    except OSError as e:  # 网络不通、DNS 失败、超时等
-        sys.exit(f"抓取 {cfg.source} 失败，请检查网络：{e}")
+    conf = sources.load_config(cfg.sources_file)
+    names = sources.enabled(conf) if cfg.source == "all" else cfg.source.split(",")
+    print(f"[1/4] 抓取 {', '.join(names)}，每个源/查询最多 {cfg.limit} 条 …")
+    items, errors = sources.fetch_all(names, cfg.limit, conf)
+    for name, err in errors.items():
+        print(f"      ✗ {name} 抓取失败：{err}", file=sys.stderr)
+    if not items:
+        sys.exit("所有数据源都没抓到内容，请检查网络或 sources.toml")
     print(f"      抓到 {len(items)} 条")
 
     coll = store.connect(cfg.mongo_uri, cfg.db_name)

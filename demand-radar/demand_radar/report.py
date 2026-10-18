@@ -20,8 +20,9 @@ def write_markdown(rows: list[dict], output_path: str) -> None:
             "",
             f"- 领域：{r['domain'] or '—'}",
             f"- 现有痛点：{r['pain_point'] or '—'}",
-            f"- 可信度：{r['confidence']:.2f}",
-            f"- 来源：[{r['source']}]({r['url']})",
+            f"- 可信度：{r['confidence']:.2f}"
+            + (f"　|　热度：{r['score']}" if r.get("score") else ""),
+            f"- 来源：[{r['source']}]({r['url']})　{r['title']}",
             "",
         ]
     with open(output_path, "w", encoding="utf-8") as f:

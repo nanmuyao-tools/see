@@ -1,0 +1,380 @@
+<?xml version="1.0" encoding="UTF-8"?><rss version="2.0"
+	xmlns:content="http://purl.org/rss/1.0/modules/content/"
+	xmlns:wfw="http://wellformedweb.org/CommentAPI/"
+	xmlns:dc="http://purl.org/dc/elements/1.1/"
+	xmlns:atom="http://www.w3.org/2005/Atom"
+	xmlns:sy="http://purl.org/rss/1.0/modules/syndication/"
+	xmlns:slash="http://purl.org/rss/1.0/modules/slash/"
+	>
+
+<channel>
+	<title>小众软件</title>
+	<atom:link href="https://www.appinn.com/feed/" rel="self" type="application/rss+xml" />
+	<link>https://www.appinn.com</link>
+	<description>分享免费、小巧、实用、有趣、绿色的软件</description>
+	<lastBuildDate>Sun, 18 Oct 2026 08:51:53 +0000</lastBuildDate>
+	<language>zh-Hans</language>
+	<sy:updatePeriod>
+	hourly	</sy:updatePeriod>
+	<sy:updateFrequency>
+	1	</sy:updateFrequency>
+	<generator>https://wordpress.org/?v=7.1.3</generator>
+
+<image>
+	<url>https://www.appinn.com/wp-content/uploads/2026/01/cropped-Appinn-icon-512-32x32.png</url>
+	<title>小众软件</title>
+	<link>https://www.appinn.com</link>
+	<width>32</width>
+	<height>32</height>
+</image> 
+	<item>
+		<title>Typora 2.0 来了？老用户需要重新付费吗？新版本有哪些变化？</title>
+		<link>https://www.appinn.com/typora-2-early-preview/</link>
+					<comments>https://www.appinn.com/typora-2-early-preview/#comments</comments>
+		
+		<dc:creator><![CDATA[青小蛙]]></dc:creator>
+		<pubDate>Sun, 18 Oct 2026 08:51:45 +0000</pubDate>
+				<category><![CDATA[业界消息]]></category>
+		<category><![CDATA[Typora]]></category>
+		<category><![CDATA[Typora2]]></category>
+		<guid isPermaLink="false">https://www.appinn.com/typora-2-early-preview/</guid>
+
+					<description><![CDATA[经典 Markdown 编辑器 Typora，终于要迎来 2.0 版本了。 Typora 2.0 发布了预告： 并且有一个好消息：V1 可以免费升级至 V2: Typora 2.0 会有哪些新功能？  ]]></description>
+										<content:encoded><![CDATA[
+<p class="has-very-light-gray-to-cyan-bluish-gray-gradient-background has-background wp-block-paragraph">经典 Markdown 编辑器 <a href="https://www.appinn.com/tag/typora/" data-type="post_tag" data-id="6570">Typora</a>，终于要迎来 2.0 版本了。</p>
+
+
+
+<figure class="wp-block-image size-full"><img decoding="async" src="https://www.appinn.com/wp-content/uploads/2026/10/Copy-of-appinn-homework-2026-10-18T163426.116.jpg" alt="Typora 2.0 来了？老用户需要重新付费吗？新版本有哪些变化？ 1" class="wp-image-60093" title="Typora 2.0 来了？老用户需要重新付费吗？新版本有哪些变化？ 1"></figure>
+
+
+
+<p class="wp-block-paragraph">Typora 2.0 <a href="https://x.com/Typora/status/2111447693394661483">发布</a>了预告：</p>
+
+
+
+<figure class="wp-block-image size-full"><img decoding="async" src="https://www.appinn.com/wp-content/uploads/2026/10/screenshot-2026-10-18-at-4.39.27-PM-2x.avif" alt="Typora 2.0 来了？老用户需要重新付费吗？新版本有哪些变化？ 2" class="wp-image-60094" title="Typora 2.0 来了？老用户需要重新付费吗？新版本有哪些变化？ 2"></figure>
+
+
+
+<p class="wp-block-paragraph">并且有一个好消息：V1 可以免费升级至 V2:</p>
+
+
+
+<figure class="wp-block-image size-full"><img decoding="async" src="https://www.appinn.com/wp-content/uploads/2026/10/screenshot-2026-10-18-at-4.40.23-PM-2x.avif" alt="Typora 2.0 来了？老用户需要重新付费吗？新版本有哪些变化？ 3" class="wp-image-60095" title="Typora 2.0 来了？老用户需要重新付费吗？新版本有哪些变化？ 3"></figure>
+
+
+
+<h2 class="wp-block-heading">Typora 2.0 会有哪些新功能？</h2>
+
+
+
+<p class="wp-block-paragraph">在这个全新的 2.0 预告页面中，能得到的消息有：</p>
+
+
+
+<ul class="wp-block-list">
+<li>Typora 2.0 将带来一次彻底重构的编辑体验</li>
+
+
+
+<li>加入更多面向现代写作者的工具</li>
+
+
+
+<li>加入<a href="https://v2.typora.io/?utm_source=appinn.com" target="_blank" rel="noopener">等待列表</a>，留下邮箱，等待后续消息</li>
+
+
+
+<li>无法确定发布日期</li>
+</ul>
+
+
+
+<p class="wp-block-paragraph">页面还展示了 Markdown 实时预览、文件树、文档大纲、图片管理、数学公式和 Mermaid 图表等功能，但这些不是新功能。</p>
+
+
+
+<p class="wp-block-paragraph">新功能完全没有列出来，但是提供了一个 Feature requests（功能建议） 区域，让用户自己提交想要的功能，也算是很机智了。</p>
+
+
+
+<figure class="wp-block-image size-full"><img decoding="async" src="https://www.appinn.com/wp-content/uploads/2026/10/screenshot-2026-10-18-at-4.44.17-PM-2x.avif" alt="Typora 2.0 来了？老用户需要重新付费吗？新版本有哪些变化？ 4" class="wp-image-60096" title="Typora 2.0 来了？老用户需要重新付费吗？新版本有哪些变化？ 4"></figure>
+
+
+
+<p class="wp-block-paragraph">目前，比较受欢迎的功能有：</p>
+
+
+
+<ul class="wp-block-list">
+<li>专注模式与打字机滚动：让正在编辑的内容保持在合适的位置，减少干扰。</li>
+
+
+
+<li>鼠标悬停预览脚注：无需跳转到文末，就能查看脚注内容。</li>
+
+
+
+<li>自定义导出模板：使用统一模板批量导出 PDF 或 HTML。</li>
+
+
+
+<li>文件夹独立主题：不同文件夹可以采用不同的字体和主题。</li>
+
+
+
+<li>Wiki 双向链接风格：通过 [[文件名]] 链接笔记，并在文件重命名后保留正确引用。</li>
+</ul>
+
+
+
+<p class="wp-block-paragraph">其中，专注模式与打字机模式本身就是 Typora 已有功能，未来可能进一步改进。</p>
+
+
+
+<h2 class="wp-block-heading">免费升级</h2>
+
+
+
+<p class="wp-block-paragraph">从 Typora 自己发布的 X 截图来看，现有用户都可以免费升级，就非常赞了。青小蛙曾经与其他两人组件家庭购买的授权，看起来可以继续用下去了。</p>
+
+
+
+<p class="wp-block-paragraph">有需要的同学可以通过青小蛙的链接购买，可以激活三台设备，有返利，感谢支持：</p>
+
+
+
+<ul class="wp-block-list">
+<li><a href="https://lizhi.shop/products/typora?cid=jxlwguir" target="_blank" rel="noopener">https://lizhi.shop/products/typora?cid=jxlwguir</a></li>
+
+
+
+<li>新用户免费加入会员，首单立减 5 元</li>
+
+
+
+<li>结算页面输入“<strong>APPINN</strong>”优惠码，额外再享 95 折优惠；</li>
+</ul>
+
+
+
+<figure class="wp-block-image size-full"><img decoding="async" src="https://www.appinn.com/wp-content/uploads/2026/10/Typora-Markdown-Latex-_-_2026-10-18-16-47-20.avif" alt="Typora 2.0 来了？老用户需要重新付费吗？新版本有哪些变化？ 5" class="wp-image-60097" title="Typora 2.0 来了？老用户需要重新付费吗？新版本有哪些变化？ 5"></figure>
+<hr /><h2>相关阅读</h2><ul><li><a href="https://www.appinn.com/typora-markdown/" rel="bookmark" title="Permanent Link: 618 大促！ 跨平台 Markdown 编辑器 Typora，买断仅需 80.1 元">618 大促！ 跨平台 Markdown 编辑器 Typora，买断仅需 80.1 元</a></li><li><a href="https://www.appinn.com/typora-227/" rel="bookmark" title="Permanent Link: 听闻 Typora 加大了对测试版更新提示的力度">听闻 Typora 加大了对测试版更新提示的力度</a></li><li><a href="https://www.appinn.com/typora-md-base64-images/" rel="bookmark" title="Permanent Link: Typora 导出 HTML 时将外链图片以 base64 形式嵌入">Typora 导出 HTML 时将外链图片以 base64 形式嵌入</a></li><li><a href="https://www.appinn.com/typora-4-plugin/" rel="bookmark" title="Permanent Link: 通过注入 js 代码，为 Typora 额外增加 4 个功能">通过注入 js 代码，为 Typora 额外增加 4 个功能</a></li><li><a href="https://www.appinn.com/lizhi-guohuo-2603/" rel="bookmark" title="Permanent Link: 国产软件正当红，126 款国货之光限时大促：Eagle、Xmind、白描 PDF 等">国产软件正当红，126 款国货之光限时大促：Eagle、Xmind、白描 PDF 等</a></li></ul><hr />
+<a href="http://www.appinn.com/copyright/?utm_source=feeds&amp;utm_medium=copyright&amp;utm_campaign=feeds" title="版权声明">&#169;</a>2021 青小蛙 for <a href="http://www.appinn.com/?utm_source=feeds&amp;utm_medium=appinn&amp;utm_campaign=feeds" title="本文来自小众软件">小众软件</a> | <a href="http://www.appinn.com/join-us/?utm_source=feeds&amp;utm_medium=joinus&amp;utm_campaign=feeds" title="加入小众软件">加入我们</a> | <a href="https://meta.appinn.net/c/faxian/?utm_source=feeds&amp;utm_medium=contribute&amp;utm_campaign=feeds" title="给小众软件投稿" target="_blank" rel="noopener">投稿</a> | <a href="http://www.appinn.com/feeds-subscribe/?utm_source=feeds&amp;utm_medium=feedsubscribe&amp;utm_campaign=feeds" title="可以分类订阅小众，Windows/MAC/游戏" target="_blank"><font color="red">订阅指南</font></a><br /> 3659b075e72a5b7b1b87ea74aa7932ff <br />
+<a href="https://www.appinn.com/typora-2-early-preview/#comments" title="to the comments">点击这里留言、和原作者一起评论</a><p><a href="https://www.appinn.com/typora-2-early-preview/">[ 点击前往获取链接 ]</a></p><hr/>]]></content:encoded>
+					
+					<wfw:commentRss>https://www.appinn.com/typora-2-early-preview/feed/</wfw:commentRss>
+			<slash:comments>4</slash:comments>
+		
+		
+			</item>
+		<item>
+		<title>近3万星，Karakeep 0.34 发布：网页抓取更强了，支持自动离线阅读，内存占用更低</title>
+		<link>https://www.appinn.com/karakeep-0-34/</link>
+					<comments>https://www.appinn.com/karakeep-0-34/#comments</comments>
+		
+		<dc:creator><![CDATA[青小蛙]]></dc:creator>
+		<pubDate>Sun, 18 Oct 2026 07:50:04 +0000</pubDate>
+				<category><![CDATA[在线应用]]></category>
+		<category><![CDATA[Karakeep]]></category>
+		<category><![CDATA[书签]]></category>
+		<guid isPermaLink="false">https://www.appinn.com/karakeep-0-34/</guid>
+
+					<description><![CDATA[Karakeep 是一款开源的网络书签工具，在 GitHub 获得了超过 29700 颗🌟。2026年1018日发布了 v0.34.0 版本。这是一次比较大的更新，主要改进了网页抓取能力、移动端离线阅 ]]></description>
+										<content:encoded><![CDATA[
+<p class="has-very-light-gray-to-cyan-bluish-gray-gradient-background has-background wp-block-paragraph"><strong></strong><strong><a href="https://www.appinn.com/tag/karakeep/" data-type="post_tag" data-id="7735">Karakeep</a></strong> 是一款开源的网络书签工具，在 GitHub 获得了超过 29700 颗<img src="https://s.w.org/images/core/emoji/17.0.2/72x72/1f31f.png" alt="🌟" class="wp-smiley" style="height: 1em; max-height: 1em;" />。2026年1018日发布了 <strong>v0.34.0</strong> 版本。这是一次比较大的更新，主要改进了网页抓取能力、移动端离线阅读，以及服务器性能。@<a href="https://www.appinn.com/karakeep-introduction/">Appinn</a></p>
+
+
+
+<p class="wp-block-paragraph">Karakeep 可以帮你保存链接、笔记、图片、视频、PDF 等等，曾用名 Hoarder（译为<strong>囤积者</strong>）。它拥有一个 iOS 应用程序和一个 Android 应用程序，可以收藏、浏览书签，拥有 Chrome、Firefox 浏览器插件。还支持 AI 自动生成标签、总结、自动分类等功能。</p>
+
+
+
+<figure class="wp-block-image size-full"><img decoding="async" src="https://www.appinn.com/wp-content/uploads/2026/10/Copy-of-appinn-homework-2026-10-18T154430.146-1.jpg" alt="近3万星，Karakeep 0.34 发布：网页抓取更强了，支持自动离线阅读，内存占用更低 6" class="wp-image-60089" title="近3万星，Karakeep 0.34 发布：网页抓取更强了，支持自动离线阅读，内存占用更低 6"></figure>
+
+
+
+<h2 class="wp-block-heading">网页抓取能力大幅增强</h2>
+
+
+
+<p class="wp-block-paragraph">这次更新最值得关注的是网页抓取功能。</p>
+
+
+
+<p class="wp-block-paragraph"><strong>Karakeep</strong> 将浏览器自动化工具从 Playwright 更换为 <strong>Patchright</strong>，并开始使用完整的 Google Chrome 浏览器。</p>
+
+
+
+<p class="wp-block-paragraph">这让 Karakeep 更不容易被网站识别为自动化爬虫，尤其是 Cloudflare 的验证页面，Karakeep 现在会自动等待验证完成，避免直接将验证页面当成网页正文保存。</p>
+
+
+
+<p class="wp-block-paragraph">同时，还增加了浏览器时区设置、自动使用真实浏览器 User-Agent 等功能，进一步提高抓取成功率。</p>
+
+
+
+<h2 class="wp-block-heading">手机端支持自动离线下载</h2>
+
+
+
+<p class="wp-block-paragraph">此前 Karakeep 已经支持手动下载单个书签，用于离线阅读。</p>
+
+
+
+<p class="wp-block-paragraph">新版本增加了两项功能：</p>
+
+
+
+<ul class="wp-block-list">
+<li><strong>自动离线下载</strong>：打开应用时，自动下载最近收藏的网页。</li>
+
+
+
+<li><strong>完整离线列表</strong>：可以指定某个收藏列表，将其中的内容全部保存到本地。</li>
+
+
+
+<li></li>
+</ul>
+
+
+
+<p class="wp-block-paragraph">此外，移动端还增加了平板多栏布局、标签管理、公开列表管理、附件下载和使用统计等功能。</p>
+
+
+
+<p class="wp-block-paragraph">目前移动端商店应用还未正式更新。</p>
+
+
+
+<h2 class="wp-block-heading">支持手动保存视频</h2>
+
+
+
+<p class="wp-block-paragraph">Karakeep 新增了「Preserve Video」功能，用户可以通过 yt-dlp 下载指定书签中的视频。</p>
+
+
+
+<p class="wp-block-paragraph">这样，当用户就可以<strong>关闭自动视频下载，只对特别想保留的视频手动执行下载</strong>。</p>
+
+
+
+<h2 class="wp-block-heading">内存占用降低约 40MB</h2>
+
+
+
+<p class="wp-block-paragraph">对于自行部署 Karakeep 的用户，官方修复了一个服务器查询缓存导致的内存泄漏问题，并调整了依赖加载方式，只加载已启用功能需要的组件。</p>
+
+
+
+<p class="wp-block-paragraph">按照官方预计，<strong>大多数部署环境的常驻内存占用可以减少约 40MB</strong>。</p>
+
+
+
+<p class="wp-block-paragraph">此外，还优化了 SQLite 数据库、标签搜索和批量索引速度，并降低了未启用 Prometheus 时的基础 CPU 占用。</p>
+
+
+
+<p class="wp-block-paragraph">下图是青小蛙的 Karakeep 在 Docker 统计中的内存占用，已更新至最新版：</p>
+
+
+
+<figure class="wp-block-image size-full"><img decoding="async" src="https://www.appinn.com/wp-content/uploads/2026/10/screenshot-2026-10-18-at-3.24.28-PM-2x.avif" alt="近3万星，Karakeep 0.34 发布：网页抓取更强了，支持自动离线阅读，内存占用更低 7" class="wp-image-60088" title="近3万星，Karakeep 0.34 发布：网页抓取更强了，支持自动离线阅读，内存占用更低 7"></figure>
+
+
+
+<h2 class="wp-block-heading">其他更新</h2>
+
+
+
+<p class="wp-block-paragraph">这次更新还包括：</p>
+
+
+
+<ul class="wp-block-list">
+<li>失效链接管理页面重新设计，支持搜索、分类和批量删除。</li>
+
+
+
+<li>搜索新增 <code>has:notes</code> 和 <code>has:highlights</code>，可以筛选包含笔记或高亮内容的书签。</li>
+
+
+
+<li>网页图片自动转换为 WebP，减少存储空间占用。</li>
+
+
+
+<li>修复 Android 分享书签时可能丢失或重复的问题。</li>
+
+
+
+<li>MCP Server 升级至新版 SDK，CLI 内置官方 Agent Skill。</li>
+
+
+
+<li>更新网页界面，支持跟随系统切换深色模式。</li>
+</ul>
+
+
+
+<h2 class="wp-block-heading">升级注意事项</h2>
+
+
+
+<p class="wp-block-paragraph">Karakeep 将身份认证系统从 NextAuth 迁移到了 Better Auth，<strong>升级后，所有网页版用户都需要重新登录一次。</strong> 移动端和 API Key 不受影响。</p>
+
+
+
+<p class="wp-block-paragraph">另外，如果数据库中存在仅邮箱大小写不同的账户，需要提前处理，否则可能导致无法登录。</p>
+
+
+
+<p class="wp-block-paragraph">对于还在使用 Browserless 的用户，官方建议迁移到 <code>karakeep-chrome</code>，以获得这次更新带来的反爬虫能力提升。</p>
+
+
+
+<p class="wp-block-paragraph">总体来看，Karakeep 0.34.0 解决了网页收藏工具两个很实际的问题：<strong>网页抓取失败，以及收藏后无法方便地离线阅读。</strong> 再加上服务器内存优化，对于长期运行 Karakeep 的用户来说，值得升级。</p>
+
+
+
+<h2 class="wp-block-heading">获取</h2>
+
+
+
+<ul class="wp-block-list">
+<li><a href="https://github.com/karakeep-app/karakeep" target="_blank" rel="noopener">GitHub</a></li>
+</ul>
+
+
+
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+
+
+
+<p class="wp-block-paragraph">原文：https://www.appinn.com/karakeep-0-34/</p>
+
+
+
+<p class="wp-block-paragraph">后记：从去年装上 Karakeep 之后，青小蛙用得不多，又变成了只往里装，没怎么用的情况，很尴尬。</p>
+
+
+
+<p class="wp-block-paragraph">不过因为 Karakeep 有完整的 API 能力，所以非常适合现阶段 AI 操作，还是值得装一个的。自己不用，可以给 AI 用嘛，比如指定一条规则：</p>
+
+
+<div class="wp-block-syntaxhighlighter-code "><pre class="brush: plain; title: ; notranslate">
+将我发给你的所有链接，都自动保存在 Karakeep 中。
+</pre></div><hr /><h2>相关阅读</h2><ul><li><a href="https://www.appinn.com/karakeep-introduction-1/" rel="bookmark" title="Permanent Link: Karakeep &#8211; 最适合 2026 年使用的私人网络书签，可自托管【第一期：纯功能介绍】">Karakeep &#8211; 最适合 2026 年使用的私人网络书签，可自托管【第一期：纯功能介绍】</a></li><li><a href="https://www.appinn.com/10-open-source-tools-update/" rel="bookmark" title="Permanent Link: 9 款开源工具更新[2602]">9 款开源工具更新[2602]</a></li><li><a href="https://www.appinn.com/karakeep-0-31-0/" rel="bookmark" title="Permanent Link: Karakeep 0.31.0 更新：阅读进度同步、LLM OCR、更强导入与移动端高亮">Karakeep 0.31.0 更新：阅读进度同步、LLM OCR、更强导入与移动端高亮</a></li><li><a href="https://www.appinn.com/inkgist/" rel="bookmark" title="Permanent Link: 墨萃 · InkGist &#8211; 帮你处理看不完，舍不得关的标签页">墨萃 · InkGist &#8211; 帮你处理看不完，舍不得关的标签页</a></li><li><a href="https://www.appinn.com/pocket-shutting-down/" rel="bookmark" title="Permanent Link: Pocket 将于2025年7月8日关闭，“稍后阅读”真变“永远不读”，你需要知道的事">Pocket 将于2025年7月8日关闭，“稍后阅读”真变“永远不读”，你需要知道的事</a></li></ul><hr />
+<a href="http://www.appinn.com/copyright/?utm_source=feeds&amp;utm_medium=copyright&amp;utm_campaign=feeds" title="版权声明">&#169;</a>2021 青小蛙 for <a href="http://www.appinn.com/?utm_source=feeds&amp;utm_medium=appinn&amp;utm_campaign=feeds" title="本文来自小众软件">小众软件</a> | <a href="http://www.appinn.com/join-us/?utm_source=feeds&amp;utm_medium=joinus&amp;utm_campaign=feeds" title="加入小众软件">加入我们</a> | <a href="https://meta.appinn.net/c/faxian/?utm_source=feeds&amp;utm_medium=contribute&amp;utm_campaign=feeds" title="给小众软件投稿" target="_blank" rel="noopener">投稿</a> | <a href="http://www.appinn.com/feeds-subscribe/?utm_source=feeds&amp;utm_medium=feedsubscribe&amp;utm_campaign=feeds" title="可以分类订阅小众，Windows/MAC/游戏" target="_blank"><font color="red">订阅指南</font></a><br /> 3659b075e72a5b7b1b87ea74aa7932ff <br />
+<a href="https://www.appinn.com/karakeep-0-34/#comments" title="to the comments">点击这里留言、和原作者一起评论</a><p><a href="https://www.appinn.com/karakeep-0-34/">[ 点击前往获取链接 ]</a></p><hr/>]]></content:encoded>
+					
+					<wfw:commentRss>https://www.appinn.com/karakeep-0-34/feed/</wfw:commentRss>
+			<slash:comments>1</slash:comments>
+		
+		
+			</item>
+		
+	</channel>
+</rss>
