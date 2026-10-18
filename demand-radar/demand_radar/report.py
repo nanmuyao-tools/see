@@ -3,11 +3,10 @@
 from __future__ import annotations
 
 import os
-import sqlite3
 from datetime import datetime
 
 
-def write_markdown(rows: list[sqlite3.Row], output_path: str) -> None:
+def write_markdown(rows: list[dict], output_path: str) -> None:
     os.makedirs(os.path.dirname(output_path) or ".", exist_ok=True)
     lines = [
         "# 需求雷达清单",

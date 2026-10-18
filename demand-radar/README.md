@@ -9,7 +9,7 @@
 ```
 Hacker News 官方 API 拉 Ask HN 帖子
   → Instructor + 本地 Qwen(Ollama) 抽取成 Demand
-  → 存入 SQLite
+  → 存入 MongoDB
   → 过滤噪音（buildable / confidence）
   → 输出 Markdown 需求清单
 ```
@@ -29,6 +29,14 @@ pip install -r requirements.txt
 ```bash
 # 安装 Ollama：https://ollama.com
 ollama pull qwen2.5:7b     # 内存小可改用 qwen2.5:3b
+```
+
+### 2b. 准备 MongoDB
+
+```bash
+# 本地起一个（任选其一）
+docker run -d -p 27017:27017 --name mongo mongo:7
+# 或装本机 MongoDB 服务，默认连 mongodb://localhost:27017
 ```
 
 ### 3. 运行
@@ -53,7 +61,8 @@ python -m demand_radar run --provider "openai/gpt-4o-mini" --limit 30
 | `--provider` | `ollama/qwen2.5:7b` | Instructor 的模型标识，一处切换本地/云 |
 | `--source` | `hackernews` | 数据源（v0 仅 HN） |
 | `--min-confidence` | 0.5 | 低于此可信度的需求被过滤 |
-| `--db` | `data/demands.db` | SQLite 路径 |
+| `--mongo-uri` | `mongodb://localhost:27017` | MongoDB 连接串 |
+| `--db-name` | `demand_radar` | 数据库名 |
 | `--output` | `out/demands.md` | 清单输出路径 |
 
 ## 目录结构
@@ -64,7 +73,7 @@ demand_radar/
   config.py         # 运行配置
   models.py         # Demand 数据结构（Pydantic）
   extract.py        # Instructor + 本地/云模型抽取
-  store.py          # SQLite 存储
+  store.py          # MongoDB 存储
   report.py         # Markdown 清单输出
   sources/
     hackernews.py   # Hacker News 官方 API

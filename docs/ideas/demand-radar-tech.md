@@ -16,7 +16,7 @@
 | 抽取库 | **[Instructor](https://github.com/567-labs/instructor)** | MIT | Python 事实标准；Pydantic 定义 schema，校验失败自动重试；一行切换模型（本地/云） |
 | 模型服务 | **[Ollama](https://github.com/ollama/ollama)** | MIT | 一条命令把开源模型跑成本地服务，开发最省事；可换 vLLM/llama.cpp |
 | 模型 | **Qwen 2.5（默认 7B，可配置）** | Apache 2.0 | 中英文俱佳，处理中文评论优于 Llama；协议宽松 |
-| 存储 | **SQLite** | 公共领域 | 单文件、零配置，个人规模足够；需要再升 PostgreSQL |
+| 存储 | **MongoDB** | SSPL | 文档型，需求字段会不断演进（加标签、聚类 id、多源原文），无需改表结构，更灵活 |
 | 输出（v0） | **Markdown 清单** | — | 最快看到结果；Web 看板留到 v4 |
 
 ## 为什么不是其他选择
@@ -66,7 +66,7 @@ Apple Silicon + 16GB 以上可直接跑 7B。
 ```
 HN 官方 API 拉最近 N 条帖子（Ask HN / Show HN / 评论）
   → Instructor + 本地 Qwen 抽取成 Demand
-  → 存入 SQLite（原文 + 抽取结果 + 来源链接）
+  → 存入 MongoDB（原文 + 抽取结果 + 来源链接，按 source+external_id 去重）
   → 过滤掉 buildable=false / 低 confidence
   → 输出按 confidence 排序的 Markdown 需求清单
 ```
@@ -76,6 +76,7 @@ HN 官方 API 拉最近 N 条帖子（Ask HN / Show HN / 评论）
 ## 配置项（便于切换，不写死）
 
 - 模型 provider 与名称（默认 `ollama/qwen2.5:7b`）
+- MongoDB 连接串与库名（默认 `mongodb://localhost:27017` / `demand_radar`）
 - 数据源与抓取条数
 - 过滤阈值（confidence、buildable）
 - 输出路径

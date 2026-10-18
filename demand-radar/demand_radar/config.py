@@ -13,7 +13,8 @@ class Config:
     # Instructor 的 provider 标识；换本地/云只改这一处
     provider: str = "ollama/qwen2.5:7b"
     min_confidence: float = 0.5
-    db_path: str = "data/demands.db"
+    mongo_uri: str = "mongodb://localhost:27017"
+    db_name: str = "demand_radar"
     output_path: str = "out/demands.md"
 
     @staticmethod
@@ -26,7 +27,8 @@ class Config:
         run.add_argument("--limit", type=int, default=Config.limit)
         run.add_argument("--provider", default=Config.provider)
         run.add_argument("--min-confidence", type=float, default=Config.min_confidence)
-        run.add_argument("--db", dest="db_path", default=Config.db_path)
+        run.add_argument("--mongo-uri", dest="mongo_uri", default=Config.mongo_uri)
+        run.add_argument("--db-name", dest="db_name", default=Config.db_name)
         run.add_argument("--output", dest="output_path", default=Config.output_path)
 
         ns = p.parse_args(argv)
@@ -35,6 +37,7 @@ class Config:
             limit=ns.limit,
             provider=ns.provider,
             min_confidence=ns.min_confidence,
-            db_path=ns.db_path,
+            mongo_uri=ns.mongo_uri,
+            db_name=ns.db_name,
             output_path=ns.output_path,
         )

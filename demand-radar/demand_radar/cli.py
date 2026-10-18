@@ -14,32 +14,32 @@ def run(cfg: Config) -> None:
     items = sources.fetch(cfg.source, cfg.limit)
     print(f"      抓到 {len(items)} 条")
 
-    conn = store.connect(cfg.db_path)
+    coll = store.connect(cfg.mongo_uri, cfg.db_name)
     client = build_client(cfg.provider)
 
     print(f"[2/4] 用 {cfg.provider} 抽取 …")
     new = 0
     for item in items:
-        if store.already_seen(conn, item.source, item.external_id):
+        if store.already_seen(coll, item.source, item.external_id):
             continue
         try:
             demand = extract(client, item)
         except Exception as e:  # 单条失败不中断整批
             print(f"      跳过 {item.external_id}: {e}", file=sys.stderr)
             continue
-        store.save(conn, item, demand)
+        store.save(coll, item, demand)
         new += 1
         mark = "✓" if (demand.is_request and demand.buildable) else "·"
         print(f"      {mark} {(demand.need or item.title)[:50]}")
     print(f"      新增 {new} 条")
 
     print(f"[3/4] 过滤（可信度 ≥ {cfg.min_confidence}）…")
-    rows = store.top_demands(conn, cfg.min_confidence)
+    rows = store.top_demands(coll, cfg.min_confidence)
 
     print(f"[4/4] 写出 {cfg.output_path}（{len(rows)} 条）")
     from .report import write_markdown
     write_markdown(rows, cfg.output_path)
-    conn.close()
+    coll.database.client.close()
     print("完成。")
 
 

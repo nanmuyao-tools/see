@@ -1,66 +1,58 @@
-"""SQLite 存储：原文 + 抽取结果，按来源去重。"""
+"""MongoDB 存储：原文 + 抽取结果，按来源去重。
+
+选 MongoDB 而非关系库：需求的字段会不断演进（加标签、聚类 id、多源
+原文等），文档型存储无需改表结构，更灵活。
+"""
 
 from __future__ import annotations
 
-import os
-import sqlite3
+from typing import Any
 from .models import Demand, SourceItem
 
-_SCHEMA = """
-CREATE TABLE IF NOT EXISTS demands (
-    source        TEXT NOT NULL,
-    external_id   TEXT NOT NULL,
-    title         TEXT,
-    url           TEXT,
-    is_request    INTEGER,
-    need          TEXT,
-    domain        TEXT,
-    pain_point    TEXT,
-    buildable     INTEGER,
-    confidence    REAL,
-    created_at    TEXT DEFAULT (datetime('now')),
-    PRIMARY KEY (source, external_id)
-);
-"""
+
+def connect(uri: str, db_name: str, collection: str = "demands"):
+    """连接 MongoDB，返回集合对象。延迟导入，缺依赖时报错更清晰。"""
+    try:
+        from pymongo import MongoClient
+    except ImportError as e:  # pragma: no cover
+        raise SystemExit(
+            "缺少 pymongo 依赖，请先 `pip install -r requirements.txt`"
+        ) from e
+    client = MongoClient(uri, serverSelectionTimeoutMS=5000)
+    coll = client[db_name][collection]
+    # (source, external_id) 唯一，保证去重
+    coll.create_index([("source", 1), ("external_id", 1)], unique=True)
+    return coll
 
 
-def connect(db_path: str) -> sqlite3.Connection:
-    os.makedirs(os.path.dirname(db_path) or ".", exist_ok=True)
-    conn = sqlite3.connect(db_path)
-    conn.row_factory = sqlite3.Row
-    conn.executescript(_SCHEMA)
-    return conn
+def _doc_id(source: str, external_id: str) -> str:
+    return f"{source}:{external_id}"
 
 
-def already_seen(conn: sqlite3.Connection, source: str, external_id: str) -> bool:
-    cur = conn.execute(
-        "SELECT 1 FROM demands WHERE source=? AND external_id=?",
-        (source, external_id),
-    )
-    return cur.fetchone() is not None
+def already_seen(coll, source: str, external_id: str) -> bool:
+    return coll.find_one({"_id": _doc_id(source, external_id)}) is not None
 
 
-def save(conn: sqlite3.Connection, item: SourceItem, d: Demand) -> None:
-    conn.execute(
-        """INSERT OR REPLACE INTO demands
-           (source, external_id, title, url, is_request, need, domain,
-            pain_point, buildable, confidence)
-           VALUES (?,?,?,?,?,?,?,?,?,?)""",
-        (
-            item.source, item.external_id, item.title, item.url,
-            int(d.is_request), d.need, d.domain, d.pain_point,
-            int(d.buildable), d.confidence,
-        ),
-    )
-    conn.commit()
+def save(coll, item: SourceItem, d: Demand) -> None:
+    doc: dict[str, Any] = {
+        "_id": _doc_id(item.source, item.external_id),
+        "source": item.source,
+        "external_id": item.external_id,
+        "title": item.title,
+        "url": item.url,
+        **d.model_dump(),
+    }
+    # 重复抓取时覆盖更新
+    coll.replace_one({"_id": doc["_id"]}, doc, upsert=True)
 
 
-def top_demands(conn: sqlite3.Connection, min_confidence: float) -> list[sqlite3.Row]:
+def top_demands(coll, min_confidence: float) -> list[dict]:
     """取出通过过滤的需求，按可信度降序。"""
-    cur = conn.execute(
-        """SELECT * FROM demands
-           WHERE is_request=1 AND buildable=1 AND confidence>=?
-           ORDER BY confidence DESC""",
-        (min_confidence,),
-    )
-    return cur.fetchall()
+    cursor = coll.find(
+        {
+            "is_request": True,
+            "buildable": True,
+            "confidence": {"$gte": min_confidence},
+        }
+    ).sort("confidence", -1)
+    return list(cursor)
