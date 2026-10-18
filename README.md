@@ -36,6 +36,7 @@
 
 | 方式 | 成本 | 覆盖范围 |
 |---|---|---|
+| **定时读原厂路由器的"每设备实时网速"接口**（小米、华为有现成的库） | 0 元，网络不用改 | 全家设备，只是采样比较粗 |
 | 电脑开热点抓包 | 0 元 | 做验证实验 |
 | 手机上用 PCAPdroid（Android 本地 VPN） | 0 元 | 只覆盖本机，4G 也能统计 |
 | 二手玩客云 / 斐讯 N1 做**旁路网关**（只把手机的网关指向它） | 30–100 元 | 只覆盖自己的手机，和路由器品牌无关 |
@@ -64,5 +65,6 @@
 | [docs/feasibility.md](docs/feasibility.md) | 方向与可行性分析，验证实验的判定标准 |
 | [docs/behavior-detection.md](docs/behavior-detection.md) | 按流量行为识别视频流 |
 | [docs/traffic-access.md](docs/traffic-access.md) | 流量接入方式对比（旁路网关、AP 模式、热点、VPN……） |
+| [docs/more-options.md](docs/more-options.md) | 不改网络、不买设备：读原厂路由器的每设备网速接口、Wi-Fi 被动嗅探 |
 | [docs/alternatives.md](docs/alternatives.md) | 现有的类似 App 和产品，以及低成本方案 |
 | [docs/research/](docs/research/README.md) | 开源项目源码学习笔记：OpenAppFilter、nDPI、netifyd、nlbwmon、AdGuard Home |
