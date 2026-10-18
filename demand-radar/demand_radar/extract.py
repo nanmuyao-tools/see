@@ -17,14 +17,19 @@ _SYSTEM = (
 )
 
 
-def build_client(provider: str):
-    """按 provider 构造 Instructor 客户端。延迟导入，缺依赖时报错更清晰。"""
+def build_client(provider: str, ollama_base_url: str | None = None):
+    """按 provider 构造 Instructor 客户端。延迟导入，缺依赖时报错更清晰。
+
+    本地 ollama 需要指定服务地址（容器里指向 ollama 服务）；云 provider 忽略该参数。
+    """
     try:
         import instructor
     except ImportError as e:  # pragma: no cover
         raise SystemExit(
             "缺少 instructor 依赖，请先 `pip install -r requirements.txt`"
         ) from e
+    if provider.startswith("ollama/") and ollama_base_url:
+        return instructor.from_provider(provider, base_url=ollama_base_url)
     return instructor.from_provider(provider)
 
 

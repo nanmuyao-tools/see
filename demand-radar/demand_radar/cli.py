@@ -15,7 +15,7 @@ def run(cfg: Config) -> None:
     print(f"      抓到 {len(items)} 条")
 
     coll = store.connect(cfg.mongo_uri, cfg.db_name)
-    client = build_client(cfg.provider)
+    client = build_client(cfg.provider, cfg.ollama_base_url)
 
     print(f"[2/4] 用 {cfg.provider} 抽取 …")
     new = 0

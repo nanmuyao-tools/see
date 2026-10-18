@@ -1,0 +1,44 @@
+# 需求雷达：一条命令本地部署
+#   docker compose up
+# 结果输出到 ./out/demands.md
+#
+# 说明：app 跑完一轮即退出（批处理任务）；mongo 与 ollama 常驻。
+# 想再跑一次：docker compose run --rm app  （可追加 --limit 50 等参数）
+
+services:
+  mongo:
+    image: mongo:7
+    restart: unless-stopped
+    volumes:
+      - mongo-data:/data/db
+    # 默认仅容器内网互通，不对外暴露端口；需要本机连调试时再放开下面两行
+    # ports:
+    #   - "27017:27017"
+
+  ollama:
+    image: ollama/ollama:latest
+    restart: unless-stopped
+    volumes:
+      - ollama-models:/root/.ollama   # 模型缓存，避免每次重拉
+    # 想用本机已装的 ollama 时可注释掉本服务，并把 app 的 OLLAMA_API 指向宿主机
+
+  app:
+    build: .
+    depends_on:
+      - mongo
+      - ollama
+    environment:
+      MONGO_URI: "mongodb://mongo:27017"
+      OLLAMA_API: "http://ollama:11434"            # 入口脚本拉模型用
+      OLLAMA_BASE_URL: "http://ollama:11434/v1"    # Instructor 调用用
+      OLLAMA_MODEL: "qwen2.5:7b"                    # 内存小可改 qwen2.5:3b
+      DR_PROVIDER: "ollama/qwen2.5:7b"
+      DR_LIMIT: "30"
+      DR_MIN_CONFIDENCE: "0.5"
+      DR_OUTPUT: "out/demands.md"
+    volumes:
+      - ./out:/app/out          # 需求清单输出到宿主机 ./out
+
+volumes:
+  mongo-data:
+  ollama-models:

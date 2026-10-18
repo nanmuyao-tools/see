@@ -73,6 +73,26 @@ HN 官方 API 拉最近 N 条帖子（Ask HN / Show HN / 评论）
 
 **判断标准**：自己看这份清单，是否觉得「这些点子真能做」。是 → 加源加看板；否 → 调整 schema / prompt / 过滤策略。
 
+## 部署：Docker 一键本地运行
+
+**目标**：用户只装 Docker，`docker compose up` 即可运行，不手动装 Python / MongoDB / Ollama。
+
+三个服务编排在 `docker-compose.yml`：
+
+| 服务 | 镜像 | 职责 | 数据卷 |
+|---|---|---|---|
+| app | 本项目 Dockerfile | 抓取 + 抽取 + 输出，跑完即退出（批处理） | `./out` 挂出需求清单 |
+| mongo | `mongo:7` | 存储 | `mongo-data` 持久化 |
+| ollama | `ollama/ollama` | 本地模型服务 | `ollama-models` 缓存模型 |
+
+要点：
+
+- **模型自动拉取**：app 的 `docker/entrypoint.sh` 先等 ollama 就绪，再调 `/api/pull` 拉模型（首次慢，之后走缓存卷），然后运行。
+- **容器间地址靠环境变量注入**：`MONGO_URI=mongodb://mongo:27017`、`OLLAMA_BASE_URL=http://ollama:11434/v1`。配置优先级为 命令行 > 环境变量 > 默认值。
+- **全本地**：默认不暴露端口，数据不出本机，无 API 费用。
+- **低配 / 已有环境**：可把模型换成 `qwen2.5:3b`；或注释掉 ollama 服务、指向宿主机已装的 Ollama。
+- **再次运行**：`docker compose run --rm app --limit 50`。
+
 ## 配置项（便于切换，不写死）
 
 - 模型 provider 与名称（默认 `ollama/qwen2.5:7b`）

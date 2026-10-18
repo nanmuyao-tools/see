@@ -14,36 +14,40 @@ Hacker News 官方 API 拉 Ask HN 帖子
   → 输出 Markdown 需求清单
 ```
 
-## 快速开始
+## 快速开始（推荐：Docker，一条命令）
 
-### 1. 装依赖
+只需装好 [Docker](https://docs.docker.com/get-docker/)，不用自己装 Python、MongoDB、Ollama：
+
+```bash
+cd demand-radar
+docker compose up        # 首次会拉取模型（较慢），之后走缓存
+```
+
+三个容器自动起好：**app**（抓取+抽取）、**mongo**（存储）、**ollama**（本地模型）。
+跑完一轮后 app 退出，结果在 **`./out/demands.md`**，全程本地、不花钱、数据不出本机。
+
+再跑一次 / 改参数：
+
+```bash
+docker compose run --rm app --limit 50 --min-confidence 0.6
+```
+
+> 低配机器提示：CPU 跑 7B 模型较慢。可在 `docker-compose.yml` 把 `OLLAMA_MODEL`
+> 和 `DR_PROVIDER` 改成 `qwen2.5:3b`；或已装本机 Ollama 时注释掉 ollama 服务、
+> 把 `OLLAMA_API`/`OLLAMA_BASE_URL` 指向宿主机。
+
+## 本地开发模式（不走 Docker）
 
 ```bash
 cd demand-radar
 python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
-```
 
-### 2. 准备本地模型（默认全本地，无需任何 API key）
-
-```bash
-# 安装 Ollama：https://ollama.com
-ollama pull qwen2.5:7b     # 内存小可改用 qwen2.5:3b
-```
-
-### 2b. 准备 MongoDB
-
-```bash
-# 本地起一个（任选其一）
+# 自备 MongoDB 与 Ollama
 docker run -d -p 27017:27017 --name mongo mongo:7
-# 或装本机 MongoDB 服务，默认连 mongodb://localhost:27017
-```
+ollama pull qwen2.5:7b        # 内存小可改 qwen2.5:3b
 
-### 3. 运行
-
-```bash
-python -m demand_radar run --limit 30
-# 结果写到 out/demands.md，原始数据存 data/demands.db
+python -m demand_radar run --limit 30   # 结果写到 out/demands.md
 ```
 
 ## 切换到云模型（低配机器先验证效果时）
@@ -61,9 +65,13 @@ python -m demand_radar run --provider "openai/gpt-4o-mini" --limit 30
 | `--provider` | `ollama/qwen2.5:7b` | Instructor 的模型标识，一处切换本地/云 |
 | `--source` | `hackernews` | 数据源（v0 仅 HN） |
 | `--min-confidence` | 0.5 | 低于此可信度的需求被过滤 |
+| `--ollama-base-url` | `http://localhost:11434/v1` | 本地模型服务地址 |
 | `--mongo-uri` | `mongodb://localhost:27017` | MongoDB 连接串 |
 | `--db-name` | `demand_radar` | 数据库名 |
 | `--output` | `out/demands.md` | 清单输出路径 |
+
+命令行参数也可用环境变量设置（Docker 用）：`DR_LIMIT`、`DR_PROVIDER`、
+`DR_MIN_CONFIDENCE`、`OLLAMA_BASE_URL`、`MONGO_URI`、`DR_DB_NAME`、`DR_OUTPUT`。
 
 ## 目录结构
 
@@ -77,6 +85,9 @@ demand_radar/
   report.py         # Markdown 清单输出
   sources/
     hackernews.py   # Hacker News 官方 API
+Dockerfile
+docker-compose.yml  # app + mongo + ollama 一键编排
+docker/entrypoint.sh
 ```
 
 ## 状态
