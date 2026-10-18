@@ -22,7 +22,7 @@ class Demand(BaseModel):
     )
     confidence: float = Field(
         ge=0.0, le=1.0,
-        description="对『这是一个真实、可做的需求』的信心，0–1。",
+        description="对『这是一个真实、可做的需求』的信心，0 到 1 之间的小数，如 0.8。",
     )
 
 

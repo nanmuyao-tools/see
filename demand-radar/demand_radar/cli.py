@@ -28,7 +28,8 @@ def run(cfg: Config) -> None:
         try:
             demand = extract(client, item)
         except Exception as e:  # 单条失败不中断整批
-            print(f"      跳过 {item.external_id}: {e}", file=sys.stderr)
+            reason = str(e).splitlines()[0][:200]  # instructor 会附带完整重试记录，只取首行
+            print(f"      跳过 {item.external_id}: {reason}", file=sys.stderr)
             continue
         store.save(coll, item, demand)
         new += 1

@@ -28,8 +28,13 @@ def build_client(provider: str, ollama_base_url: str | None = None):
         raise SystemExit(
             "缺少 instructor 依赖，请先 `pip install -r requirements.txt`"
         ) from e
-    if provider.startswith("ollama/") and ollama_base_url:
-        return instructor.from_provider(provider, base_url=ollama_base_url)
+    if provider.startswith("ollama/"):
+        # instructor 对 qwen2.5 默认用 TOOLS 模式，但小模型常返回空内容、不调用工具；
+        # 实测 JSON 模式稳定得多
+        kwargs = {"mode": instructor.Mode.JSON}
+        if ollama_base_url:
+            kwargs["base_url"] = ollama_base_url
+        return instructor.from_provider(provider, **kwargs)
     return instructor.from_provider(provider)
 
 

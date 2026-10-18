@@ -51,6 +51,13 @@ client = instructor.from_provider("ollama/qwen2.5:7b")
 client = instructor.from_provider("openai/...")  # 填 API key
 ```
 
+## 实测结论（真实 HN + 本地 qwen2.5:3b，4 核 CPU）
+
+- **本地模型要用 JSON 模式**：instructor 对 qwen2.5 默认用 TOOLS 模式，实测 qwen2.5:3b 返回空内容、不调用工具，全部失败；改用 `Mode.JSON` 后 10/10 成功。JSON_SCHEMA 模式偶尔把 confidence 写成 80（超出 0–1）。代码里已对 ollama 固定使用 JSON 模式。
+- **速度**：纯 CPU 上 qwen2.5:3b 约 7 秒/条。
+- **判断质量**：10 条 Ask HN 中，8 条讨论帖正确判为非需求；2 条求助帖（依赖平台方修改）正确判为个人做不了。
+- **数据源信噪比是瓶颈**：Ask HN 首页大多是讨论，这一批产出 0 条可做需求。下一步应接入 r/SomebodyMakeThis 等专门许愿的数据源。
+
 ## 硬件参考
 
 | 模型 | 大致内存 | 适合 |
