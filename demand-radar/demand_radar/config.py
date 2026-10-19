@@ -25,6 +25,7 @@ class Config:
     # 本地模型服务地址；容器里指向 ollama 服务
     ollama_base_url: str = "http://localhost:11434/v1"
     min_confidence: float = 0.5
+    workers: int = 2  # 同时发给模型的请求数；Ollama 默认串行处理，要配合 OLLAMA_NUM_PARALLEL 才有效果
     mongo_uri: str = "mongodb://localhost:27017"
     db_name: str = "demand_radar"
     output_path: str = "out/demands.md"
@@ -44,6 +45,7 @@ class Config:
             provider=_env("DR_PROVIDER", Config.provider),
             ollama_base_url=_env("OLLAMA_BASE_URL", Config.ollama_base_url),
             min_confidence=float(_env("DR_MIN_CONFIDENCE", str(Config.min_confidence))),
+            workers=int(_env("DR_WORKERS", str(Config.workers))),
             mongo_uri=_env("MONGO_URI", Config.mongo_uri),
             db_name=_env("DR_DB_NAME", Config.db_name),
             output_path=_env("DR_OUTPUT", Config.output_path),
@@ -59,6 +61,7 @@ class Config:
         run.add_argument("--limit", type=int, default=d.limit)
         run.add_argument("--min-confidence", type=float, default=d.min_confidence)
         run.add_argument("--output", dest="output_path", default=d.output_path)
+        run.add_argument("--workers", type=int, default=d.workers, help="并发调用模型的线程数")
 
         ev = sub.add_parser("eval", help="在标注集上评测抽取质量，不写库")
         ev.add_argument("--eval-set", dest="eval_set", default=d.eval_set)
@@ -92,6 +95,7 @@ class Config:
             provider=getattr(ns, "provider", d.provider),
             ollama_base_url=getattr(ns, "ollama_base_url", d.ollama_base_url),
             min_confidence=getattr(ns, "min_confidence", d.min_confidence),
+            workers=getattr(ns, "workers", d.workers),
             mongo_uri=getattr(ns, "mongo_uri", d.mongo_uri),
             db_name=getattr(ns, "db_name", d.db_name),
             output_path=getattr(ns, "output_path", d.output_path),

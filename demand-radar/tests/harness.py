@@ -12,6 +12,7 @@ from contextlib import redirect_stderr, redirect_stdout
 from unittest import mock
 
 from demand_radar import cli
+from demand_radar import extract as extract_mod
 from demand_radar.config import Config
 from demand_radar.models import Demand, SourceItem
 
@@ -58,7 +59,7 @@ class FakeEnv:
              mock.patch.object(cli.sources, "load_config", return_value=conf or CONF), \
              mock.patch.object(cli.sources, "fetch_all", side_effect=fake_fetch_all), \
              mock.patch.object(cli, "build_client", return_value=None), \
-             mock.patch.object(cli, "extract", side_effect=fake_extract), \
+             mock.patch.object(extract_mod, "extract", side_effect=fake_extract), \
              redirect_stdout(buf), redirect_stderr(buf):
             cli.run(self.cfg)
         return buf.getvalue()

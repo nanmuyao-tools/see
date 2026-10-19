@@ -132,12 +132,13 @@ python -m demand_radar run --provider "openai/gpt-4o-mini"
 | `--provider` | `ollama/qwen2.5:3b` | 模型，本地和云模型都用这一个参数切换 |
 | `--lang` | `zh` | 输出语言：`zh` / `en` |
 | `--min-confidence` | 0.5 | 低于此可信度的需求不进清单 |
+| `--workers` | 2 | 同时发给模型的请求数。Ollama 默认一次只处理一个请求，要在 ollama 服务上设 `OLLAMA_NUM_PARALLEL` 才真正并行；云模型直接生效 |
 | `--days` | 7 | `digest`：汇总最近多少天 |
 | `--sources-file` | `sources.toml` | 数据源、过滤规则、排序权重的配置文件 |
 | `--mongo-uri` / `--db-name` | `mongodb://localhost:27017` / `demand_radar` | 数据库 |
 | `--ollama-base-url` | `http://localhost:11434/v1` | 本地模型服务地址 |
 
-这些参数也都能用环境变量设置（Docker 部署时用）：`DR_SOURCE`、`DR_LIMIT`、`DR_PROVIDER`、`DR_OUTPUT_LANGUAGE`、`DR_MIN_CONFIDENCE`、`DR_SOURCES_FILE`、`MONGO_URI`、`DR_DB_NAME`、`OLLAMA_BASE_URL`、`DR_OUTPUT`。
+这些参数也都能用环境变量设置（Docker 部署时用）：`DR_SOURCE`、`DR_LIMIT`、`DR_PROVIDER`、`DR_OUTPUT_LANGUAGE`、`DR_MIN_CONFIDENCE`、`DR_WORKERS`、`DR_SOURCES_FILE`、`MONGO_URI`、`DR_DB_NAME`、`OLLAMA_BASE_URL`、`DR_OUTPUT`。
 
 ## 和同类项目的区别
 

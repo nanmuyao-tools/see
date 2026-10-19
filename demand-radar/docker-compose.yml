@@ -36,6 +36,7 @@ services:
       DR_OUTPUT_LANGUAGE: "${DR_OUTPUT_LANGUAGE:-zh}"  # 输出语言：zh 中文 / en 英文
       DR_LIMIT: "10"                                 # 每个源/查询最多抓多少条
       DR_MIN_CONFIDENCE: "0.5"
+      DR_WORKERS: "2"                                # 同时发给模型的请求数；ollama 默认串行，需配 OLLAMA_NUM_PARALLEL 才并行
       DR_OUTPUT: "out/demands.md"
       # 可选：提高限额。不设也能用
       GITHUB_TOKEN: "${GITHUB_TOKEN:-}"            # GitHub 搜索：10 → 30 次/分钟

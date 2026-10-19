@@ -7,7 +7,7 @@ from datetime import datetime, timedelta, timezone
 
 from . import filters, rank, report, sources, store
 from .config import Config
-from .extract import build_client, extract
+from .extract import build_client, extract_many
 from .models import SourceItem
 
 
@@ -29,20 +29,21 @@ def _todo(coll, items: list[SourceItem]) -> list[SourceItem]:
 
 
 def _process(coll, client, todo: list[SourceItem], cfg: Config, fconf: dict) -> dict[str, int]:
-    """先过规则，再逐条抽取并入库。单条失败不中断整批。返回各步计数。"""
+    """先过规则，再并发抽取、在主线程入库。单条失败不中断整批。返回各步计数。"""
     extracted = filtered = failed = 0
+    to_extract: list[SourceItem] = []
     for item in todo:
         reason = filters.check(item, fconf)
         if reason:
             store.save_filtered(coll, item, reason)
             filtered += 1
-            continue
-        try:
-            demand = extract(client, item, cfg.output_language)
-        except Exception as e:  # 记下来下次重试
-            n = store.record_failure(coll, item, _reason(e))
+        else:
+            to_extract.append(item)
+    for item, demand, err in extract_many(client, to_extract, cfg.output_language, cfg.workers):
+        if err is not None:  # 记下来下次重试
+            n = store.record_failure(coll, item, _reason(err))
             failed += 1
-            print(f"      跳过 {item.external_id}（第 {n} 次失败）: {_reason(e)}", file=sys.stderr)
+            print(f"      跳过 {item.external_id}（第 {n} 次失败）: {_reason(err)}", file=sys.stderr)
             continue
         store.save(coll, item, demand)
         extracted += 1
@@ -73,7 +74,8 @@ def run(cfg: Config) -> None:
 
     client = build_client(cfg.provider, cfg.ollama_base_url)
     todo = _todo(coll, items)
-    print(f"[2/4] 待处理 {len(todo)} 条（含上次失败待重试的），先过规则，再用 {cfg.provider} 抽取 …")
+    print(f"[2/4] 待处理 {len(todo)} 条（含上次失败待重试的），先过规则，"
+          f"再用 {cfg.provider} 抽取（{cfg.workers} 个并发）…")
     stats = _process(coll, client, todo, cfg, conf.get("filters") or {})
     store.save_cursors(coll, cursors)  # 这批全处理完才记游标；中途崩溃就不记，下次重抓
 
