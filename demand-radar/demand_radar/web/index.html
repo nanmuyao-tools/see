@@ -1,0 +1,462 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>需求雷达</title>
+<!--
+  需求雷达看板：一个文件，原生 JS，不引任何外部资源，离线能开。
+  文案跟随 ?lang=zh|en（默认 zh）；数据全部来自同源的 /api/*。
+-->
+<style>
+  :root {
+    --bg: #f5f6f8; --surface: #ffffff; --text: #1b1f24; --muted: #646b75; --border: #e2e5ea;
+    --accent: #2457d6; --accent-soft: #e9eefc; --warn: #a24f06; --warn-soft: #fff2e6;
+    --good: #1b7f4b; --bad: #b3232c; --meter: #c9d0da;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #111418; --surface: #1a1f26; --text: #e6e9ee; --muted: #98a1ab; --border: #2b323b;
+      --accent: #8aa9ff; --accent-soft: #1f2b48; --warn: #f0a35c; --warn-soft: #3a2a16;
+      --good: #5cc48a; --bad: #ff7a83; --meter: #3a434e;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--bg); color: var(--text);
+    font: 15px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Hiragino Sans GB",
+      "Microsoft YaHei", "Noto Sans CJK SC", sans-serif; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  button, select, input { font: inherit; color: inherit; }
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 0 16px 48px; }
+
+  /* 顶栏：标题、标签页、语言切换 */
+  header.top { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; padding: 18px 0 10px; }
+  header.top h1 { font-size: 20px; margin: 0; }
+  header.top .sub { color: var(--muted); font-size: 13px; margin-left: 8px; }
+  .tabs { display: flex; gap: 4px; margin-left: auto; }
+  .tabs button { background: none; border: 1px solid transparent; border-radius: 6px; padding: 6px 12px;
+    cursor: pointer; color: var(--muted); }
+  .tabs button.active { background: var(--surface); border-color: var(--border); color: var(--text); }
+  .tabs .badge { display: inline-block; min-width: 18px; padding: 0 6px; margin-left: 4px; border-radius: 9px;
+    background: var(--warn-soft); color: var(--warn); font-size: 12px; text-align: center; }
+  .lang { font-size: 13px; color: var(--muted); }
+
+  /* 首屏四个数 */
+  .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin: 8px 0 20px; }
+  .tile { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px; }
+  .tile .label { font-size: 12px; color: var(--muted); }
+  .tile .value { font-size: 24px; font-weight: 600; margin-top: 2px; }
+  .tile .value.small { font-size: 15px; font-weight: 500; margin-top: 6px; }
+
+  /* 左筛选 + 右主区 */
+  .layout { display: grid; grid-template-columns: 236px minmax(0, 1fr); gap: 24px; align-items: start; }
+  aside.filters { position: sticky; top: 12px; display: flex; flex-direction: column; gap: 12px; }
+  .field label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 4px; }
+  .field input, .field select { width: 100%; padding: 7px 9px; border: 1px solid var(--border); border-radius: 6px;
+    background: var(--surface); }
+  .domains { display: flex; flex-direction: column; gap: 2px; }
+  .domains button { display: flex; justify-content: space-between; gap: 8px; width: 100%; text-align: left;
+    background: none; border: 0; border-radius: 6px; padding: 5px 9px; cursor: pointer; color: var(--text); }
+  .domains button:hover { background: var(--surface); }
+  .domains button.active { background: var(--accent-soft); color: var(--accent); }
+  .domains .n { color: var(--muted); font-size: 12px; }
+
+  /* 主区 */
+  .toolbar { display: flex; align-items: baseline; gap: 12px; color: var(--muted); font-size: 13px; margin-bottom: 10px; }
+  .note { background: var(--warn-soft); color: var(--warn); border-radius: 8px; padding: 10px 14px; font-size: 13px;
+    margin-bottom: 12px; }
+  .list { display: flex; flex-direction: column; gap: 12px; }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 14px 16px; }
+  .card h3 { margin: 0 0 6px; font-size: 16px; line-height: 1.4; }
+  .card .meta { display: flex; flex-wrap: wrap; gap: 6px 12px; font-size: 13px; color: var(--muted); align-items: center; }
+  .tag { background: var(--accent-soft); color: var(--accent); border-radius: 4px; padding: 1px 7px; font-size: 12px; }
+  .card .src a { word-break: break-all; }
+  .card .cue { margin: 8px 0 0; color: var(--warn); font-size: 13px; }
+  .card .pain { margin: 8px 0 0; font-size: 14px; }
+  .card .pain b { font-weight: 500; color: var(--muted); margin-right: 4px; }
+  .card blockquote { margin: 8px 0 0; padding: 6px 12px; border-left: 3px solid var(--border); color: var(--muted);
+    font-size: 14px; }
+  .scores { display: flex; flex-wrap: wrap; gap: 6px 16px; margin-top: 10px; font-size: 13px; color: var(--muted); }
+  .scores .s { display: inline-flex; align-items: center; gap: 6px; }
+  .meter { display: inline-flex; gap: 2px; }
+  .meter i { width: 9px; height: 4px; border-radius: 2px; background: var(--meter); }
+  .meter i.on { background: var(--accent); }
+  .scores .rank { color: var(--text); font-weight: 500; }
+  .more { display: block; margin: 16px auto 0; padding: 8px 18px; border: 1px solid var(--border); border-radius: 6px;
+    background: var(--surface); cursor: pointer; }
+  .empty, .error { color: var(--muted); padding: 32px 0; text-align: center; }
+  .error { color: var(--bad); }
+
+  /* 运行记录表 */
+  .table-wrap { overflow-x: auto; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; }
+  table { border-collapse: collapse; width: 100%; font-size: 13px; }
+  th, td { padding: 8px 10px; border-bottom: 1px solid var(--border); white-space: nowrap; text-align: left; }
+  th { color: var(--muted); font-weight: 500; }
+  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+  tr:last-child td { border-bottom: 0; }
+  .st { display: inline-flex; align-items: center; gap: 6px; }
+  .st::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--muted); }
+  .st.done::before { background: var(--good); }
+  .st.failed::before, .st.quota::before { background: var(--bad); }
+  .st.running::before, .st.interrupted::before { background: var(--warn); }
+  .err { color: var(--bad); cursor: help; }
+
+  /* 手机宽度：筛选栏放到上面，横向排 */
+  @media (max-width: 760px) {
+    .stats { grid-template-columns: repeat(2, 1fr); }
+    .layout { grid-template-columns: 1fr; gap: 14px; }
+    aside.filters { position: static; display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+    aside.filters .field.q { grid-column: 1 / -1; }
+    .domains-field { grid-column: 1 / -1; }
+    .domains { flex-direction: row; flex-wrap: wrap; gap: 4px; }
+    .domains button { width: auto; border: 1px solid var(--border); padding: 3px 9px; font-size: 13px; }
+    .tabs { margin-left: 0; width: 100%; }
+    .tabs button { flex: 1; text-align: center; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div><h1 data-t="title"></h1><span class="sub" data-t="subtitle"></span></div>
+    <nav class="tabs" id="tabs">
+      <button data-tab="demands" class="active"><span data-t="tab_demands"></span></button>
+      <button data-tab="held"><span data-t="tab_held"></span><span class="badge" id="held-badge">0</span></button>
+      <button data-tab="runs"><span data-t="tab_runs"></span></button>
+    </nav>
+    <a class="lang" id="lang-switch" href="#"></a>
+  </header>
+
+  <section class="stats" id="stats">
+    <div class="tile"><div class="label" data-t="stat_total"></div><div class="value" id="st-total">–</div></div>
+    <div class="tile"><div class="label" data-t="stat_listed"></div><div class="value" id="st-listed">–</div></div>
+    <div class="tile"><div class="label" data-t="stat_held"></div><div class="value" id="st-held">–</div></div>
+    <div class="tile"><div class="label" data-t="stat_last_run"></div><div class="value small" id="st-run">–</div></div>
+  </section>
+
+  <div class="layout">
+    <aside class="filters" id="filters">
+      <div class="field q"><label for="q" data-t="search"></label><input type="search" id="q"></div>
+      <div class="field"><label for="days" data-t="days"></label>
+        <select id="days">
+          <option value="" data-t="days_all"></option>
+          <option value="7" data-t="days_7"></option>
+          <option value="30" data-t="days_30"></option>
+          <option value="90" data-t="days_90"></option>
+        </select></div>
+      <div class="field"><label for="source" data-t="source"></label>
+        <select id="source"><option value="" data-t="source_all"></option></select></div>
+      <div class="field"><label for="sort" data-t="sort"></label>
+        <select id="sort">
+          <option value="rank" data-t="sort_rank"></option>
+          <option value="heat" data-t="sort_heat"></option>
+          <option value="time" data-t="sort_time"></option>
+        </select></div>
+      <div class="field"><label for="minconf" data-t="minconf"></label>
+        <input type="number" id="minconf" min="0" max="1" step="0.1"></div>
+      <div class="field domains-field"><label data-t="domains"></label><div class="domains" id="domains"></div></div>
+    </aside>
+
+    <main id="main">
+      <div id="held-note" class="note" hidden data-t="held_note"></div>
+      <div class="toolbar"><span id="count"></span></div>
+      <div id="list" class="list"></div>
+      <button id="more" class="more" hidden data-t="more"></button>
+      <div id="runs" hidden></div>
+    </main>
+  </div>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  // ---- 文案 ----
+  var I18N = {
+    zh: {
+      title: "需求雷达", subtitle: "从社区的吐槽和许愿里找值得做的需求",
+      tab_demands: "需求", tab_held: "待人工确认", tab_runs: "运行记录", lang_switch: "English",
+      stat_total: "库里条数", stat_listed: "入选需求", stat_held: "待人工确认", stat_last_run: "最近一次运行",
+      never: "还没跑过",
+      search: "搜索", search_ph: "需求描述或原帖标题", days: "时间范围", days_all: "全部时间",
+      days_7: "最近 7 天", days_30: "最近 30 天", days_90: "最近 90 天",
+      source: "来源", source_all: "全部来源", sort: "排序", sort_rank: "排序分", sort_heat: "热度", sort_time: "最新",
+      minconf: "可信度 ≥", domains: "领域", domain_all: "全部领域", other: "其他",
+      total: "共 {n} 条", more: "加载更多", loading: "加载中…",
+      empty: "没有符合条件的需求。", empty_held: "没有待人工确认的需求。",
+      empty_runs: "还没有运行记录。先跑一次：docker compose run --rm app", error: "接口请求失败：{e}",
+      held_note: "以下需求提到了特定的他人，可能被用来追踪、监视、曝光、骚扰或欺骗别人，没有列入正文。请人工确认后再决定是否发布。",
+      cue: "命中", pain: "现有痛点", clarity: "清晰度", intensity: "迫切度", feasibility: "可实现性",
+      heat: "热度", rank: "排序分", confidence: "可信度",
+      started: "开始时间", command: "命令", status: "状态", sources: "来源", fetched: "抓取", filtered: "过滤",
+      extracted: "抽取", failed: "失败", listed: "入选", held: "待确认", duration: "耗时", pages: "页",
+      status_done: "完成", status_running: "运行中", status_failed: "失败", status_interrupted: "已中断",
+      status_quota: "配额用完", fetch_errors: "{n} 个源抓取失败", sec: "秒", min: "分"
+    },
+    en: {
+      title: "Demand Radar", subtitle: "Needs worth building, mined from community complaints and wishes",
+      tab_demands: "Needs", tab_held: "Held for review", tab_runs: "Runs", lang_switch: "中文",
+      stat_total: "Items in database", stat_listed: "Listed needs", stat_held: "Held for review", stat_last_run: "Last run",
+      never: "never",
+      search: "Search", search_ph: "need or post title", days: "Time range", days_all: "All time",
+      days_7: "Last 7 days", days_30: "Last 30 days", days_90: "Last 90 days",
+      source: "Source", source_all: "All sources", sort: "Sort", sort_rank: "Rank", sort_heat: "Heat", sort_time: "Newest",
+      minconf: "Confidence ≥", domains: "Domain", domain_all: "All domains", other: "Other",
+      total: "{n} needs", more: "Load more", loading: "Loading…",
+      empty: "No needs match these filters.", empty_held: "Nothing is held for review.",
+      empty_runs: "No runs yet. Run once: docker compose run --rm app", error: "Request failed: {e}",
+      held_note: "These needs mention specific other people and could be used to track, monitor, expose, harass or deceive someone, so they are not in the main list. Check them before publishing.",
+      cue: "Matched", pain: "Pain point", clarity: "clarity", intensity: "intensity", feasibility: "feasibility",
+      heat: "heat", rank: "rank", confidence: "confidence",
+      started: "Started", command: "Command", status: "Status", sources: "Sources", fetched: "Fetched", filtered: "Filtered",
+      extracted: "Extracted", failed: "Failed", listed: "Listed", held: "Held", duration: "Duration", pages: "pages",
+      status_done: "done", status_running: "running", status_failed: "failed", status_interrupted: "interrupted",
+      status_quota: "quota exhausted", fetch_errors: "{n} source(s) failed to fetch", sec: "s", min: "m"
+    }
+  };
+  var params = new URLSearchParams(location.search);
+  var lang = params.get("lang") === "en" ? "en" : "zh";
+  var T = I18N[lang];
+  function t(key, vars) {
+    var s = T[key] || key;
+    return s.replace(/\{(\w+)\}/g, function (_, k) { return vars && k in vars ? vars[k] : ""; });
+  }
+
+  // ---- 小工具 ----
+  function $(id) { return document.getElementById(id); }
+  function esc(s) {
+    return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+    });
+  }
+  function fmtTime(iso) {
+    if (!iso) return "";
+    var d = new Date(iso);
+    return d.toLocaleString(lang === "zh" ? "zh-CN" : "en-US",
+      { year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hour12: false });
+  }
+  function fmtDate(iso) {
+    if (!iso) return "";
+    return new Date(iso).toLocaleDateString(lang === "zh" ? "zh-CN" : "en-US",
+      { year: "numeric", month: "2-digit", day: "2-digit" });
+  }
+  function fmtDuration(s) {
+    if (s == null) return "";
+    s = Math.round(s);
+    return s < 60 ? s + " " + t("sec") : Math.floor(s / 60) + " " + t("min") + " " + (s % 60) + " " + t("sec");
+  }
+  function num(v) { return v == null ? "" : v; }
+  function getJSON(path, query) {
+    var qs = new URLSearchParams();
+    Object.keys(query || {}).forEach(function (k) {
+      if (query[k] !== "" && query[k] != null) qs.set(k, query[k]);
+    });
+    var url = path + (qs.toString() ? "?" + qs : "");
+    return fetch(url).then(function (r) {
+      if (!r.ok) throw new Error(r.status + " " + r.statusText);
+      return r.json();
+    });
+  }
+
+  // ---- 状态 ----
+  var state = { tab: "demands", domain: "", days: "", source: "", q: "", sort: "rank", minconf: "", offset: 0,
+    limit: 30, total: 0 };
+  var PAGE = 30;
+
+  function filterQuery(withDomain) {
+    var f = { days: state.days, source: state.source, q: state.q, min_confidence: state.minconf };
+    if (withDomain) f.domain = state.domain;
+    return f;
+  }
+
+  // ---- 首屏数字 ----
+  function loadStats() {
+    return getJSON("/api/stats", { min_confidence: state.minconf }).then(function (s) {
+      $("st-total").textContent = s.total;
+      $("st-listed").textContent = s.listed;
+      $("st-held").textContent = s.held;
+      $("held-badge").textContent = s.held;
+      var r = s.last_run;
+      $("st-run").textContent = r ? fmtTime(r.started_at) + " · " + statusText(r.status) : t("never");
+    }).catch(showError);
+  }
+
+  // ---- 筛选栏 ----
+  function loadSources() {
+    // 来源只在启动时取一次：选项随筛选变会让选中的来源消失
+    return getJSON("/api/sources", { min_confidence: state.minconf }).then(function (rows) {
+      var sel = $("source");
+      rows.forEach(function (r) {
+        var o = document.createElement("option");
+        o.value = r.source;
+        o.textContent = r.source + " (" + r.count + ")";
+        sel.appendChild(o);
+      });
+    }).catch(showError);
+  }
+
+  function loadDomains() {
+    var q = filterQuery(false);
+    if (state.tab === "held") q.held = "true";  // 待确认页的领域数要数待确认的
+    return getJSON("/api/domains", q).then(function (rows) {
+      var sum = rows.reduce(function (a, r) { return a + r.count; }, 0);
+      var html = domainButton("", t("domain_all"), sum);
+      rows.forEach(function (r) { html += domainButton(r.domain, r.domain || t("other"), r.count); });
+      $("domains").innerHTML = html;
+    }).catch(showError);
+  }
+
+  function domainButton(value, label, n) {
+    var active = value === state.domain ? " active" : "";
+    return '<button data-domain="' + esc(value) + '" class="' + active + '"><span>' + esc(label) +
+      '</span><span class="n">' + n + "</span></button>";
+  }
+
+  // ---- 需求卡片 ----
+  function meter(n) {
+    var html = '<span class="meter">';
+    for (var i = 1; i <= 5; i++) html += '<i class="' + (n != null && i <= n ? "on" : "") + '"></i>';
+    return html + "</span>";
+  }
+  function scoreSpan(key, v) {
+    return '<span class="s">' + esc(t(key)) + " " + meter(v) + " " + (v == null ? "—" : v) + "</span>";
+  }
+  function card(it) {
+    var h = '<article class="card">';
+    h += "<h3>" + esc(it.need || it.title) + "</h3>";
+    h += '<div class="meta">';
+    if (it.domain) h += '<span class="tag">' + esc(it.domain) + "</span>";
+    h += '<span class="src"><a href="' + esc(it.url) + '" target="_blank" rel="noopener">' + esc(it.source) +
+      "</a> · " + esc(it.title) + "</span>";
+    if (it.extracted_at) h += "<time>" + esc(fmtDate(it.extracted_at)) + "</time>";
+    h += "</div>";
+    if (it.review_cue) h += '<p class="cue">' + esc(t("cue")) + "：“" + esc(it.review_cue) + "”</p>";
+    if (it.pain_point) h += '<p class="pain"><b>' + esc(t("pain")) + "</b>" + esc(it.pain_point) + "</p>";
+    if (it.excerpt) h += "<blockquote>“" + esc(it.excerpt) + "”</blockquote>";
+    h += '<div class="scores">' + scoreSpan("clarity", it.clarity) + scoreSpan("intensity", it.intensity) +
+      scoreSpan("feasibility", it.feasibility);
+    if (it.score) h += "<span>" + esc(t("heat")) + " " + it.score + "</span>";
+    if (it.rank_score != null) h += '<span class="rank">' + esc(t("rank")) + " " + it.rank_score + "</span>";
+    h += "</div></article>";
+    return h;
+  }
+
+  function loadList(reset) {
+    if (reset) { state.offset = 0; $("list").innerHTML = ""; }
+    var path = state.tab === "held" ? "/api/held" : "/api/demands";
+    var q = filterQuery(true);
+    q.sort = state.sort; q.limit = PAGE; q.offset = state.offset;
+    $("count").textContent = t("loading");
+    $("more").hidden = true;
+    return getJSON(path, q).then(function (page) {
+      state.total = page.total;
+      state.offset = page.offset + page.items.length;
+      $("count").textContent = t("total", { n: page.total });
+      if (page.total === 0) {
+        $("list").innerHTML = '<div class="empty">' + esc(t(state.tab === "held" ? "empty_held" : "empty")) + "</div>";
+      } else {
+        $("list").insertAdjacentHTML("beforeend", page.items.map(card).join(""));
+      }
+      $("more").hidden = state.offset >= page.total;
+    }).catch(showError);
+  }
+
+  // ---- 运行记录 ----
+  function statusText(s) { return t("status_" + s) !== "status_" + s ? t("status_" + s) : s; }
+  function runRow(r) {
+    var fetched = r.fetched_total != null ? r.fetched_total : (typeof r.fetched === "number" ? r.fetched : "");
+    if (r.pages != null) fetched += " / " + r.pages + " " + t("pages");
+    var errs = r.fetch_errors && Object.keys(r.fetch_errors).length;
+    var errHtml = errs ? ' <span class="err" title="' + esc(JSON.stringify(r.fetch_errors)) + '">⚠ ' +
+      esc(t("fetch_errors", { n: errs })) + "</span>" : "";
+    return "<tr><td>" + esc(fmtTime(r.started_at)) + "</td><td>" + esc(r.command) + "</td>" +
+      '<td><span class="st ' + esc(r.status) + '">' + esc(statusText(r.status)) + "</span>" + errHtml + "</td>" +
+      "<td>" + esc((r.sources || []).join(", ")) + "</td>" +
+      '<td class="num">' + esc(fetched) + '</td><td class="num">' + num(r.filtered) + "</td>" +
+      '<td class="num">' + num(r.extracted) + '</td><td class="num">' + num(r.failed) + "</td>" +
+      '<td class="num">' + num(r.listed) + '</td><td class="num">' + num(r.held) + "</td>" +
+      '<td class="num">' + esc(fmtDuration(r.duration_s)) + "</td></tr>";
+  }
+  function loadRuns() {
+    $("runs").innerHTML = '<div class="empty">' + esc(t("loading")) + "</div>";
+    return getJSON("/api/runs", { limit: 50 }).then(function (rows) {
+      if (!rows.length) {
+        $("runs").innerHTML = '<div class="empty">' + esc(t("empty_runs")) + "</div>";
+        return;
+      }
+      var cols = ["started", "command", "status", "sources", "fetched", "filtered", "extracted", "failed",
+        "listed", "held", "duration"];
+      var head = cols.map(function (c, i) { return "<th" + (i >= 4 ? ' class="num"' : "") + ">" + esc(t(c)) + "</th>"; });
+      $("runs").innerHTML = '<div class="table-wrap"><table><thead><tr>' + head.join("") + "</tr></thead><tbody>" +
+        rows.map(runRow).join("") + "</tbody></table></div>";
+    }).catch(showError);
+  }
+
+  function showError(e) {
+    var target = state.tab === "runs" ? $("runs") : $("list");
+    target.innerHTML = '<div class="error">' + esc(t("error", { e: e.message || e })) + "</div>";
+    $("count").textContent = "";
+  }
+
+  // ---- 标签页 ----
+  function showTab(tab) {
+    state.tab = tab;
+    Array.prototype.forEach.call($("tabs").querySelectorAll("button"), function (b) {
+      b.classList.toggle("active", b.dataset.tab === tab);
+    });
+    var runs = tab === "runs";
+    $("filters").hidden = runs;
+    $("list").hidden = runs;
+    $("count").hidden = runs;
+    $("runs").hidden = !runs;
+    $("held-note").hidden = tab !== "held";
+    if (runs) { $("more").hidden = true; loadRuns(); } else { loadDomains(); loadList(true); }
+  }
+
+  // ---- 事件 ----
+  function refilter() { loadDomains(); loadList(true); }
+  var timer;
+  $("q").addEventListener("input", function (e) {
+    clearTimeout(timer);
+    timer = setTimeout(function () { state.q = e.target.value.trim(); refilter(); }, 300);
+  });
+  $("days").addEventListener("change", function (e) { state.days = e.target.value; refilter(); });
+  $("source").addEventListener("change", function (e) { state.source = e.target.value; refilter(); });
+  $("sort").addEventListener("change", function (e) { state.sort = e.target.value; loadList(true); });
+  $("minconf").addEventListener("change", function (e) {
+    state.minconf = e.target.value; loadStats(); refilter();
+  });
+  $("domains").addEventListener("click", function (e) {
+    var b = e.target.closest("button[data-domain]");
+    if (!b) return;
+    state.domain = b.dataset.domain;
+    Array.prototype.forEach.call($("domains").children, function (x) {
+      x.classList.toggle("active", x.dataset.domain === state.domain);
+    });
+    loadList(true);
+  });
+  $("more").addEventListener("click", function () { loadList(false); });
+  $("tabs").addEventListener("click", function (e) {
+    var b = e.target.closest("button[data-tab]");
+    if (b) showTab(b.dataset.tab);
+  });
+
+  // ---- 启动：套文案，拉数据 ----
+  document.documentElement.lang = lang === "zh" ? "zh-CN" : "en";
+  document.title = t("title");
+  Array.prototype.forEach.call(document.querySelectorAll("[data-t]"), function (el) { el.textContent = t(el.dataset.t); });
+  $("q").placeholder = t("search_ph");
+  var other = new URLSearchParams(location.search);
+  other.set("lang", lang === "zh" ? "en" : "zh");
+  $("lang-switch").href = "?" + other;
+  $("lang-switch").textContent = t("lang_switch");
+
+  loadStats();
+  loadSources();
+  loadDomains();
+  loadList(true);
+})();
+</script>
+</body>
+</html>

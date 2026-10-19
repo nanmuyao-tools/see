@@ -200,6 +200,18 @@ class ApiTest(unittest.TestCase):
         self.assertEqual(s["by_status"], {"extracted": 3, "filtered": 1, "retry": 1, "failed": 0})
         self.assertEqual(s["min_confidence"], 0.5)
 
+    # ---- 静态页 ----
+
+    def test_index_html_offline(self):
+        for path in ("/", "/?lang=en"):
+            r = self.client.get(path)
+            self.assertEqual(r.status_code, 200)
+            self.assertTrue(r.headers["content-type"].startswith("text/html"))
+            self.assertIn("<!doctype html>", r.text.lower())
+            self.assertIn("/api/demands", r.text)  # 页面确实在调这些接口
+            self.assertNotIn("https://cdn.", r.text)  # 不引外部资源，离线可用
+            self.assertNotIn("<script src=\"http", r.text)
+
 
 if __name__ == "__main__":
     unittest.main()
