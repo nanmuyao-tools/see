@@ -20,6 +20,10 @@ services:
     restart: unless-stopped
     volumes:
       - ollama-models:/root/.ollama   # 模型缓存，避免每次重拉
+    # 用 Clash/mihomo fake-ip 模式时模型下载会失败（redirect target not allowed … non-public 198.18.x.x）。
+    # 解法见 README「常见问题」；若选第二种，打开下面两行并填入查到的真实 IP：
+    # extra_hosts:
+    #   - "dd20bb891979d25aebc8bec07b2b3bbc.r2.cloudflarestorage.com:172.64.66.1"
     # 想用本机已装的 ollama 时可注释掉本服务，并把 app 的 OLLAMA_API 指向宿主机
 
   app:

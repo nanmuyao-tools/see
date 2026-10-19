@@ -84,9 +84,11 @@ It reports accuracy on "is this a need" and "can one person build it", end-to-en
 
 ## Running without Docker
 
+Requires **Python 3.11 or newer** (it uses `tomllib`, added in 3.11). The Python that ships with macOS is 3.9 and fails with `No module named 'tomllib'`; install a newer one with `brew install python@3.12`.
+
 ```bash
 cd demand-radar
-python -m venv .venv && source .venv/bin/activate
+python3.12 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 
 docker run -d -p 27017:27017 --name mongo mongo:7
@@ -138,6 +140,24 @@ Projects such as [Reddit_Scrapper](https://github.com/Mohamedsaleh14/Reddit_Scra
 | Setup | `docker compose up` | Local Python setup, rarely Docker |
 | Quality | Labeled eval set, reproducible metrics | No published evaluation |
 | Sources | HN, Reddit, StackExchange, GitHub issues | Mostly Reddit only |
+
+## Troubleshooting
+
+**Model download fails with `redirect target not allowed … resolves to non-public 198.18.x.x`**
+
+This happens when a Clash / mihomo style proxy runs in fake-ip (TUN) mode: inside the container every hostname resolves to a fake 198.18.0.0/16 address. Ollama follows a redirect to Cloudflare storage when downloading a model, checks that the redirect target is a public IP, and refuses. The network itself works; only that check fails. Pick one fix:
+
+1. **Exclude the host from fake-ip in your proxy** (recommended): add `+.cloudflarestorage.com` to `dns.fake-ip-filter` (Clash Verge Rev: Settings → DNS override). Then run `docker compose up` again.
+2. **Pin the real IP in the ollama container**: look it up over encrypted DNS, which the proxy cannot intercept:
+
+   ```bash
+   curl -s -H "accept: application/dns-json" \
+     "https://1.1.1.1/dns-query?name=dd20bb891979d25aebc8bec07b2b3bbc.r2.cloudflarestorage.com&type=A"
+   ```
+
+   then uncomment the two `extra_hosts` lines under the ollama service in `docker-compose.yml` and fill in that IP. It may change over time; look it up again if the download stops working.
+
+**`No module named 'tomllib'` when running locally**: your Python is older than 3.11, see "Running without Docker" above.
 
 ## Compliance
 

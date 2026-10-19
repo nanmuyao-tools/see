@@ -85,9 +85,11 @@ python -m demand_radar eval --lang en          # 英文输出模式下评测
 
 ## 不用 Docker 本地运行
 
+需要 **Python 3.11 或更新**（用到了 3.11 才有的 `tomllib`）。macOS 自带的 Python 是 3.9，会报 `No module named 'tomllib'`，请用 Homebrew 装一个：`brew install python@3.12`。
+
 ```bash
 cd demand-radar
-python -m venv .venv && source .venv/bin/activate
+python3.12 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 
 # 自备 MongoDB 与 Ollama
@@ -140,6 +142,24 @@ GitHub 上已有一些同类项目，比如 [Reddit_Scrapper](https://github.com
 | 部署 | `docker compose up` | 本地装 Python 环境，几乎都没有 Docker |
 | 质量 | 有标注评测集，指标可复现 | 没有公开的评测方法 |
 | 数据源 | HN、Reddit、StackExchange、GitHub issues | 大多只有 Reddit |
+
+## 常见问题
+
+**模型下载失败，报错里有 `redirect target not allowed … resolves to non-public 198.18.x.x`**
+
+这是 Clash / mihomo 类代理开了 fake-ip 模式（TUN）的典型现象：容器里的域名被解析成 198.18.0.0/16 的假 IP，而 ollama 下载模型时要跳转到 Cloudflare 的存储域名，它检查到跳转目标不是公网 IP 就拒绝。网络本身是通的，只是这一道检查过不去。两种解法任选其一：
+
+1. **在代理里把这个域名排除出 fake-ip**（推荐，一劳永逸）：在 fake-ip-filter 里加一条 `+.cloudflarestorage.com`。Clash Verge Rev 在「设置 → DNS 覆写」里改；其他客户端改配置文件里的 `dns.fake-ip-filter`。改完重新 `docker compose up`。
+2. **给 ollama 容器写死真实 IP**：先用加密 DNS 查出真实地址（不会被劫持）：
+
+   ```bash
+   curl -s -H "accept: application/dns-json" \
+     "https://1.1.1.1/dns-query?name=dd20bb891979d25aebc8bec07b2b3bbc.r2.cloudflarestorage.com&type=A"
+   ```
+
+   然后把 `docker-compose.yml` 里 ollama 服务下注释掉的 `extra_hosts` 两行打开，填上查到的 IP。这个 IP 可能会变，失效了重查一次即可。
+
+**本地运行报 `No module named 'tomllib'`**：Python 版本低于 3.11，见上面「不用 Docker 本地运行」。
 
 ## 合规
 
