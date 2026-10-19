@@ -29,6 +29,7 @@ _LABELS = {
         "held_note": "以下需求提到了特定的他人，可能被用来追踪、监视、曝光、骚扰或欺骗别人，没有列入正文。"
                      "请人工确认后再决定是否发布。",
         "cue": "命中",
+        "cluster": "来自 {s} 个来源，共 {n} 条",
         "sep": "：",
     },
     "en": {
@@ -50,6 +51,7 @@ _LABELS = {
         "held_note": "These needs mention specific other people and could be used to track, monitor, expose, "
                      "harass or deceive someone, so they are not in the list above. Check them before publishing.",
         "cue": "Matched",
+        "cluster": "From {s} sources, {n} posts",
         "sep": ": ",
     },
 }
@@ -77,7 +79,19 @@ def _entry(r: dict, heading: str, L: dict[str, str]) -> list[str]:
         meta += f" · {L['rank']} {r['rank_score']}"
     lines.append(f"- {meta}")
     lines.append(f"- {L['source']}{sep}[{r['source']}]({r['url']}) {r['title']}")
+    lines += _cluster_lines(r, L)
     lines.append("")
+    return lines
+
+
+def _cluster_lines(r: dict, L: dict[str, str]) -> list[str]:
+    """簇代表多打一行「来自 N 个来源，共 M 条」和其余成员的原帖链接（字段由 cluster.group 挂上）。
+    旧数据没有这些字段，输出和以前一字不差。"""
+    if r.get("cluster_size", 1) <= 1:
+        return []
+    lines = [f"- {L['cluster'].format(s=len(r.get('cluster_sources') or []), n=r['cluster_size'])}"]
+    for m in r.get("cluster_members") or []:
+        lines.append(f"  - [{m['source']}]({m['url']}) {m['title']}")
     return lines
 
 

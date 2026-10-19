@@ -41,6 +41,9 @@ docker compose run --rm app digest                 # 生成最近 7 天的周报
 docker compose run --rm app digest --days 14 --lang en   # 最近 14 天，英文周报
 docker compose run --rm app backfill --source softwarerecs --pages 20   # 往回拉历史，可中断续跑
 docker compose run --rm app eval                   # 在标注集上评测当前模型
+docker compose exec ollama ollama pull nomic-embed-text   # 一次性：拉嵌入模型（约 270MB），下面两条要用
+docker compose run --rm app cluster                # 把不同来源里的同一需求合并成一条，重写清单
+docker compose run --rm app run --cluster          # 抓一轮并顺手合并（默认不开）
 ```
 
 **机器配置**：默认模型 qwen2.5:3b 约 2GB，8GB 内存的电脑可以跑。低配机器可在 `docker-compose.yml` 里把模型换成 `qwen2.5:1.5b`（更快，但准确率低一些）。已经装了 Ollama 的话，可以注释掉 ollama 服务，把 `OLLAMA_API` / `OLLAMA_BASE_URL` 指向本机。
@@ -56,6 +59,8 @@ docker compose run --rm app eval                   # 在标注集上评测当前
   → 原文摘录：程序从原帖挑一句最像需求的原话，不让模型抄写（小模型抄写时常会翻译或改写）
   → 存入 MongoDB：每条都记处理状态，已处理的不再重复；失败的下次重试，最多 3 次
   → 综合排序：三项打分加权 + 原帖热度（取对数）
+  → 相似需求合并（可选，cluster 命令或 run --cluster）：本地嵌入模型向量化，余弦相似度超过阈值的归为一簇，
+    清单里只列一条，标明来自几个来源、共几条
   → 全量清单 out/demands.md ／ 周报 out/digest-<日期>.md
   → 每次运行在 MongoDB 的 runs 集合记一条：各源抓取数、过滤 / 抽取 / 失败数、耗时
 ```
@@ -117,6 +122,25 @@ python -m demand_radar backfill --source arctic_shift --pages 10       # Reddit 
 
 需求描述默认用中文，也可以用英文：`--lang en`，或在 `docker-compose.yml` 里设 `DR_OUTPUT_LANGUAGE: "en"`。**原文摘录始终保留原帖语言，不翻译。**
 
+## 相似需求合并
+
+同一个需求会在 HN 评论、softwarerecs 提问、Reddit 帖子里各说一遍，清单里重复列出、热度被分散。`cluster` 命令把它们合成一条：
+
+```bash
+ollama pull nomic-embed-text                        # 一次性；Docker 里是 docker compose exec ollama ollama pull nomic-embed-text
+python -m demand_radar cluster                      # 向量化 + 合并，重写 out/demands.md；不调抽取模型
+python -m demand_radar run --cluster                # 抓取 + 抽取后顺手合并（默认不开；定时服务设 DR_CLUSTER=1）
+python -m demand_radar cluster --threshold 0.8 --rebuild   # 调了阈值，丢掉已有簇重新归
+```
+
+**原理**：每条需求的 `need` 一句话（旧数据没有就用标题）经本地嵌入模型变成向量，存回 MongoDB；新条目按排序分从高到低，和已有簇的代表向量算余弦相似度，超过阈值（默认 0.85）就归入最像的簇，否则自己成为新簇的代表。增量进行：已算过的向量不重算，已归的簇不动，换嵌入模型会自动整体重建。几千条规模全在内存里用纯 Python 算，不需要向量数据库。
+
+合并后的清单里，每簇只显示代表（簇内排序分最高的那条），下面一行「来自 N 个来源，共 M 条」加其余成员的原帖链接。簇的排序分 = 代表的排序分 + log(成员数) × 0.5：出现得多说明有人要，但取对数、权重小，三个零赞小帖不会压过一个几百赞的帖子；权重在 `sources.toml` 的 `[ranking]` 里加 `cluster_size = …` 可调。没跑过 `cluster` 的库、没有簇信息的旧数据，清单和周报照原样显示。
+
+簇存在 MongoDB 的 `clusters` 集合（代表、成员、来源、总热度、最高排序分），需求文档加 `embedding` / `cluster_id` 字段，看板和其他工具可以直接读。
+
+嵌入服务默认和模型服务同一个地址（`--base-url`）。**Mac GPU 路线的 mlx-lm 不提供嵌入接口**，这时让嵌入单独走本机 Ollama：`--embed-base-url http://localhost:11434/v1`（容器里是 `http://host.docker.internal:11434/v1`）。中文需求较多时可以试更强的多语言模型 `--embed-model bge-m3`（约 1.2GB），换模型后第一次运行会重算全部向量。
+
 ## 评测
 
 改 prompt、改规则或换模型之后，用标注集量化效果，而不是凭感觉。标注集 [`eval/eval_set.json`](eval/eval_set.json) 有 61 条：46 条人工标注的真实样本，加 15 条构造样本（覆盖「追踪、曝光特定的人」这类有害需求和容易被误判的正常需求）。
@@ -127,6 +151,15 @@ python -m demand_radar eval --lang en          # 英文输出模式下评测
 ```
 
 输出：是否需求的准确率、能否做成的准确率、端到端「应入选」的精确率 / 召回率 / F1、规则过滤了多少条（以及有没有误杀）、有害需求有没有混进正文清单（必须为 0）、有多少正常需求被转去人工确认。加 `-v` 会打印每条入选需求的原文摘录，方便人工核对。最新结果见 [`ROADMAP.md`](ROADMAP.md)。
+
+**合并的评测**：[`eval/cluster_pairs.json`](eval/cluster_pairs.json) 有 23 对需求描述（中文 16 对、英文 7 对；11 对标「同一需求」、12 对标「不同」，其中不少是「都是提醒类」「都是自托管」这种难例；正例多由 `eval/eval_set.json` 里真实样本的需求改写而来），用真实嵌入服务跑：
+
+```bash
+python -m demand_radar cluster --eval -v            # 不动库；换嵌入模型或调阈值后跑
+python -m demand_radar cluster --eval --embed-model bge-m3 --threshold 0.8
+```
+
+输出准确率、「同一需求」的精确率 / 召回率 / F1、中英文分开的准确率、正例最低 / 负例最高相似度（两者重叠说明这个模型在该阈值附近分不开），以及这个集合上准确率最高的阈值——样本少，只作调参参考。
 
 ## 不用 Docker 本地运行
 
@@ -168,6 +201,8 @@ docker compose -f docker-compose.yml -f docker-compose.mac-gpu.yml run --rm app 
 
 换模型或端口：`MLX_MODEL=<模型名> MLX_PORT=<端口>` 放在命令前面。不用 Docker 跑 app 的话，直接给 `--provider local/<模型名> --base-url http://localhost:8765/v1`。任何在宿主机上跑的 OpenAI 兼容服务都能这样接（LM Studio、llama.cpp、原生 Ollama）。
 
+mlx-lm 没有嵌入接口，这条路线上要合并相似需求的话，嵌入单独指向本机 Ollama（`brew install ollama && ollama pull nomic-embed-text`）：容器里给 `DR_EMBED_BASE_URL=http://host.docker.internal:11434/v1`，本机跑 app 给 `--embed-base-url http://localhost:11434/v1`。
+
 ## 用云模型（可选）
 
 没有合适的机器时，可以换成云模型（需要 API key，会产生费用，数据会发给服务商）：
@@ -193,8 +228,13 @@ python -m demand_radar run --provider "openai/gpt-4o-mini"
 | `--sources-file` | `sources.toml` | 数据源、过滤规则、排序权重的配置文件 |
 | `--mongo-uri` / `--db-name` | `mongodb://localhost:27017` / `demand_radar` | 数据库 |
 | `--base-url` | `http://localhost:11434/v1` | 本地模型服务地址（旧名 `--ollama-base-url` 仍可用） |
+| `--cluster` | 关 | `run` / `schedule`：抽取完顺手合并相似需求（需要嵌入模型） |
+| `--embed-model` | `nomic-embed-text` | 嵌入模型，走 `/v1/embeddings`；中文多可试 `bge-m3` |
+| `--embed-base-url` | 同 `--base-url` | 嵌入服务地址；mlx-lm 没有嵌入接口时单独指向 Ollama |
+| `--threshold` | 0.85 | 余弦相似度 ≥ 此值视为同一需求 |
+| `--rebuild` / `--eval` | 关 | `cluster`：丢掉已有簇重新归 / 在标注对上评测合并判断（`--pairs` 指定文件） |
 
-这些参数也都能用环境变量设置（Docker 部署时用）：`DR_SOURCE`、`DR_LIMIT`、`DR_PROVIDER`、`DR_OUTPUT_LANGUAGE`、`DR_MIN_CONFIDENCE`、`DR_WORKERS`、`DR_SOURCES_FILE`、`MONGO_URI`、`DR_DB_NAME`、`OLLAMA_BASE_URL`、`DR_OUTPUT`。
+这些参数也都能用环境变量设置（Docker 部署时用）：`DR_SOURCE`、`DR_LIMIT`、`DR_PROVIDER`、`DR_OUTPUT_LANGUAGE`、`DR_MIN_CONFIDENCE`、`DR_WORKERS`、`DR_SOURCES_FILE`、`MONGO_URI`、`DR_DB_NAME`、`OLLAMA_BASE_URL`、`DR_OUTPUT`、`DR_CLUSTER`、`DR_EMBED_MODEL`、`DR_EMBED_BASE_URL`、`DR_CLUSTER_THRESHOLD`。
 
 ## 和同类项目的区别
 
@@ -244,19 +284,21 @@ GitHub 上已有一些同类项目，比如 [Reddit_Scrapper](https://github.com
 
 ```
 demand_radar/
-  cli.py            # 入口：run / eval / digest / backfill / schedule 五个命令
+  cli.py            # 入口：run / eval / digest / backfill / schedule / cluster 六个命令
   schedule.py       # 定时运行：每天 run、每周 digest
+  cluster.py        # 相似需求合并：向量化、阈值归簇、按簇折叠展示、标注对评测
   config.py         # 运行配置（命令行 > 环境变量 > 默认值）
   sources/          # 数据源：softwarerecs、hn_algolia、github、arctic_shift、rss；cursor.py 增量游标
   filters.py        # 规则预过滤
   extract.py        # 模型抽取
   excerpt.py        # 从原文挑摘录
   models.py         # 数据结构
-  store.py          # MongoDB 存储：条目状态、游标与回填进度、运行记录
-  rank.py           # 综合排序
-  report.py         # 清单与周报（中英文）
+  store.py          # MongoDB 存储：条目状态、游标与回填进度、运行记录、向量与簇
+  rank.py           # 综合排序（含簇的排序分）
+  report.py         # 清单与周报（中英文），簇代表下列出其余成员
   evaluate.py       # 评测
 eval/eval_set.json  # 评测标注集
+eval/cluster_pairs.json  # 「是否同一需求」标注对，cluster --eval 用
 tests/              # 离线单元测试
 sources.toml        # 数据源、过滤规则、排序权重
 docker-compose.yml  # app + mongo + ollama，可选的 scheduler（定时）
