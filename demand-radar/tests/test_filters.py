@@ -115,6 +115,7 @@ class ExcerptTest(unittest.TestCase):
 
 def demand(**kw):
     base = dict(is_request=True, need="n", domain="d", pain_point="", excerpt="", buildable=True,
+                harmful=False,
                 clarity=3, intensity=3, feasibility=3, confidence=0.9)
     return Demand(**{**base, **kw})
 
@@ -147,6 +148,14 @@ class StoreStatusTest(unittest.TestCase):
         self.store.record_failure(self.coll, item, "boom")
         self.assertEqual(self.coll.find_one()["status"], "failed")
         self.assertFalse(self.store.should_process(self.coll, item))
+
+    def test_harmful_never_listed(self):
+        self.store.save(self.coll, it("ok", external_id="t3_ok"), demand())
+        self.store.save(self.coll, it("bad", external_id="t3_bad"), demand(harmful=True))
+        self.coll.insert_one({"_id": "legacy", "is_request": True, "buildable": True,
+                              "confidence": 0.9})  # 旧数据没有 harmful 字段
+        got = {d["_id"] for d in self.store.top_demands(self.coll, 0.5)}
+        self.assertEqual(got, {"reddit/x:t3_ok", "legacy"})
 
     def test_success_after_failure_overwrites(self):
         item = it("x")

@@ -19,9 +19,9 @@ EVAL_SET = os.path.join(HERE, "..", "eval", "eval_set.json")
 _FIELDS = ("is_request", "need", "domain", "pain_point", "buildable", "confidence")
 
 
-def demand(is_request, buildable, confidence=0.9):
+def demand(is_request, buildable, confidence=0.9, harmful=False):
     return Demand(is_request=is_request, need="x" if is_request else "", domain="d",
-                  pain_point="", buildable=buildable,
+                  pain_point="", buildable=buildable, harmful=harmful,
                   clarity=3, intensity=3, feasibility=3, confidence=confidence)
 
 
@@ -39,11 +39,13 @@ def run_eval(eset, fake, min_confidence=0.5, fconf=None):
     return buf.getvalue()
 
 
-def item(id_, is_request, buildable, note="", title=None, text=None, kind="post", source="s"):
+def item(id_, is_request, buildable, note="", title=None, text=None, kind="post", source="s",
+         harmful=False):
     return {"source": source, "external_id": id_, "title": title or f"t{id_}",
             "text": "a body long enough to pass the empty-body rule" if text is None else text,
             "url": "u", "score": 0, "kind": kind,
-            "label": {"is_request": is_request, "buildable": buildable, "note": note}}
+            "label": {"is_request": is_request, "buildable": buildable, "harmful": harmful,
+                      "note": note}}
 
 
 class MetricsTest(unittest.TestCase):
@@ -106,6 +108,22 @@ class MetricsTest(unittest.TestCase):
         self.assertIn("误杀应入选 1 条", out)
         self.assertIn("FN=1", out)
 
+    def test_harmful_listed_is_reported(self):
+        eset = [item("1", True, True, harmful=True), item("2", True, True)]
+        # 模型没识别出有害：有害需求进了清单，必须被报出来
+        out = run_eval(eset, lambda c, it: demand(True, True))
+        self.assertIn("被判入选 1 条", out)
+        self.assertIn("TP=1 FP=1", out)
+        # 模型识别出有害：不入选，算对
+        out = run_eval(eset, lambda c, it: demand(True, True, harmful=(it.title == "t1")))
+        self.assertIn("被判入选 0 条", out)
+        self.assertIn("TP=1 FP=0 FN=0 TN=1", out)
+
+    def test_benign_flagged_harmful_is_reported(self):
+        out = run_eval([item("1", True, True)], lambda c, it: demand(True, True, harmful=True))
+        self.assertIn("正常需求被误判有害 1 条", out)
+        self.assertIn("FN=1", out)
+
     def test_extraction_failure_counted(self):
         eset = [item("1", True, True)]
 
@@ -127,6 +145,9 @@ class EvalSetIntegrityTest(unittest.TestCase):
             lbl = d["label"]
             self.assertIsInstance(lbl["is_request"], bool)
             self.assertIn(lbl["buildable"], (True, False, None))
+            self.assertIsInstance(lbl.get("harmful", False), bool)
+            if d["source"] == "synthetic":
+                self.assertIn("构造样本", lbl["note"])
             self.assertTrue(lbl["note"])
             # buildable 只在 is_request 为真时才有意义
             if not lbl["is_request"]:

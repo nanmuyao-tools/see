@@ -26,6 +26,11 @@ class Demand(BaseModel):
     buildable: bool = Field(
         description="Whether a solo developer could build it as a standalone tool or product."
     )
+    harmful: bool = Field(
+        description="Whether the tool would mainly be used to track, expose, harass or deceive specific "
+        "people, or otherwise cause harm: covert location tracking, finding someone's home address, "
+        "doxxing, stalking, mass reporting, spam, fraud. A tool people use on their own data is not harmful."
+    )
     clarity: int = Field(ge=1, le=5, description="How clearly the need is described, 1 (vague) to 5 (specific).")
     intensity: int = Field(ge=1, le=5, description="How strongly the user wants it, 1 (idle thought) to 5 (urgent, would pay).")
     feasibility: int = Field(ge=1, le=5, description="How easy it is for a solo developer to build, 1 (very hard) to 5 (easy).")

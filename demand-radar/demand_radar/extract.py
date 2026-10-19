@@ -32,6 +32,8 @@ _SYSTEM = {
         "例子：『有没有获取当前窗口信息的命令行工具』→ true；『帮我挑选合适大模型的工具』→ true；"
         "『能消灭癌细胞的软件』→ false；『让某个 App 去掉广告』→ false（得平台方改）。\n"
         "注意区分真实需求和情绪发泄：『卡、广告多、太贵、客服差』这类不是需求。\n"
+        "harmful 单独判断：做出来主要用于追踪、曝光、骚扰或欺骗特定的人（偷偷定位别人、查别人住址、"
+        "公开某些人的行踪、批量举报、群发垃圾信息、诈骗），就是 true；用户处理自己的数据不算。\n"
         "need、domain、pain_point 用简体中文写。"
     ),
     "en": (
@@ -47,6 +49,9 @@ _SYSTEM = {
         "the right LLM' → true; 'software that destroys cancer' → false; 'make some app remove its ads' "
         "→ false (only the platform can do it).\n"
         "Tell real needs apart from venting: 'slow, too many ads, too expensive, bad support' are not needs.\n"
+        "Judge harmful separately: true if the tool would mainly be used to track, expose, harass or deceive "
+        "specific people (covertly locating someone, finding someone's address, publishing certain people's "
+        "movements, mass reporting, spam, fraud). People handling their own data is not harmful.\n"
         "Write need, domain and pain_point in English."
     ),
 }

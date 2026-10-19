@@ -52,7 +52,7 @@ def run(cfg: Config) -> None:
             continue
         store.save(coll, item, demand)
         new += 1
-        mark = "✓" if (demand.is_request and demand.buildable) else "·"
+        mark = "✓" if (demand.is_request and demand.buildable and not demand.harmful) else "·"
         print(f"      {mark} {(demand.need or item.title)[:50]}")
     print(f"      规则过滤 {filtered} 条，抽取 {new} 条，失败 {failed} 条")
 

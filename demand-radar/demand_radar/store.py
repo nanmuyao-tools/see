@@ -93,7 +93,9 @@ def record_failure(coll, item: SourceItem, error: str) -> int:
 
 
 def _listed(min_confidence: float) -> dict[str, Any]:
-    return {"is_request": True, "buildable": True, "confidence": {"$gte": min_confidence}}
+    # harmful 用 $ne：旧数据没有这个字段，按不有害处理
+    return {"is_request": True, "buildable": True, "harmful": {"$ne": True},
+            "confidence": {"$gte": min_confidence}}
 
 
 def top_demands(coll, min_confidence: float) -> list[dict]:
