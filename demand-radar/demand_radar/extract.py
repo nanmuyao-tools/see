@@ -55,4 +55,6 @@ def extract(client, item: SourceItem) -> Demand:
             {"role": "user", "content": content},
         ],
         max_retries=2,  # schema 校验失败自动重试
+        # 温度 0：同一条内容每次结论一致。默认温度下实测同一评测集两次 F1 相差 8 个百分点
+        temperature=0,
     )
