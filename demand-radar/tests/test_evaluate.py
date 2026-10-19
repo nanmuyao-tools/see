@@ -75,6 +75,13 @@ class MetricsTest(unittest.TestCase):
         out = run_eval(eset, lambda c, it: demand(it.title == "t1", True))
         self.assertIn("buildable  准确率 : 1/1", out)
 
+    def test_uncertain_buildable_excluded_from_listing(self):
+        # 是需求但可做性存疑：只评 is_request，不进入入选混淆矩阵
+        eset = [item("1", True, None), item("2", True, True)]
+        out = run_eval(eset, lambda c, it: demand(True, True))
+        self.assertIn("is_request 准确率 : 2/2", out)
+        self.assertIn("TP=1 FP=0 FN=0 TN=0", out)
+
     def test_extraction_failure_counted(self):
         eset = [item("1", True, True)]
 

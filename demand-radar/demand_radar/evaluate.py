@@ -8,7 +8,8 @@
 评测三个维度：
   - is_request：判断「是不是需求」的准确率
   - buildable：在「是需求」且标注非 null 的条目上，判断「能否做成」的准确率
-  - 入选（端到端）：is_request ∧ buildable ∧ confidence≥阈值，与应入选标准算准确率/精确率/召回率
+  - 入选（端到端）：is_request ∧ buildable ∧ confidence≥阈值，与应入选标准算准确率/精确率/召回率。
+    「是需求但可做性存疑」（buildable 为 null）的样本没有标准答案，不计入这一项
 不写数据库。
 """
 
@@ -64,9 +65,17 @@ def run(cfg: Config) -> int:
             bld_total += 1
             bld_ok += r.buildable == label["buildable"]
 
-        # 端到端「应入选」
-        gold_listed = bool(label["is_request"] and label["buildable"])
+        # 端到端「应入选」。可做性存疑的需求没有标准答案，跳过
         pred_listed = bool(r.is_request and r.buildable and r.confidence >= cfg.min_confidence)
+        if label["is_request"] and label["buildable"] is None:
+            if cfg.verbose or not req_hit:
+                mistakes.append(
+                    f"  {'·' if req_hit else '✗'} 可做性存疑 判入选={pred_listed!s:5} "
+                    f"conf={r.confidence:.2f}  {item.title[:46]}"
+                    + ("" if req_hit else f"  [is_request 判成 {r.is_request}]")
+                )
+            continue
+        gold_listed = bool(label["is_request"] and label["buildable"])
         tp += gold_listed and pred_listed
         fp += (not gold_listed) and pred_listed
         fn += gold_listed and (not pred_listed)

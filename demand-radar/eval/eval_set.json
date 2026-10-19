@@ -202,9 +202,9 @@
   "url": "https://news.ycombinator.com/item?id=48267796",
   "score": 0,
   "label": {
-   "is_request": false,
+   "is_request": true,
    "buildable": null,
-   "note": "Show HN，作品发布"
+   "note": "帖子下的评论在求「把老歌修复到现代音质」的工具；音质修复接近研究问题，可做性存疑"
   }
  },
  {
