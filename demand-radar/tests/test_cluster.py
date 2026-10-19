@@ -297,6 +297,19 @@ class PairEvalTest(unittest.TestCase):
         self.assertIn("zh     : 4/4", text)
         self.assertIn("en     : 0/1", text)
 
+    def test_shipped_pairs_file_is_well_formed(self):
+        """eval/cluster_pairs.json：约 20 对、两类都有、每对都标了语言；评测本身要真实嵌入服务，不在这里跑。"""
+        path = os.path.join(os.path.dirname(__file__), "..", "eval", "cluster_pairs.json")
+        pairs = cluster.load_pairs(path)
+        self.assertGreaterEqual(len(pairs), 20)
+        same = [p for p in pairs if p["same"]]
+        self.assertGreaterEqual(min(len(same), len(pairs) - len(same)), 8)  # 两类都够多，准确率才有意义
+        for p in pairs:
+            self.assertIn(p["lang"], ("zh", "en"))
+            self.assertNotEqual(p["a"].strip(), p["b"].strip())
+            self.assertTrue(p["a"].strip() and p["b"].strip())
+        self.assertEqual(len({(p["a"], p["b"]) for p in pairs}), len(pairs))  # 不重复
+
     def test_load_pairs_rejects_missing_fields(self):
         path = os.path.join(tempfile.mkdtemp(), "bad.json")
         with open(path, "w", encoding="utf-8") as f:

@@ -1,0 +1,186 @@
+[
+ {
+  "a": "一个能从真实流量自动生成 API 回归测试和依赖 mock 的开源工具",
+  "b": "录制线上请求自动生成接口回归用例、能在 CI 里跑的工具",
+  "same": true,
+  "lang": "zh",
+  "from": "stackexchange/softwarerecs:95686",
+  "note": "同一帖子的两种归纳写法"
+ },
+ {
+  "a": "追踪各依赖库每个版本的弃用和破坏性变更、提供 API 或订阅源的服务",
+  "b": "升级前就能知道某个库的新版本有没有 breaking change 的工具",
+  "same": true,
+  "lang": "zh",
+  "from": "stackexchange/softwarerecs:95656",
+  "note": "一个写全了需求点，一个只写核心"
+ },
+ {
+  "a": "阅读时随手记录脑子里冒出的想法的 App",
+  "b": "读书时能快速保存闪过的念头、不打断阅读的应用",
+  "same": true,
+  "lang": "zh",
+  "from": "reddit/SomebodyMakeThis",
+  "note": "改写：App / 应用，想法 / 念头"
+ },
+ {
+  "a": "把所有快递包裹集中到一处追踪的工具",
+  "b": "一个 App 统一查看我所有包裹的物流状态",
+  "same": true,
+  "lang": "zh",
+  "from": "constructed: Track all my packages in one place",
+  "note": "快递 / 包裹 / 物流 三种说法"
+ },
+ {
+  "a": "自托管的密码管理器",
+  "b": "能部署在自己服务器上的密码管理工具",
+  "same": true,
+  "lang": "zh",
+  "from": "constructed: Self-hosted password manager",
+  "note": "自托管 = 部署在自己服务器上"
+ },
+ {
+  "a": "Android 上按窗口标题等条件把指定应用切到前台的命令行程序",
+  "b": "一个 Android shell 工具，按条件切换到某个已打开的应用",
+  "same": true,
+  "lang": "zh",
+  "from": "stackexchange/softwarerecs:95670",
+  "note": "命令行程序 / shell 工具"
+ },
+ {
+  "a": "检查自己的邮箱账号有没有出现在数据泄露里、有新泄露时提醒",
+  "b": "监控我的账号是否被泄露并通知我的工具",
+  "same": true,
+  "lang": "zh",
+  "from": "constructed: Check whether my accounts were in a data breach",
+  "note": "检查 + 提醒 / 监控 + 通知"
+ },
+ {
+  "a": "一个帮我根据用途和预算挑选合适大模型的工具",
+  "b": "描述使用场景就能推荐几个合适模型的服务",
+  "same": true,
+  "lang": "zh",
+  "from": "hackernews: Qwen 3.8 Omni Flash (comment)",
+  "note": "挑选 / 推荐，工具 / 服务"
+ },
+ {
+  "a": "A menu bar app that monitors the resource usage of one specific app",
+  "b": "Menu bar tool to watch CPU and memory of a single chosen application",
+  "same": true,
+  "lang": "en",
+  "from": "reddit/macapps (README example)",
+  "note": "resource usage = CPU and memory"
+ },
+ {
+  "a": "A website that summarizes product reviews",
+  "b": "Tool that aggregates reviews of a product and gives a summary",
+  "same": true,
+  "lang": "en",
+  "from": "reddit/SomebodyMakeThis: Does a website/app that summarizes reviews exist?",
+  "note": "summarize / aggregate + summary"
+ },
+ {
+  "a": "Self-hosted web push notification server with a web UI and CLI trigger",
+  "b": "A self-hostable service for sending browser push notifications, managed from a web interface",
+  "same": true,
+  "lang": "en",
+  "from": "stackexchange/softwarerecs:95677",
+  "note": "web push = browser push"
+ },
+ {
+  "a": "阅读时随手记录脑子里冒出的想法的 App",
+  "b": "记录每天读书时长并统计的 App",
+  "same": false,
+  "lang": "zh",
+  "from": "reddit/SomebodyMakeThis vs constructed",
+  "note": "难例：都和读书有关，但一个记想法、一个记时长"
+ },
+ {
+  "a": "把所有快递包裹集中到一处追踪的工具",
+  "b": "追踪一笔贷款还款进度的 App",
+  "same": false,
+  "lang": "zh",
+  "from": "constructed vs reddit/androidapps: App to track a loan",
+  "note": "难例：都是「追踪」"
+ },
+ {
+  "a": "自托管的密码管理器",
+  "b": "自托管的照片备份服务",
+  "same": false,
+  "lang": "zh",
+  "from": "constructed",
+  "note": "难例：同是自托管，对象不同"
+ },
+ {
+  "a": "提醒我定期给父母打电话的应用",
+  "b": "提醒我按时吃药的应用",
+  "same": false,
+  "lang": "zh",
+  "from": "constructed: Remind me to call my parents vs constructed",
+  "note": "难例：都是提醒类，句式几乎一样"
+ },
+ {
+  "a": "判断来电号码是不是诈骗电话的工具",
+  "b": "屏蔽垃圾短信的工具",
+  "same": false,
+  "lang": "zh",
+  "from": "constructed: Check if a number calling me is a scam vs constructed",
+  "note": "难例：都是反骚扰，但电话识别和短信屏蔽是两个产品"
+ },
+ {
+  "a": "Windows 上把手写笔悬停事件转成按下事件的工具",
+  "b": "Windows 上把鼠标侧键映射成键盘快捷键的工具",
+  "same": false,
+  "lang": "zh",
+  "from": "stackexchange/softwarerecs:95671 vs constructed",
+  "note": "难例：都是 Windows 输入重映射"
+ },
+ {
+  "a": "把图片和音乐合成歌词视频的 App",
+  "b": "从视频里提取背景音乐的工具",
+  "same": false,
+  "lang": "zh",
+  "from": "reddit/androidapps: lyrical videos vs constructed",
+  "note": "都涉及音乐和视频，方向相反"
+ },
+ {
+  "a": "查看自己哪些 App 在后台读取位置信息",
+  "b": "和家人分享实时位置的 App",
+  "same": false,
+  "lang": "zh",
+  "from": "constructed: Which of my apps are tracking my location vs App to share location with my family",
+  "note": "都是位置，一个是隐私审计，一个是分享"
+ },
+ {
+  "a": "A program that destroys cancer cells using cheap USB hardware",
+  "b": "A live DNA editor that works like a text editor",
+  "same": false,
+  "lang": "en",
+  "from": "stackexchange/softwarerecs:95689 vs 95691",
+  "note": "难例：同一作者的两个医学幻想帖"
+ },
+ {
+  "a": "A menu bar app that monitors the resource usage of one specific app",
+  "b": "A menu bar app that shows the current weather",
+  "same": false,
+  "lang": "en",
+  "from": "reddit/macapps vs constructed",
+  "note": "难例：同一形态（菜单栏），功能无关"
+ },
+ {
+  "a": "A home screen calendar widget",
+  "b": "A Vancouver transit app with real-time bus arrivals",
+  "same": false,
+  "lang": "en",
+  "from": "reddit/androidapps: Calendar widget vs Vancouver Transit App",
+  "note": "易例：完全无关"
+ },
+ {
+  "a": "Open-source records management system for police and security guards",
+  "b": "Open-source tool to auto-generate API regression tests from real traffic",
+  "same": false,
+  "lang": "en",
+  "from": "reddit/SomebodyMakeThis: Open-source RMS vs stackexchange/softwarerecs:95686",
+  "note": "都强调开源，领域完全不同"
+ }
+]

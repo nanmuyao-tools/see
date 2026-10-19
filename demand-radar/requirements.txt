@@ -3,3 +3,5 @@
 instructor>=1.0.0
 pydantic>=2.0.0
 pymongo>=4.6.0
+# 相似需求合并（cluster.py）用纯 Python 算余弦相似度，几千条够用，不需要 numpy，也不需要向量数据库；
+# 嵌入请求走 instructor 已依赖的 openai 客户端
