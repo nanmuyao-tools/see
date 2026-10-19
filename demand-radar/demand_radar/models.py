@@ -26,11 +26,8 @@ class Demand(BaseModel):
     buildable: bool = Field(
         description="Whether a solo developer could build it as a standalone tool or product."
     )
-    harmful: bool = Field(
-        description="Whether the tool would mainly be used to track, expose, harass or deceive specific "
-        "people, or otherwise cause harm: covert location tracking, finding someone's home address, "
-        "doxxing, stalking, mass reporting, spam, fraud. A tool people use on their own data is not harmful."
-    )
+    # 是否有害由单独一次模型调用判断（见 extract.check_harmful），不进主抽取的 schema
+    harmful: SkipJsonSchema[bool] = False
     clarity: int = Field(ge=1, le=5, description="How clearly the need is described, 1 (vague) to 5 (specific).")
     intensity: int = Field(ge=1, le=5, description="How strongly the user wants it, 1 (idle thought) to 5 (urgent, would pay).")
     feasibility: int = Field(ge=1, le=5, description="How easy it is for a solo developer to build, 1 (very hard) to 5 (easy).")
@@ -60,6 +57,18 @@ class Demand(BaseModel):
         if isinstance(v, (int, float)):
             return min(5, max(1, round(v)))  # 给了 0、6 或小数，夹到 1–5
         return v
+
+
+class SafetyCheck(BaseModel):
+    """有害判断的输出。先写理由再下结论，小模型判得更稳。"""
+
+    reason: str = Field(description="One short sentence: who would use the tool and what for.")
+    harmful: bool = Field(description="Whether the tool would mainly be used to harm other people.")
+
+    @field_validator("reason", mode="before")
+    @classmethod
+    def _none_to_empty(cls, v):
+        return "" if v is None else v
 
 
 @dataclass

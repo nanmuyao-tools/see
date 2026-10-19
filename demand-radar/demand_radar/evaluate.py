@@ -10,7 +10,8 @@
   - is_request：判断「是不是需求」的准确率（被规则过滤的按「判为非需求」计）
   - buildable：在「是需求」且标注非 null 的条目上，判断「能否做成」的准确率
   - 入选（端到端）：is_request ∧ buildable ∧ ¬harmful ∧ confidence≥阈值，与标准答案算精确率/召回率/F1
-  - 有害：标为有害的需求被判入选的条数（必须为 0）；正常需求被误判为有害的条数
+  - 有害：标为有害的需求被判入选的条数（必须为 0）；正常需求被误判为有害的条数。
+    有害判断只对「是需求且能做」的候选单独调一次模型
   - 规则过滤：挡掉多少条，其中有没有误杀应入选的（误杀必须为 0）
   - 摘录：由程序从原文挑选，-v 时逐条打印，供人工核对挑得对不对
 不写数据库。
@@ -24,7 +25,7 @@ import sys
 from . import filters, sources
 from .config import Config
 from . import excerpt
-from .extract import build_client, extract_raw
+from .extract import build_client, is_candidate, judge
 from .models import SourceItem
 
 _ITEM_FIELDS = ("source", "external_id", "title", "text", "url", "score", "kind")
@@ -88,7 +89,8 @@ def run(cfg: Config) -> int:
 
         model_calls += 1
         try:
-            r = extract_raw(client, item, cfg.output_language)
+            r = judge(client, item, cfg.output_language)
+            model_calls += is_candidate(r)  # 候选多一次有害判断
         except Exception as e:
             fails += 1
             mistakes.append(f"  ⚠ 抽取失败  {item.title[:50]}  （{type(e).__name__}）")

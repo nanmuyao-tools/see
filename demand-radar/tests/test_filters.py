@@ -120,6 +120,36 @@ def demand(**kw):
     return Demand(**{**base, **kw})
 
 
+class JudgeTest(unittest.TestCase):
+    """有害判断单独调一次模型，只对会进清单的候选调用。"""
+
+    def _client(self, *responses):
+        from unittest import mock
+        client = mock.MagicMock()
+        client.chat.completions.create.side_effect = list(responses)
+        return client
+
+    def test_candidate_gets_safety_check(self):
+        from demand_radar.extract import judge
+        from demand_radar.models import SafetyCheck
+        client = self._client(demand(), SafetyCheck(reason="someone else, no consent", harmful=True))
+        d = judge(client, it("Bot to mass report an account"))
+        self.assertTrue(d.harmful)
+        second = client.chat.completions.create.call_args_list[1].kwargs
+        self.assertIs(second["response_model"], SafetyCheck)
+
+    def test_non_candidate_skips_safety_check(self):
+        from demand_radar.extract import judge
+        client = self._client(demand(buildable=False))
+        d = judge(client, it("software that destroys cancer"))
+        self.assertFalse(d.harmful)
+        self.assertEqual(client.chat.completions.create.call_count, 1)
+
+    def test_harmful_not_in_extraction_schema(self):
+        self.assertNotIn("harmful", Demand.model_json_schema()["properties"])
+        self.assertNotIn("excerpt", Demand.model_json_schema()["properties"])
+
+
 try:
     import mongomock
 except ImportError:  # pragma: no cover

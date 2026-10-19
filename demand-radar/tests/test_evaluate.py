@@ -33,7 +33,7 @@ def run_eval(eset, fake, min_confidence=0.5, fconf=None):
     buf = io.StringIO()
     with mock.patch.object(evaluate, "build_client", return_value=None), \
          mock.patch.object(evaluate, "_filter_conf", return_value=fconf or {}), \
-         mock.patch.object(evaluate, "extract_raw", lambda c, it, lang: fake(c, it)), \
+         mock.patch.object(evaluate, "judge", lambda c, it, lang: fake(c, it)), \
          redirect_stdout(buf):
         evaluate.run(cfg)
     return buf.getvalue()
@@ -99,7 +99,7 @@ class MetricsTest(unittest.TestCase):
 
         out = run_eval(eset, fake)
         self.assertEqual(calls, ["Show HN: x"])
-        self.assertIn("规则过滤          : 1 条，误杀应入选 0 条；调用模型 1 次", out)
+        self.assertIn("规则过滤          : 1 条，误杀应入选 0 条；调用模型 2 次", out)  # 抽取 1 次 + 候选的有害判断 1 次
         self.assertIn("TP=1 FP=0 FN=0 TN=1", out)
 
     def test_filter_false_kill_reported(self):

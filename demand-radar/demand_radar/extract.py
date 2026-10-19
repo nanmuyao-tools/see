@@ -11,7 +11,7 @@ provider 字符串决定跑本地还是云（Instructor 统一接口）：
 from __future__ import annotations
 
 from . import excerpt
-from .models import Demand, SourceItem
+from .models import Demand, SafetyCheck, SourceItem
 
 LANGUAGES = ("zh", "en")
 MAX_TOKENS = 512
@@ -32,8 +32,6 @@ _SYSTEM = {
         "例子：『有没有获取当前窗口信息的命令行工具』→ true；『帮我挑选合适大模型的工具』→ true；"
         "『能消灭癌细胞的软件』→ false；『让某个 App 去掉广告』→ false（得平台方改）。\n"
         "注意区分真实需求和情绪发泄：『卡、广告多、太贵、客服差』这类不是需求。\n"
-        "harmful 单独判断：做出来主要用于追踪、曝光、骚扰或欺骗特定的人（偷偷定位别人、查别人住址、"
-        "公开某些人的行踪、批量举报、群发垃圾信息、诈骗），就是 true；用户处理自己的数据不算。\n"
         "need、domain、pain_point 用简体中文写。"
     ),
     "en": (
@@ -49,12 +47,32 @@ _SYSTEM = {
         "the right LLM' → true; 'software that destroys cancer' → false; 'make some app remove its ads' "
         "→ false (only the platform can do it).\n"
         "Tell real needs apart from venting: 'slow, too many ads, too expensive, bad support' are not needs.\n"
-        "Judge harmful separately: true if the tool would mainly be used to track, expose, harass or deceive "
-        "specific people (covertly locating someone, finding someone's address, publishing certain people's "
-        "movements, mass reporting, spam, fraud). People handling their own data is not harmful.\n"
         "Write need, domain and pain_point in English."
     ),
 }
+
+# 有害判断单独调一次模型，只问这一个问题。试过把 harmful 作为字段放进主抽取：3b 模型同时判十来个
+# 字段，有害判断只挡住 4 条里的 2 条，还把一条正常的科研需求判成有害；同时连带 buildable 判断变差，
+# 45 条真实样本上 F1 从 83.7% 掉到 76.0%。
+# 只判断不输出给读者，两种语言共用一份英文提示词。
+_SAFETY = (
+    "You review product ideas for safety. Given a request for a tool, decide whether the tool, as "
+    "described, would mainly be used to harm other people.\n"
+    "harmful = true when its main use is:\n"
+    "- tracking, monitoring or reading the messages of a specific person without their knowledge or consent\n"
+    "- finding or publishing private information about specific people, such as a home address or the "
+    "real identity behind an anonymous account\n"
+    "- harassing or silencing people, such as mass reporting or mass messaging\n"
+    "- deceiving people, such as impersonating a bank or company, phishing, fake reviews or scams\n"
+    "- breaking into accounts or devices that are not your own\n"
+    "harmful = false for ordinary tools, including ones that handle personal data with consent: managing "
+    "your own data, accounts, devices or deliveries; protecting your own privacy or security; sharing "
+    "information with people who agreed to it; scientific, medical or educational software.\n"
+    "Most tool requests are not harmful. Answer true only when the request itself says or clearly implies "
+    "that the tool is meant to be used against a specific other person, or to deceive people.\n"
+    "First say in one short sentence who would use the tool and what for, then decide."
+)
+
 
 def build_client(provider: str, ollama_base_url: str | None = None):
     """按 provider 构造 Instructor 客户端。延迟导入，缺依赖时报错更清晰。
@@ -102,8 +120,38 @@ def extract_raw(client, item: SourceItem, language: str = "zh") -> Demand:
     )
 
 
+def check_harmful(client, item: SourceItem, need: str = "") -> bool:
+    """单独判断这个需求做出来是否主要用来伤害他人。"""
+    content = f"Title: {item.title}\nBody: {item.text}\nSummarized need: {need}".strip()
+    r = client.chat.completions.create(
+        response_model=SafetyCheck,
+        messages=[
+            {"role": "system", "content": _SAFETY},
+            {"role": "user", "content": content},
+        ],
+        max_retries=2,
+        temperature=0,
+        max_tokens=MAX_TOKENS,
+        timeout=REQUEST_TIMEOUT,
+    )
+    return r.harmful
+
+
+def is_candidate(d: Demand) -> bool:
+    """会进清单的候选：只有这些需要做有害判断，其他的不额外调模型。"""
+    return d.is_request and d.buildable
+
+
+def judge(client, item: SourceItem, language: str = "zh") -> Demand:
+    """主抽取，候选再加一次有害判断。不含摘录。"""
+    d = extract_raw(client, item, language)
+    if is_candidate(d):
+        d.harmful = check_harmful(client, item, d.need)
+    return d
+
+
 def extract(client, item: SourceItem, language: str = "zh") -> Demand:
     """把一条 SourceItem 抽成 Demand，并附上程序从原文挑出的摘录。"""
-    d = extract_raw(client, item, language)
+    d = judge(client, item, language)
     d.excerpt = excerpt.pick(item)
     return d

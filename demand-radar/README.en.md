@@ -49,7 +49,8 @@ docker compose run --rm app eval --lang en             # evaluate the current mo
 ```
 Public sources (configured in sources.toml)
   → Rule-based pre-filter: empty posts, launch posts (Show HN, "I built…"), bot output never reach the model
-  → Local LLM extraction: is it a need, can one person build it, is it harmful, three 1–5 scores
+  → Local LLM extraction: is it a need, can one person build it, three 1–5 scores
+  → Harm check: candidates get one more focused model call; needs that track, expose, harass or deceive specific people are left out
   → Quote: the program picks the sentence from the post that reads most like a request (small models asked to copy one often translate or paraphrase it)
   → MongoDB: every post gets a status, so nothing is processed twice; failures are retried up to 3 times
   → Ranking: weighted scores + post popularity (log-scaled)
@@ -75,7 +76,7 @@ Needs are written in Chinese by default; use `--lang en` or `DR_OUTPUT_LANGUAGE=
 
 ## Evaluation
 
-After changing the prompt, the rules or the model, measure instead of guessing. [`eval/eval_set.json`](eval/eval_set.json) holds 52 items: 45 hand-labeled real posts plus 7 constructed ones covering harmful requests (tracking or exposing specific people) and benign look-alikes.
+After changing the prompt, the rules or the model, measure instead of guessing. [`eval/eval_set.json`](eval/eval_set.json) holds 60 items: 45 hand-labeled real posts plus 15 constructed ones covering harmful requests (tracking or exposing specific people) and benign look-alikes.
 
 ```bash
 python -m demand_radar eval -v --lang en

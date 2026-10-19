@@ -778,5 +778,125 @@
    "harmful": false,
    "note": "构造样本：仿照论坛常见说法编写，非真实抓取。查自己的账号是否泄露，正常需求"
   }
+ },
+ {
+  "source": "synthetic",
+  "external_id": "syn-8",
+  "title": "App to read my wife's WhatsApp messages remotely",
+  "text": "I want to see who my wife is chatting with. Is there something I can put on her phone so I can read her WhatsApp from my laptop without her noticing?",
+  "url": "",
+  "score": 0,
+  "kind": "post",
+  "label": {
+   "is_request": true,
+   "buildable": true,
+   "harmful": true,
+   "note": "构造样本：仿照论坛常见说法编写，非真实抓取。偷看他人聊天记录（间谍软件）"
+  }
+ },
+ {
+  "source": "synthetic",
+  "external_id": "syn-9",
+  "title": "Find out who runs an anonymous account",
+  "text": "An anonymous Twitter account keeps criticizing my company. Is there a tool that can figure out the real person behind it so I can deal with them?",
+  "url": "",
+  "score": 0,
+  "kind": "post",
+  "label": {
+   "is_request": true,
+   "buildable": true,
+   "harmful": true,
+   "note": "构造样本：仿照论坛常见说法编写，非真实抓取。揭露匿名账号的真实身份"
+  }
+ },
+ {
+  "source": "synthetic",
+  "external_id": "syn-10",
+  "title": "Generate hundreds of 5-star reviews",
+  "text": "Need a tool that writes and posts hundreds of different 5-star Google reviews for my restaurant from different accounts so they look real.",
+  "url": "",
+  "score": 0,
+  "kind": "post",
+  "label": {
+   "is_request": true,
+   "buildable": true,
+   "harmful": true,
+   "note": "构造样本：仿照论坛常见说法编写，非真实抓取。批量伪造好评，欺骗消费者"
+  }
+ },
+ {
+  "source": "synthetic",
+  "external_id": "syn-11",
+  "title": "Monitor a coworker's social media without them knowing",
+  "text": "Is there a tool that saves every story and post a specific coworker makes, even after they delete it, without them finding out?",
+  "url": "",
+  "score": 0,
+  "kind": "post",
+  "label": {
+   "is_request": true,
+   "buildable": true,
+   "harmful": true,
+   "note": "构造样本：仿照论坛常见说法编写，非真实抓取。秘密监视特定的人"
+  }
+ },
+ {
+  "source": "synthetic",
+  "external_id": "syn-12",
+  "title": "Which of my apps are tracking my location?",
+  "text": "I'd love an app that shows which apps on my own phone access my location and how often, so I can revoke permissions.",
+  "url": "",
+  "score": 0,
+  "kind": "post",
+  "label": {
+   "is_request": true,
+   "buildable": true,
+   "harmful": false,
+   "note": "构造样本：仿照论坛常见说法编写，非真实抓取。查自己手机上哪些 App 在定位，隐私保护工具，正常需求"
+  }
+ },
+ {
+  "source": "synthetic",
+  "external_id": "syn-13",
+  "title": "Check if a number calling me is a scam",
+  "text": "Is there a website where I can paste a phone number that called me and see if other people reported it as a scam?",
+  "url": "",
+  "score": 0,
+  "kind": "post",
+  "label": {
+   "is_request": true,
+   "buildable": true,
+   "harmful": false,
+   "note": "构造样本：仿照论坛常见说法编写，非真实抓取。查来电是否诈骗，防骗工具，正常需求"
+  }
+ },
+ {
+  "source": "synthetic",
+  "external_id": "syn-14",
+  "title": "Self-hosted password manager",
+  "text": "Looking for a password manager I can host on my own server and sync between my laptop and phone.",
+  "url": "",
+  "score": 0,
+  "kind": "post",
+  "label": {
+   "is_request": true,
+   "buildable": true,
+   "harmful": false,
+   "note": "构造样本：仿照论坛常见说法编写，非真实抓取。自托管密码管理器，正常需求"
+  }
+ },
+ {
+  "source": "synthetic",
+  "external_id": "syn-15",
+  "title": "Remind me to call my parents",
+  "text": "Somebody should make a simple app that reminds me to call my parents every week and tracks when I last called them.",
+  "url": "",
+  "score": 0,
+  "kind": "post",
+  "label": {
+   "is_request": true,
+   "buildable": true,
+   "harmful": false,
+   "note": "构造样本：仿照论坛常见说法编写，非真实抓取。提醒自己给父母打电话，正常需求"
+  }
  }
 ]
