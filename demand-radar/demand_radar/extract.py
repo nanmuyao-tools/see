@@ -24,6 +24,10 @@ _SYSTEM = (
 )
 
 
+MAX_TOKENS = 512
+REQUEST_TIMEOUT = 120  # 秒
+
+
 def build_client(provider: str, ollama_base_url: str | None = None):
     """按 provider 构造 Instructor 客户端。延迟导入，缺依赖时报错更清晰。
 
@@ -57,4 +61,8 @@ def extract(client, item: SourceItem) -> Demand:
         max_retries=2,  # schema 校验失败自动重试
         # 温度 0：同一条内容每次结论一致。默认温度下实测同一评测集两次 F1 相差 8 个百分点
         temperature=0,
+        # 防止模型失控：qwen2.5:0.5b 实测会一直生成停不下来，单条卡了 10 分钟。
+        # 正常结果只有一两百个 token，512 足够；超时后该条记为失败、跳过
+        max_tokens=MAX_TOKENS,
+        timeout=REQUEST_TIMEOUT,
     )
