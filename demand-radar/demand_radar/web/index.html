@@ -192,7 +192,7 @@
       started: "开始时间", command: "命令", status: "状态", sources: "来源", fetched: "抓取", filtered: "过滤",
       extracted: "抽取", failed: "失败", listed: "入选", held: "待确认", duration: "耗时", pages: "页",
       status_done: "完成", status_running: "运行中", status_failed: "失败", status_interrupted: "已中断",
-      status_quota: "配额用完", fetch_errors: "{n} 个源抓取失败", sec: "秒", min: "分"
+      status_quota: "配额用完", fetch_errors: "{n} 个源抓取失败", sec: "秒", min: "分", sep: "："
     },
     en: {
       title: "Demand Radar", subtitle: "Needs worth building, mined from community complaints and wishes",
@@ -212,7 +212,7 @@
       started: "Started", command: "Command", status: "Status", sources: "Sources", fetched: "Fetched", filtered: "Filtered",
       extracted: "Extracted", failed: "Failed", listed: "Listed", held: "Held", duration: "Duration", pages: "pages",
       status_done: "done", status_running: "running", status_failed: "failed", status_interrupted: "interrupted",
-      status_quota: "quota exhausted", fetch_errors: "{n} source(s) failed to fetch", sec: "s", min: "m"
+      status_quota: "quota exhausted", fetch_errors: "{n} source(s) failed to fetch", sec: "s", min: "m", sep: ": "
     }
   };
   var params = new URLSearchParams(location.search);
@@ -331,7 +331,7 @@
       "</a> · " + esc(it.title) + "</span>";
     if (it.extracted_at) h += "<time>" + esc(fmtDate(it.extracted_at)) + "</time>";
     h += "</div>";
-    if (it.review_cue) h += '<p class="cue">' + esc(t("cue")) + "：“" + esc(it.review_cue) + "”</p>";
+    if (it.review_cue) h += '<p class="cue">' + esc(t("cue")) + esc(t("sep")) + "“" + esc(it.review_cue) + "”</p>";
     if (it.pain_point) h += '<p class="pain"><b>' + esc(t("pain")) + "</b>" + esc(it.pain_point) + "</p>";
     if (it.excerpt) h += "<blockquote>“" + esc(it.excerpt) + "”</blockquote>";
     h += '<div class="scores">' + scoreSpan("clarity", it.clarity) + scoreSpan("intensity", it.intensity) +
