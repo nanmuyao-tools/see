@@ -1,0 +1,40 @@
+# Mac 上用 GPU 跑模型：Docker Desktop 不能把 Apple GPU 交给容器，所以模型服务在 macOS 上
+# 原生运行（mlx-lm），容器只跑 MongoDB 和 app。实测 M5 上 Qwen3-4B 每条约 3 秒，容器 CPU 里
+# 的 qwen2.5:3b 是 4–6 秒，而且质量高一档（评测见 docs/model-selection.md）。
+#
+#   1) 起模型服务（只需一次，放在后台）：
+#        pip install mlx-lm
+#        mlx_lm.server --model mlx-community/Qwen3-4B-Instruct-2507-4bit --port 8765
+#      端口别用 8080：Docker Desktop 自己占着。
+#   2) 叠加本文件运行：
+#        docker compose -f docker-compose.yml -f docker-compose.mac-gpu.yml up
+#      之后的 run / digest / eval 同样叠加本文件：
+#        docker compose -f docker-compose.yml -f docker-compose.mac-gpu.yml run --rm app digest
+#   换模型或端口：MLX_MODEL=<模型名> MLX_PORT=<端口> 放在命令前面。
+#
+# 也适用于任何在宿主机上跑的 OpenAI 兼容服务（LM Studio、llama.cpp、原生 Ollama）。
+
+services:
+  app:
+    depends_on: !override          # 不再依赖容器里的 ollama
+      - mongo
+    environment:
+      OLLAMA_API: ""               # 入口脚本看到为空就不等 ollama、不拉模型
+      OLLAMA_BASE_URL: "http://host.docker.internal:${MLX_PORT:-8765}/v1"
+      DR_PROVIDER: "local/${MLX_MODEL:-mlx-community/Qwen3-4B-Instruct-2507-4bit}"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"   # Docker Desktop 自带这个名字；Linux 上靠这一行
+
+  # scheduler 在主文件里 extends app，但 extends 在合并前就展开了，这里要再写一遍同样的覆盖
+  scheduler:
+    depends_on: !override
+      - mongo
+    environment:
+      OLLAMA_API: ""
+      OLLAMA_BASE_URL: "http://host.docker.internal:${MLX_PORT:-8765}/v1"
+      DR_PROVIDER: "local/${MLX_MODEL:-mlx-community/Qwen3-4B-Instruct-2507-4bit}"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  ollama:
+    profiles: ["bundled"]          # 本模式下不启动容器里的 ollama

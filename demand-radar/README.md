@@ -152,17 +152,19 @@ python -m unittest discover -s tests
 
 ## Mac 上用 GPU 跑模型（可选）
 
-Docker Desktop 在 Mac 上不能把 GPU 交给容器，容器里的模型只能用 CPU。想用 Apple GPU，可以让模型服务在 macOS 上原生运行，MongoDB 仍然用 Docker。任何 OpenAI 兼容的本地服务都能接（mlx-lm、LM Studio、llama.cpp），provider 写成 `local/<模型名>`：
+Docker Desktop 在 Mac 上不能把 GPU 交给容器，容器里的模型只能用 CPU。想用 Apple GPU，让模型服务在 macOS 上原生运行（mlx-lm），容器只跑 MongoDB 和 app。实测 M5 上 Qwen3-4B 每条约 3 秒，比容器 CPU 里的 qwen2.5:3b（4–6 秒）快，而且评测 F1 高一档（见 [`docs/model-selection.md`](docs/model-selection.md)）。
 
 ```bash
+# 1. 起模型服务（需要 Python 3.11+；端口别用 8080，Docker Desktop 占着）
 pip install mlx-lm
-mlx_lm.server --model mlx-community/Qwen2.5-3B-Instruct-4bit --port 8080
+mlx_lm.server --model mlx-community/Qwen3-4B-Instruct-2507-4bit --port 8765
 
-python -m demand_radar eval --provider local/mlx-community/Qwen2.5-3B-Instruct-4bit \
-  --base-url http://localhost:8080/v1
+# 2. 叠加 Mac GPU 的覆盖文件运行，其他照旧
+docker compose -f docker-compose.yml -f docker-compose.mac-gpu.yml up
+docker compose -f docker-compose.yml -f docker-compose.mac-gpu.yml run --rm app digest
 ```
 
-模型选型的调研见 [`docs/model-selection.md`](docs/model-selection.md)。
+换模型或端口：`MLX_MODEL=<模型名> MLX_PORT=<端口>` 放在命令前面。不用 Docker 跑 app 的话，直接给 `--provider local/<模型名> --base-url http://localhost:8765/v1`。任何在宿主机上跑的 OpenAI 兼容服务都能这样接（LM Studio、llama.cpp、原生 Ollama）。
 
 ## 用云模型（可选）
 

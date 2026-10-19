@@ -12,8 +12,10 @@ import time
 import urllib.error
 import urllib.request
 
+# OLLAMA_API 留空表示模型不由容器里的 ollama 提供（例如 Mac 上原生跑的 mlx-lm），
+# 这时不等待也不拉模型，直接运行；模型地址由 OLLAMA_BASE_URL / DR_PROVIDER 决定
 OLLAMA_API = os.getenv("OLLAMA_API", "http://ollama:11434").rstrip("/")
-OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "qwen2.5:7b")
+OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "qwen2.5:3b")
 WAIT_SECONDS = int(os.getenv("OLLAMA_WAIT_SECONDS", "120"))
 
 
@@ -57,7 +59,7 @@ def main() -> None:
     # 例：docker compose run --rm app digest --days 14 / docker compose run --rm app --limit 20
     if not args or args[0] not in COMMANDS:
         args = ["run", *args]
-    if args[0] in NEEDS_MODEL:  # digest 只读数据库，不用等模型
+    if args[0] in NEEDS_MODEL and OLLAMA_API:  # digest 只读数据库，不用等模型
         wait_for_ollama()
         pull_model()
     print("开始运行 …", flush=True)

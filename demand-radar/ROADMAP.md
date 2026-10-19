@@ -21,7 +21,7 @@
 
 ## 现在在哪
 
-v0.1 功能已全部完成：四类公开数据源 → 规则预过滤 → 本地模型抽取 → 有害规则标记 → MongoDB → 排序 → 清单 / 周报（中英文），`docker compose up` 一条命令部署，72 个离线测试，CI 通过。已在 Mac（M5）上真机跑通。
+v0.1 功能已全部完成：四类公开数据源 → 规则预过滤 → 本地模型抽取 → 有害规则标记 → MongoDB → 排序 → 清单 / 周报（中英文），`docker compose up` 一条命令部署，130 个离线测试，CI 通过。已在 Mac（M5）上真机跑通；v0.2 的增量抓取、运行记录、并发抽取、历史回填、定时运行已合并进主线。
 
 质量：61 条标注样本（46 条真实 + 15 条构造），qwen2.5:3b、温度 0：
 
@@ -83,9 +83,10 @@ v0.1 功能已全部完成：四类公开数据源 → 规则预过滤 → 本�
 - [x] GitHub 源在真实环境跑通
 - [x] 容器里 qwen2.5:3b 每条 4–6 秒
 
-**模型选型**（见 [`docs/model-selection.md`](docs/model-selection.md)，需要在 Mac 上跑）：
-- [ ] 用 mlx-lm 原生跑（GPU），`--provider local/<模型> --base-url http://localhost:8080/v1` 中英文各测一遍：Qwen2.5-3B（对照）、Qwen3-4B-Instruct-2507、Qwen2.5-7B-Instruct
-- [ ] 注意协议：Qwen2.5-3B 不是 Apache-2.0（Qwen Research License，限制商用），默认模型最好换成 Apache-2.0 的候选
+**模型选型**（见 [`docs/model-selection.md`](docs/model-selection.md)，已在 Mac 上实测）：
+- [x] mlx-lm 原生跑 Qwen3-4B-Instruct-2507-4bit（GPU）：61 条评测集中英文 F1 都是 **96.8%**（基线 3b 是 83.6% / 89.7%），每条约 3 秒。4B 已远超目标，7B 和 3B 对照省略
+- [x] `docker-compose.mac-gpu.yml`：模型在宿主机、容器只跑 MongoDB 和 app，已端到端实跑
+- [ ] 协议：容器默认的 Qwen2.5-3B 不是 Apache-2.0（Qwen Research License，限制商用）。Mac 路线已是 Apache-2.0 的 Qwen3-4B；容器里的 Ollama 默认模型待换成 Apache-2.0 的候选（如 qwen3:4b 的非思考版，需先评测）
 
 **验证价值**（同类项目都没做到，是整个方向最大的不确定性）：
 - [ ] 自己从清单里挑一个点子真正做出来，记录从发现到上线的过程
@@ -114,7 +115,9 @@ v0.1 功能已全部完成：四类公开数据源 → 规则预过滤 → 本�
 | qwen3:1.7b | 每条 30 多秒 | — | 默认开启思考模式，比 3b 还慢，不推荐 |
 | llama3.2:1b、gemma3:1b | 未测完 | — | 中文弱，优先级低 |
 
-上表是 45 条时的数据。v0.1 的 61 条结果见「现在在哪」。
+上表是 45 条时、容器 CPU 的数据。v0.1 的 61 条结果见「现在在哪」。
+
+**Mac 上的推荐（2026-10-19 实测）**：mlx-lm 原生跑 **Qwen3-4B-Instruct-2507-4bit**，61 条评测集中英文 F1 均 96.8%，每条约 3 秒，Apache-2.0。详见 [`docs/model-selection.md`](docs/model-selection.md)。
 
 ## 需要你决定
 

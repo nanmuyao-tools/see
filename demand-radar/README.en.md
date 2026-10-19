@@ -110,15 +110,19 @@ python -m unittest discover -s tests
 
 ## Using the GPU on a Mac (optional)
 
-Docker Desktop on macOS cannot pass the GPU to containers, so the model in the container runs on the CPU. To use the Apple GPU, run the model server natively and keep MongoDB in Docker. Any OpenAI-compatible local server works (mlx-lm, LM Studio, llama.cpp); write the provider as `local/<model>`:
+Docker Desktop on macOS cannot pass the GPU to containers, so a model inside a container runs on the CPU. To use the Apple GPU, run the model server natively with mlx-lm and let the containers handle only MongoDB and the app. Measured on an M5: Qwen3-4B takes about 3 s per post, versus 4–6 s for qwen2.5:3b on the CPU inside Docker, with a clearly higher F1 (see [`docs/model-selection.md`](docs/model-selection.md), in Chinese).
 
 ```bash
+# 1. Start the model server (Python 3.11+; avoid port 8080, Docker Desktop uses it)
 pip install mlx-lm
-mlx_lm.server --model mlx-community/Qwen2.5-3B-Instruct-4bit --port 8080
+mlx_lm.server --model mlx-community/Qwen3-4B-Instruct-2507-4bit --port 8765
 
-python -m demand_radar eval --provider local/mlx-community/Qwen2.5-3B-Instruct-4bit \
-  --base-url http://localhost:8080/v1 --lang en
+# 2. Add the Mac GPU override file; everything else stays the same
+docker compose -f docker-compose.yml -f docker-compose.mac-gpu.yml up
+docker compose -f docker-compose.yml -f docker-compose.mac-gpu.yml run --rm app digest --lang en
 ```
+
+To change the model or port, prefix the command with `MLX_MODEL=<model> MLX_PORT=<port>`. Without Docker for the app, pass `--provider local/<model> --base-url http://localhost:8765/v1` directly. Any OpenAI-compatible server running on the host works the same way (LM Studio, llama.cpp, native Ollama).
 
 ## Cloud models (optional)
 
