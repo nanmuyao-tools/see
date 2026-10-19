@@ -20,9 +20,11 @@ def parse(data: dict) -> list[SourceItem]:
         if h.get("comment_text"):  # 评论：标题用所在帖子的标题
             title = clean(h.get("story_title"), 300)
             text = clean(h["comment_text"])
+            kind = "comment"
         else:
             title = clean(h.get("title"), 300)
             text = clean(h.get("story_text"))
+            kind = "post"
         items.append(SourceItem(
             source="hackernews",
             external_id=str(h["objectID"]),
@@ -30,6 +32,7 @@ def parse(data: dict) -> list[SourceItem]:
             text=text,
             url=f"https://news.ycombinator.com/item?id={h['objectID']}",
             score=h.get("points") or 0,
+            kind=kind,
         ))
     return items
 

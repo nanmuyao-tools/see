@@ -21,7 +21,7 @@ class Config:
     sources_file: str = "sources.toml"
     limit: int = 10  # 每个源（RSS 按每个订阅、HN/GitHub 按每个查询）最多抓多少条
     # Instructor 的 provider 标识；换本地/云只改这一处
-    provider: str = "ollama/qwen2.5:7b"
+    provider: str = "ollama/qwen2.5:3b"
     # 本地模型服务地址；容器里指向 ollama 服务
     ollama_base_url: str = "http://localhost:11434/v1"
     min_confidence: float = 0.5
@@ -29,6 +29,7 @@ class Config:
     db_name: str = "demand_radar"
     output_path: str = "out/demands.md"
     eval_set: str = "eval/eval_set.json"  # eval 命令用的标注集
+    output_language: str = "zh"  # 需求描述用的语言：zh 中文 / en 英文；摘录始终保留原文
     verbose: bool = False  # eval 命令：逐条打印
 
     @staticmethod
@@ -45,6 +46,7 @@ class Config:
             db_name=_env("DR_DB_NAME", Config.db_name),
             output_path=_env("DR_OUTPUT", Config.output_path),
             eval_set=_env("DR_EVAL_SET", Config.eval_set),
+            output_language=_env("DR_OUTPUT_LANGUAGE", Config.output_language),
         )
 
         p = argparse.ArgumentParser(prog="demand_radar")
@@ -68,6 +70,8 @@ class Config:
         for sp in (run, ev):
             sp.add_argument("--provider", default=d.provider)
             sp.add_argument("--ollama-base-url", dest="ollama_base_url", default=d.ollama_base_url)
+            sp.add_argument("--lang", dest="output_language", choices=("zh", "en"),
+                            default=d.output_language, help="需求描述的输出语言")
 
         ns = p.parse_args(argv)
         return Config(
@@ -83,4 +87,5 @@ class Config:
             output_path=getattr(ns, "output_path", d.output_path),
             eval_set=getattr(ns, "eval_set", d.eval_set),
             verbose=getattr(ns, "verbose", d.verbose),
+            output_language=getattr(ns, "output_language", d.output_language),
         )

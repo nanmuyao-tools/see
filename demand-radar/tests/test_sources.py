@@ -168,14 +168,23 @@ class DemandModelTest(unittest.TestCase):
     def test_null_text_fields_become_empty(self):
         from demand_radar.models import Demand
         d = Demand.model_validate({"is_request": False, "need": None, "domain": None,
-                                   "pain_point": None, "buildable": False, "confidence": 0.1})
-        self.assertEqual((d.need, d.domain, d.pain_point), ("", "", ""))
+                                   "pain_point": None, "excerpt": None, "buildable": False,
+                                   "clarity": 1, "intensity": 1, "feasibility": 1, "confidence": 0.1})
+        self.assertEqual((d.need, d.domain, d.pain_point, d.excerpt), ("", "", "", ""))
 
     def test_percent_confidence_is_normalized(self):
         from demand_radar.models import Demand
         d = Demand.model_validate({"is_request": True, "need": "x", "domain": "x",
-                                   "pain_point": "", "buildable": True, "confidence": 80})
+                                   "pain_point": "", "excerpt": "", "buildable": True,
+                                   "clarity": 3, "intensity": 3, "feasibility": 3, "confidence": 80})
         self.assertAlmostEqual(d.confidence, 0.8)
+
+    def test_scores_clamped_to_1_5(self):
+        from demand_radar.models import Demand
+        d = Demand.model_validate({"is_request": True, "need": "x", "domain": "x",
+                                   "pain_point": "", "excerpt": "", "buildable": True,
+                                   "clarity": 0, "intensity": 7, "feasibility": None, "confidence": 0.5})
+        self.assertEqual((d.clarity, d.intensity, d.feasibility), (1, 5, 1))
 
 
 class ReasonTest(unittest.TestCase):

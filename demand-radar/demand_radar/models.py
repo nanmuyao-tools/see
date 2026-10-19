@@ -1,4 +1,8 @@
-"""核心数据结构。"""
+"""核心数据结构。
+
+Demand 的字段说明用英文写：它们会作为 JSON schema 发给模型，用中性的英文，
+输出中文还是英文由系统提示决定（见 extract.py），两种语言共用一套结构。
+"""
 
 from __future__ import annotations
 
@@ -7,26 +11,32 @@ from pydantic import BaseModel, Field, field_validator
 
 
 class Demand(BaseModel):
-    """从一条评论/帖子里抽取出的需求。字段设计服务于「筛掉噪音」。"""
+    """从一条评论/帖子里抽取出的需求。字段设计服务于「筛掉噪音」和「排序」。"""
 
     is_request: bool = Field(
-        description="这条内容是否在表达『想要一个工具/功能』或抱怨现有工具缺某功能。"
-        "纯粹的情绪发泄（卡、广告多、客服差）应为 False。"
+        description="Whether the post expresses wanting a tool/feature, or complains that "
+        "existing tools lack something. Pure venting (slow, too many ads, bad support) is false."
     )
-    need: str = Field(description="用户想要什么，一句话。若 is_request 为 False 则留空。")
-    domain: str = Field(description="所属领域，如『截图工具』『效率』『开发工具』。")
-    pain_point: str = Field(description="现有方案的痛点；没有则留空。")
+    need: str = Field(description="What the user wants, in one sentence. Empty if is_request is false.")
+    domain: str = Field(description="Short category, e.g. screenshot tool, productivity, developer tools.")
+    pain_point: str = Field(description="What is wrong with existing solutions; empty if none.")
+    excerpt: str = Field(
+        description="Copy, word for word, the one sentence from the original post that best "
+        "shows the need. Keep the original language. Empty if is_request is false."
+    )
     buildable: bool = Field(
-        description="是否可由个人开发者做成一个独立小工具/产品。需要大量数据、资质、"
-        "平台方权限的需求应为 False。"
+        description="Whether a solo developer could build it as a standalone tool or product."
     )
+    clarity: int = Field(ge=1, le=5, description="How clearly the need is described, 1 (vague) to 5 (specific).")
+    intensity: int = Field(ge=1, le=5, description="How strongly the user wants it, 1 (idle thought) to 5 (urgent, would pay).")
+    feasibility: int = Field(ge=1, le=5, description="How easy it is for a solo developer to build, 1 (very hard) to 5 (easy).")
     confidence: float = Field(
         ge=0.0, le=1.0,
-        description="对『这是一个真实、可做的需求』的信心，0 到 1 之间的小数，如 0.8。",
+        description="Confidence that this is a real, buildable need, a decimal between 0 and 1, e.g. 0.8.",
     )
 
     # 小模型常见的输出偏差，在校验前纠正，避免整条白白重试失败
-    @field_validator("need", "domain", "pain_point", mode="before")
+    @field_validator("need", "domain", "pain_point", "excerpt", mode="before")
     @classmethod
     def _none_to_empty(cls, v):
         return "" if v is None else v  # 「留空」被理解成 null
@@ -36,6 +46,15 @@ class Demand(BaseModel):
     def _percent_to_ratio(cls, v):
         if isinstance(v, (int, float)) and 1 < v <= 100:
             return v / 100  # 按百分制给出，如 80
+        return v
+
+    @field_validator("clarity", "intensity", "feasibility", mode="before")
+    @classmethod
+    def _to_1_5(cls, v):
+        if v is None:
+            return 1
+        if isinstance(v, (int, float)):
+            return min(5, max(1, round(v)))  # 给了 0、6 或小数，夹到 1–5
         return v
 
 
@@ -49,3 +68,4 @@ class SourceItem:
     text: str
     url: str             # 原帖链接
     score: int = 0       # 热度：GitHub 点赞、HN 得分、StackExchange 投票；RSS 无此信息为 0
+    kind: str = "post"   # post 帖子本身；comment 帖子下的评论（标题是所在帖子的标题）

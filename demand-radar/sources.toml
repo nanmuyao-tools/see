@@ -43,3 +43,10 @@ url = "https://www.reddit.com/r/androidapps/search.rss?q=%22is+there+an+app%22&r
 [[rss]]
 name = "reddit/software"
 url = "https://www.reddit.com/r/software/search.rss?q=%22looking+for%22&restrict_sr=1&sort=new"
+
+# 规则预过滤：明显不是需求的内容不交给模型。规则说明见 demand_radar/filters.py
+[filters]
+# 想关闭某条规则，把名字写进来，例如 ["empty_body"]
+disabled = []
+# 这些来源发布的是产品而不是需求，整源跳过（例如以后接入 Product Hunt 的 RSS）
+supply_sources = ["producthunt"]

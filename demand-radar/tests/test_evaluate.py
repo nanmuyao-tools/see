@@ -19,26 +19,30 @@ EVAL_SET = os.path.join(HERE, "..", "eval", "eval_set.json")
 _FIELDS = ("is_request", "need", "domain", "pain_point", "buildable", "confidence")
 
 
-def demand(is_request, buildable, confidence=0.9):
+def demand(is_request, buildable, confidence=0.9, excerpt=""):
     return Demand(is_request=is_request, need="x" if is_request else "", domain="d",
-                  pain_point="", buildable=buildable, confidence=confidence)
+                  pain_point="", excerpt=excerpt, buildable=buildable,
+                  clarity=3, intensity=3, feasibility=3, confidence=confidence)
 
 
-def run_eval(eset, fake, min_confidence=0.5):
+def run_eval(eset, fake, min_confidence=0.5, fconf=None):
     p = os.path.join(tempfile.mkdtemp(), "e.json")
     json.dump(eset, open(p, "w"))
     cfg = Config(command="eval", eval_set=p, provider="ollama/x",
                  min_confidence=min_confidence, verbose=True)
     buf = io.StringIO()
     with mock.patch.object(evaluate, "build_client", return_value=None), \
-         mock.patch.object(evaluate, "extract", fake), redirect_stdout(buf):
+         mock.patch.object(evaluate, "_filter_conf", return_value=fconf or {}), \
+         mock.patch.object(evaluate, "extract_raw", lambda c, it, lang: fake(c, it)), \
+         redirect_stdout(buf):
         evaluate.run(cfg)
     return buf.getvalue()
 
 
-def item(id_, is_request, buildable, note=""):
-    return {"source": "s", "external_id": id_, "title": f"t{id_}", "text": "",
-            "url": "u", "score": 0,
+def item(id_, is_request, buildable, note="", title=None, text=None, kind="post", source="s"):
+    return {"source": source, "external_id": id_, "title": title or f"t{id_}",
+            "text": "a body long enough to pass the empty-body rule" if text is None else text,
+            "url": "u", "score": 0, "kind": kind,
             "label": {"is_request": is_request, "buildable": buildable, "note": note}}
 
 
@@ -81,6 +85,33 @@ class MetricsTest(unittest.TestCase):
         out = run_eval(eset, lambda c, it: demand(True, True))
         self.assertIn("is_request 准确率 : 2/2", out)
         self.assertIn("TP=1 FP=0 FN=0 TN=0", out)
+
+    def test_filtered_items_count_as_not_listed(self):
+        eset = [item("1", False, None, title="Show HN: my app"),          # 规则挡掉，正确
+                item("2", True, True, title="Show HN: x", kind="comment")]  # 评论不挡，交给模型
+        calls = []
+
+        def fake(c, it):
+            calls.append(it.title)
+            return demand(True, True)
+
+        out = run_eval(eset, fake)
+        self.assertEqual(calls, ["Show HN: x"])
+        self.assertIn("规则过滤          : 1 条，误杀应入选 0 条；调用模型 1 次", out)
+        self.assertIn("TP=1 FP=0 FN=0 TN=1", out)
+
+    def test_filter_false_kill_reported(self):
+        eset = [item("1", True, True, title="Show HN: actually a request")]
+        out = run_eval(eset, lambda c, it: demand(True, True))
+        self.assertIn("误杀应入选 1 条", out)
+        self.assertIn("FN=1", out)
+
+    def test_excerpt_validity(self):
+        eset = [item("1", True, True, text="I want a tool that does X"),
+                item("2", True, True, text="Something else entirely here")]
+        ex = {"t1": "I want a tool that does X", "t2": "made-up sentence"}
+        out = run_eval(eset, lambda c, it: demand(True, True, excerpt=ex[it.title]))
+        self.assertIn("摘录有效率        : 1/2", out)
 
     def test_extraction_failure_counted(self):
         eset = [item("1", True, True)]
