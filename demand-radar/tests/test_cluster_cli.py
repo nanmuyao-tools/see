@@ -33,7 +33,7 @@ class ConfigTest(unittest.TestCase):
     def test_defaults(self):
         cfg = Config.from_args(["cluster"])
         self.assertEqual((cfg.embed_model, cfg.cluster_threshold, cfg.embed_base_url),
-                         ("nomic-embed-text", 0.85, ""))
+                         ("qwen3-embedding:0.6b", 0.78, ""))
         self.assertEqual(cfg.eval_pairs, "eval/cluster_pairs.json")
 
     def test_run_cluster_flag_default_off(self):
@@ -70,7 +70,7 @@ class RunClusterTest(unittest.TestCase):
         embed = FakeEmbed()
         with mock.patch.object(cli.cluster, "embedder", return_value=embed) as mk:
             out = env.run(self.ITEMS, extract=by_id(self.NEEDS))
-        mk.assert_called_once_with("http://localhost:11434/v1", "nomic-embed-text")
+        mk.assert_called_once_with("http://localhost:11434/v1", "qwen3-embedding:0.6b")
         self.assertEqual(len(embed.calls), 1)
         self.assertIn("向量化 3 条，归簇 3 条，新簇 2 个", out)
         self.assertEqual(len(list(env.coll.database["clusters"].find())), 2)

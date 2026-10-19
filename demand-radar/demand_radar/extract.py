@@ -1,7 +1,7 @@
 """抽取层：用 Instructor 让 LLM 把一条内容归纳成 Demand。
 
 provider 字符串决定跑本地还是云（Instructor 统一接口）：
-  - 本地: ollama/qwen2.5:3b
+  - 本地: ollama/qwen3:4b-instruct-2507-q4_K_M
   - 云:   openai/gpt-4o-mini
 
 输出语言由 language 决定（zh / en），只影响 need、domain、pain_point。

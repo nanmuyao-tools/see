@@ -41,13 +41,12 @@ docker compose run --rm app digest                 # 生成最近 7 天的周报
 docker compose run --rm app digest --days 14 --lang en   # 最近 14 天，英文周报
 docker compose run --rm app backfill --source softwarerecs --pages 20   # 往回拉历史，可中断续跑
 docker compose run --rm app eval                   # 在标注集上评测当前模型
-docker compose exec ollama ollama pull nomic-embed-text   # 一次性：拉嵌入模型（约 270MB），下面两条要用
-docker compose run --rm app cluster                # 把不同来源里的同一需求合并成一条，重写清单
+docker compose run --rm app cluster                # 把不同来源里的同一需求合并成一条，重写清单（首次自动拉嵌入模型 qwen3-embedding:0.6b，约 640MB）
 docker compose run --rm app run --cluster          # 抓一轮并顺手合并（默认不开）
 docker compose --profile web up -d web             # Web 看板 → http://localhost:8501（见下文）
 ```
 
-**机器配置**：默认模型 qwen2.5:3b 约 2GB，8GB 内存的电脑可以跑。低配机器可在 `docker-compose.yml` 里把模型换成 `qwen2.5:1.5b`（更快，但准确率低一些）。已经装了 Ollama 的话，可以注释掉 ollama 服务，把 `OLLAMA_API` / `OLLAMA_BASE_URL` 指向本机。
+**机器配置**：默认模型 `qwen3:4b-instruct-2507-q4_K_M`（Apache-2.0）约 2.5GB，8GB 内存的电脑可以跑，容器 CPU 里每条约 7 秒，61 条评测中文 F1 95.2%、英文 96.8%。低配机器可在 `docker-compose.yml` 里换成 `qwen2.5:1.5b`（更快，但准确率明显低）。已经装了 Ollama 的话，可以注释掉 ollama 服务，把 `OLLAMA_API` / `OLLAMA_BASE_URL` 指向本机。
 
 ## 工作流程
 
@@ -157,19 +156,19 @@ python -m demand_radar backfill --source arctic_shift --pages 10       # Reddit 
 同一个需求会在 HN 评论、softwarerecs 提问、Reddit 帖子里各说一遍，清单里重复列出、热度被分散。`cluster` 命令把它们合成一条：
 
 ```bash
-ollama pull nomic-embed-text                        # 一次性；Docker 里是 docker compose exec ollama ollama pull nomic-embed-text
+ollama pull qwen3-embedding:0.6b                     # 一次性（约 640MB）；Docker 里入口脚本会自动拉
 python -m demand_radar cluster                      # 向量化 + 合并，重写 out/demands.md；不调抽取模型
 python -m demand_radar run --cluster                # 抓取 + 抽取后顺手合并（默认不开；定时服务设 DR_CLUSTER=1）
 python -m demand_radar cluster --threshold 0.8 --rebuild   # 调了阈值，丢掉已有簇重新归
 ```
 
-**原理**：每条需求的 `need` 一句话（旧数据没有就用标题）经本地嵌入模型变成向量，存回 MongoDB；新条目按排序分从高到低，和已有簇的代表向量算余弦相似度，超过阈值（默认 0.85）就归入最像的簇，否则自己成为新簇的代表。增量进行：已算过的向量不重算，已归的簇不动，换嵌入模型会自动整体重建。几千条规模全在内存里用纯 Python 算，不需要向量数据库。
+**原理**：每条需求的 `need` 一句话（旧数据没有就用标题）经本地嵌入模型变成向量，存回 MongoDB；新条目按排序分从高到低，和已有簇的代表向量算余弦相似度，超过阈值（默认 0.78）就归入最像的簇，否则自己成为新簇的代表。增量进行：已算过的向量不重算，已归的簇不动，换嵌入模型会自动整体重建。几千条规模全在内存里用纯 Python 算，不需要向量数据库。
 
 合并后的清单里，每簇只显示代表（簇内排序分最高的那条），下面一行「来自 N 个来源，共 M 条」加其余成员的原帖链接。簇的排序分 = 代表的排序分 + log(成员数) × 0.5：出现得多说明有人要，但取对数、权重小，三个零赞小帖不会压过一个几百赞的帖子；权重在 `sources.toml` 的 `[ranking]` 里加 `cluster_size = …` 可调。没跑过 `cluster` 的库、没有簇信息的旧数据，清单和周报照原样显示。
 
 簇存在 MongoDB 的 `clusters` 集合（代表、成员、来源、总热度、最高排序分），需求文档加 `embedding` / `cluster_id` 字段，看板和其他工具可以直接读。
 
-嵌入服务默认和模型服务同一个地址（`--base-url`）。**Mac GPU 路线的 mlx-lm 不提供嵌入接口**，这时让嵌入单独走本机 Ollama：`--embed-base-url http://localhost:11434/v1`（容器里是 `http://host.docker.internal:11434/v1`）。中文需求较多时可以试更强的多语言模型 `--embed-model bge-m3`（约 1.2GB），换模型后第一次运行会重算全部向量。
+嵌入服务默认和模型服务同一个地址（`--base-url`）。**Mac GPU 路线的 mlx-lm 不提供嵌入接口**，这时让嵌入单独走本机 Ollama：`--embed-base-url http://localhost:11434/v1`（容器里是 `http://host.docker.internal:11434/v1`）。**嵌入模型必须懂中文**（默认输出就是中文）：23 对标注样本上 `nomic-embed-text` 准确率只有 43.5%（中文 16 对只对 5 对），`qwen3-embedding:0.6b` 和 `bge-m3` 在各自最佳阈值下都是 87.0%，默认取更小、Apache-2.0 的前者；换模型后第一次运行会重算全部向量，换数据后用 `cluster --eval` 复核阈值。
 
 ## 评测
 
@@ -202,7 +201,7 @@ pip install -r requirements.txt
 
 # 自备 MongoDB 与 Ollama
 docker run -d -p 27017:27017 --name mongo mongo:7
-ollama pull qwen2.5:3b
+ollama pull qwen3:4b-instruct-2507-q4_K_M
 
 python -m demand_radar run --limit 10          # 结果写到 out/demands.md
 python -m demand_radar digest                  # 周报
@@ -217,7 +216,7 @@ python -m unittest discover -s tests
 
 ## Mac 上用 GPU 跑模型（可选）
 
-Docker Desktop 在 Mac 上不能把 GPU 交给容器，容器里的模型只能用 CPU。想用 Apple GPU，让模型服务在 macOS 上原生运行（mlx-lm），容器只跑 MongoDB 和 app。实测 M5 上 Qwen3-4B 每条约 3 秒，比容器 CPU 里的 qwen2.5:3b（4–6 秒）快，而且评测 F1 高一档（见 [`docs/model-selection.md`](docs/model-selection.md)）。
+Docker Desktop 在 Mac 上不能把 GPU 交给容器，容器里的模型只能用 CPU。想用 Apple GPU，让模型服务在 macOS 上原生运行（mlx-lm），容器只跑 MongoDB 和 app。实测 M5 上 Qwen3-4B 每条约 3 秒；容器 CPU 里跑同一个 4B 模型约 7 秒、qwen2.5:3b 4–6 秒但 F1 低一档（见 [`docs/model-selection.md`](docs/model-selection.md)）。
 
 ```bash
 # 1. 起模型服务（需要 Python 3.11+；端口别用 8080，Docker Desktop 占着）
@@ -231,7 +230,7 @@ docker compose -f docker-compose.yml -f docker-compose.mac-gpu.yml run --rm app 
 
 换模型或端口：`MLX_MODEL=<模型名> MLX_PORT=<端口>` 放在命令前面。不用 Docker 跑 app 的话，直接给 `--provider local/<模型名> --base-url http://localhost:8765/v1`。任何在宿主机上跑的 OpenAI 兼容服务都能这样接（LM Studio、llama.cpp、原生 Ollama）。
 
-mlx-lm 没有嵌入接口，这条路线上要合并相似需求的话，嵌入单独指向本机 Ollama（`brew install ollama && ollama pull nomic-embed-text`）：容器里给 `DR_EMBED_BASE_URL=http://host.docker.internal:11434/v1`，本机跑 app 给 `--embed-base-url http://localhost:11434/v1`。
+mlx-lm 没有嵌入接口，这条路线上要合并相似需求的话，嵌入单独指向本机 Ollama（`brew install ollama && ollama pull qwen3-embedding:0.6b`）：容器里给 `DR_EMBED_BASE_URL=http://host.docker.internal:11434/v1`，本机跑 app 给 `--embed-base-url http://localhost:11434/v1`。
 
 ## 用云模型（可选）
 
@@ -248,7 +247,7 @@ python -m demand_radar run --provider "openai/gpt-4o-mini"
 |---|---|---|
 | `--limit` | 10 | 每个源最多抓多少条（RSS 按每个订阅、HN/GitHub 按每个查询计） |
 | `--source` | `all` | 只跑部分源，如 `github,rss` |
-| `--provider` | `ollama/qwen2.5:3b` | 模型，本地和云模型都用这一个参数切换；其他本地服务用 `local/<模型名>` |
+| `--provider` | `ollama/qwen3:4b-instruct-2507-q4_K_M` | 模型，本地和云模型都用这一个参数切换；其他本地服务用 `local/<模型名>` |
 | `--lang` | `zh` | 输出语言：`zh` / `en` |
 | `--min-confidence` | 0.5 | 低于此可信度的需求不进清单 |
 | `--workers` | 2 | 同时发给模型的请求数。Ollama 默认一次只处理一个请求，要在 ollama 服务上设 `OLLAMA_NUM_PARALLEL` 才真正并行；云模型直接生效 |
@@ -260,9 +259,9 @@ python -m demand_radar run --provider "openai/gpt-4o-mini"
 | `--mongo-uri` / `--db-name` | `mongodb://localhost:27017` / `demand_radar` | 数据库 |
 | `--base-url` | `http://localhost:11434/v1` | 本地模型服务地址（旧名 `--ollama-base-url` 仍可用） |
 | `--cluster` | 关 | `run` / `schedule`：抽取完顺手合并相似需求（需要嵌入模型） |
-| `--embed-model` | `nomic-embed-text` | 嵌入模型，走 `/v1/embeddings`；中文多可试 `bge-m3` |
+| `--embed-model` | `qwen3-embedding:0.6b` | 嵌入模型，走 `/v1/embeddings`；同等准确率的备选 `bge-m3`（1.2GB）；`nomic-embed-text` 不懂中文 |
 | `--embed-base-url` | 同 `--base-url` | 嵌入服务地址；mlx-lm 没有嵌入接口时单独指向 Ollama |
-| `--threshold` | 0.85 | 余弦相似度 ≥ 此值视为同一需求 |
+| `--threshold` | 0.78 | 余弦相似度 ≥ 此值视为同一需求；调整前后用 `cluster --eval` 对比 |
 | `--rebuild` / `--eval` | 关 | `cluster`：丢掉已有簇重新归 / 在标注对上评测合并判断（`--pairs` 指定文件） |
 
 这些参数也都能用环境变量设置（Docker 部署时用）：`DR_SOURCE`、`DR_LIMIT`、`DR_PROVIDER`、`DR_OUTPUT_LANGUAGE`、`DR_MIN_CONFIDENCE`、`DR_WORKERS`、`DR_SOURCES_FILE`、`MONGO_URI`、`DR_DB_NAME`、`OLLAMA_BASE_URL`、`DR_OUTPUT`、`DR_CLUSTER`、`DR_EMBED_MODEL`、`DR_EMBED_BASE_URL`、`DR_CLUSTER_THRESHOLD`、`DR_HOST`、`DR_PORT`（看板；compose 里宿主机端口另由 `DR_WEB_PORT` 定）。

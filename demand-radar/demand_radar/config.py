@@ -21,7 +21,7 @@ class Config:
     sources_file: str = "sources.toml"
     limit: int = 10  # 每个源（RSS 按每个订阅、HN/GitHub 按每个查询）最多抓多少条
     # Instructor 的 provider 标识；换本地/云只改这一处
-    provider: str = "ollama/qwen2.5:3b"
+    provider: str = "ollama/qwen3:4b-instruct-2507-q4_K_M"
     # 本地模型服务地址；容器里指向 ollama 服务
     ollama_base_url: str = "http://localhost:11434/v1"
     min_confidence: float = 0.5
@@ -40,9 +40,9 @@ class Config:
     run_on_start: bool = True  # schedule 命令：启动时先跑一次，不等到点
     # 相似需求合并（v0.3，见 cluster.py）
     cluster: bool = False  # run / schedule：抽取完顺手向量化并合并相似需求
-    embed_model: str = "nomic-embed-text"  # 嵌入模型名，走 /v1/embeddings；Ollama 可直接 pull
+    embed_model: str = "qwen3-embedding:0.6b"  # 嵌入模型名，走 /v1/embeddings；Ollama 可直接 pull。要懂中文，选型见 cluster.py
     embed_base_url: str = ""  # 嵌入服务地址；空 = 同 ollama_base_url。Mac GPU 路线 mlx-lm 不提供嵌入接口，可单独指向 Ollama
-    cluster_threshold: float = 0.85  # 余弦相似度 ≥ 此值视为同一需求
+    cluster_threshold: float = 0.78  # 余弦相似度 ≥ 此值视为同一需求（按 23 对标注定的，见 cluster.py）
     rebuild: bool = False  # cluster 命令：丢掉已有簇重新归（调阈值后用）
     cluster_eval: bool = False  # cluster 命令：不动库，在标注对上评测合并判断
     eval_pairs: str = "eval/cluster_pairs.json"  # cluster --eval 用的标注对

@@ -28,7 +28,7 @@ All you need is [Docker](https://docs.docker.com/get-docker/). No Python, MongoD
 
 ```bash
 cd demand-radar
-DR_OUTPUT_LANGUAGE=en docker compose up   # first run downloads the model (~2 GB)
+DR_OUTPUT_LANGUAGE=en docker compose up   # first run downloads the model (~2.5 GB)
 ```
 
 This starts three containers: **app** (fetch + extract), **mongo** (storage) and **ollama** (local model). The app exits after one round and writes **`./out/demands.md`**.
@@ -40,9 +40,11 @@ docker compose run --rm app --lang en                  # fetch another round (al
 docker compose run --rm app digest --lang en           # last 7 days → out/digest-<date>.md
 docker compose run --rm app digest --days 14 --lang en
 docker compose run --rm app eval --lang en             # evaluate the current model on the labeled set
+docker compose run --rm app cluster --lang en          # merge the same need seen in several places into one entry (pulls the embedding model on first use, ~640 MB)
+docker compose --profile web up -d web                 # web dashboard → http://localhost:8501/?lang=en
 ```
 
-**Hardware**: the default model, qwen2.5:3b, is about 2 GB and runs on a machine with 8 GB of RAM. On weaker machines, switch to `qwen2.5:1.5b` in `docker-compose.yml` (faster, somewhat less accurate). If you already run Ollama, comment out the ollama service and point `OLLAMA_API` / `OLLAMA_BASE_URL` at it.
+**Hardware**: the default model, `qwen3:4b-instruct-2507-q4_K_M` (Apache-2.0), is about 2.5 GB and runs on a machine with 8 GB of RAM, at roughly 7 s per post on the CPU inside Docker; on the 61-item labeled set it scores F1 95.2% (Chinese) / 96.8% (English). On weaker machines, switch to `qwen2.5:1.5b` in `docker-compose.yml` (faster, clearly less accurate). If you already run Ollama, comment out the ollama service and point `OLLAMA_API` / `OLLAMA_BASE_URL` at it.
 
 ## How it works
 
@@ -67,9 +69,20 @@ All public endpoints, no sign-up needed. Configure them in [`sources.toml`](sour
 | `softwarerecs` | StackExchange Software Recommendations: "is there software that does X" | votes | 300 req/day; 10k with `SE_API_KEY` |
 | `hn_algolia` | Hacker News posts and comments matching phrases like "I wish there was" | points | generous |
 | `github` | Feature-request issues with many 👍 | 👍 | 10 req/min; 30 with `GITHUB_TOKEN` |
-| `rss` | Any RSS / Atom feed; defaults include r/SomebodyMakeThis and a few subreddit searches | — | per site |
+| `arctic_shift` | Reddit posts via the third-party [Arctic Shift](docs/arctic-shift.md) archive API (doc in Chinese): newest posts per subreddit, keywords filtered locally, can backfill history | score (accurate ~36 h after posting) | dynamic, a few req/s; free service with no uptime guarantee |
+| `rss` | Any RSS / Atom feed; defaults include r/SomebodyMakeThis and a few subreddit searches (same subreddits as `arctic_shift`, kept as its fallback) | — | per site |
 
 If one source fails (network, rate limit), it is skipped and the rest keep going. Rate-limited requests are retried after the server's `Retry-After`.
+
+## Merging similar needs
+
+The same need shows up in a Hacker News comment, a softwarerecs question and a Reddit post. `cluster` merges them: each need's one-line summary is embedded with a local embedding model (default `qwen3-embedding:0.6b`, pulled automatically in Docker), and items whose cosine similarity is at or above 0.78 join the same cluster. The list and the digest then show one entry per cluster, with "from N sources, M posts" and links to the other posts. `run --cluster` (or `DR_CLUSTER=1`) does this after every round.
+
+The embedding model must handle Chinese if you use Chinese output: on 23 labeled pairs `nomic-embed-text` scored 43.5%, while `qwen3-embedding:0.6b` and `bge-m3` both reach 87% at their best threshold. Check your own data with `cluster --eval`. With the Mac GPU override, mlx-lm has no embeddings endpoint, so point embeddings at a separate Ollama: `DR_EMBED_BASE_URL=http://host.docker.internal:11434/v1` for the container, `--embed-base-url http://localhost:11434/v1` for a local run.
+
+## Web dashboard
+
+`docker compose --profile web up -d web` starts a read-only dashboard at http://localhost:8501/ (`?lang=en` for English). It reads MongoDB directly and needs no model: filter by domain, source, time and keyword, sort by rank / heat / time, and browse the held-for-review items and the run history. Set `DR_WEB_PORT` if 8501 is taken. Without Docker: `python -m demand_radar serve --port 8501`.
 
 ## Output language
 
@@ -95,7 +108,7 @@ python3.12 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 
 docker run -d -p 27017:27017 --name mongo mongo:7
-ollama pull qwen2.5:3b
+ollama pull qwen3:4b-instruct-2507-q4_K_M
 
 python -m demand_radar run --limit 10 --lang en
 python -m demand_radar digest --lang en
@@ -110,7 +123,7 @@ python -m unittest discover -s tests
 
 ## Using the GPU on a Mac (optional)
 
-Docker Desktop on macOS cannot pass the GPU to containers, so a model inside a container runs on the CPU. To use the Apple GPU, run the model server natively with mlx-lm and let the containers handle only MongoDB and the app. Measured on an M5: Qwen3-4B takes about 3 s per post, versus 4–6 s for qwen2.5:3b on the CPU inside Docker, with a clearly higher F1 (see [`docs/model-selection.md`](docs/model-selection.md), in Chinese).
+Docker Desktop on macOS cannot pass the GPU to containers, so a model inside a container runs on the CPU. To use the Apple GPU, run the model server natively with mlx-lm and let the containers handle only MongoDB and the app. Measured on an M5: Qwen3-4B takes about 3 s per post, versus about 7 s for the same 4B model on the CPU inside Docker (qwen2.5:3b takes 4–6 s there but scores clearly lower) (see [`docs/model-selection.md`](docs/model-selection.md), in Chinese).
 
 ```bash
 # 1. Start the model server (Python 3.11+; avoid port 8080, Docker Desktop uses it)
@@ -139,15 +152,18 @@ python -m demand_radar run --provider "openai/gpt-4o-mini" --lang en
 |---|---|---|
 | `--limit` | 10 | Max posts per source (per feed for RSS, per query for HN/GitHub) |
 | `--source` | `all` | Run only some sources, e.g. `github,rss` |
-| `--provider` | `ollama/qwen2.5:3b` | Model; switches between local and hosted. Other local servers: `local/<model>` |
+| `--provider` | `ollama/qwen3:4b-instruct-2507-q4_K_M` | Model; switches between local and hosted. Other local servers: `local/<model>` |
 | `--lang` | `zh` | Output language: `zh` / `en` |
 | `--min-confidence` | 0.5 | Needs below this confidence are left out |
 | `--days` | 7 | `digest`: how many days back |
 | `--sources-file` | `sources.toml` | Sources, filter rules and ranking weights |
 | `--mongo-uri` / `--db-name` | `mongodb://localhost:27017` / `demand_radar` | Database |
 | `--base-url` | `http://localhost:11434/v1` | Local model server (`--ollama-base-url` still works) |
+| `--embed-model` | `qwen3-embedding:0.6b` | Embedding model for `cluster`, via `/v1/embeddings`; `bge-m3` scores the same, `nomic-embed-text` does not handle Chinese |
+| `--threshold` | 0.78 | Cosine similarity at or above this means "same need"; compare settings with `cluster --eval` |
+| `--embed-base-url` | same as `--base-url` | Separate embedding server (needed with the Mac GPU override) |
 
-Every option can also be set through an environment variable (handy with Docker): `DR_SOURCE`, `DR_LIMIT`, `DR_PROVIDER`, `DR_OUTPUT_LANGUAGE`, `DR_MIN_CONFIDENCE`, `DR_SOURCES_FILE`, `MONGO_URI`, `DR_DB_NAME`, `OLLAMA_BASE_URL`, `DR_OUTPUT`.
+Every option can also be set through an environment variable (handy with Docker): `DR_SOURCE`, `DR_LIMIT`, `DR_PROVIDER`, `DR_OUTPUT_LANGUAGE`, `DR_MIN_CONFIDENCE`, `DR_SOURCES_FILE`, `MONGO_URI`, `DR_DB_NAME`, `OLLAMA_BASE_URL`, `DR_OUTPUT`, `DR_CLUSTER`, `DR_EMBED_MODEL`, `DR_EMBED_BASE_URL`, `DR_CLUSTER_THRESHOLD`, `DR_HOST`, `DR_PORT` (dashboard; in compose the host port is `DR_WEB_PORT`).
 
 ## Compared with similar projects
 

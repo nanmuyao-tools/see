@@ -26,8 +26,14 @@ from operator import mul
 
 from . import rank, store
 
-DEFAULT_MODEL = "nomic-embed-text"  # Ollama 可直接 pull，270MB；中文更好的候选是 bge-m3
-DEFAULT_THRESHOLD = 0.85
+# 嵌入模型要懂中文（默认输出就是中文）。2026-10-20 在 23 对标注样本上实测（容器 Ollama）：
+#   nomic-embed-text（274MB）  阈值 0.85 准确率 43.5%，中文 16 对只对 5 对，「自托管的密码管理器」和「自托管的照片备份服务」相似度 0.999——不懂中文，不能用
+#   bge-m3（1.2GB，MIT）        阈值 0.85 为 60.9%，最佳阈值 0.770 时 87.0%
+#   qwen3-embedding:0.6b（640MB，Apache-2.0）阈值 0.85 为 60.9%，最佳阈值 0.767 时 87.0%
+# 后两者打平，取更小、协议更宽松的 qwen3-embedding。阈值取 0.78：比「不同需求的最高相似度」0.767 留一点余量，
+# 宁可少合并（只是多列一条）也不错合并（会把一条需求藏进别的簇里）。样本太少，换数据后用 cluster --eval 复核
+DEFAULT_MODEL = "qwen3-embedding:0.6b"
+DEFAULT_THRESHOLD = 0.78
 BATCH = 32  # 每次请求送多少条文本；每批存一次，中断了下次从没存的继续
 
 Embed = Callable[[list[str]], list[list[float]]]

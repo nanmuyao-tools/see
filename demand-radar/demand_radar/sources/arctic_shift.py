@@ -9,6 +9,7 @@
 
 from __future__ import annotations
 
+import sys
 import time
 import urllib.error
 import urllib.parse
@@ -24,7 +25,9 @@ MAX_PAGE = 100          # limit 上限（"auto" 可到 1000，但视服务器负
 SUB_INTERVAL = 1.0      # 日常抓取时版块之间的间隔
 RATE_WAIT_MAX = 60      # 限额按 60 秒窗口计，X-RateLimit-Reset 是到下个窗口的秒数
 RATE_WAIT_DEFAULT = 10  # 429 却没给 X-RateLimit-Reset 时等多久
-TIMEOUT_WAIT = 5        # 422「Timeout. Maybe slow down a bit」后歇几秒再试一次
+# 422「Timeout. Maybe slow down a bit」是服务端查询超时，和参数无关、随机出现：2026-10-20 实测同一条查询
+# 连续 3 次 422、8 秒后原样重发就 200，像是首次查询慢、后台预热后可用。所以退避重试三次，不是一次
+TIMEOUT_WAITS = (5, 10, 20)
 _REMOVED = {"[removed]", "[deleted]"}  # 被删的帖子归档里正文只剩这个占位
 
 
@@ -68,20 +71,25 @@ def _reset_seconds(e: urllib.error.HTTPError) -> float:
 
 
 def _get(params: dict) -> dict:
-    """请求一页。限额是动态的，429 要等到窗口重置；422 是查询超时，歇一下重试一次就常能过。
+    """请求一页。429 按 X-RateLimit-Reset 等到窗口重置再试一次；422 查询超时按 TIMEOUT_WAITS 退避重试。
 
     http.get 已按 Retry-After 重试 429，但这个服务不发 Retry-After、只发 X-RateLimit-Reset，
     所以最后一次机会在这里按它的头再等一回。
     """
     url = f"{API}?{urllib.parse.urlencode(params)}"
-    for attempt in range(2):
+    waits = list(TIMEOUT_WAITS)
+    rate_retried = False
+    while True:
         try:
             return get_json(url)
         except urllib.error.HTTPError as e:
-            if attempt or e.code not in (422, 429):
+            if e.code == 422 and waits:
+                time.sleep(waits.pop(0))
+            elif e.code == 429 and not rate_retried:
+                rate_retried = True
+                time.sleep(_reset_seconds(e))
+            else:
                 raise
-            time.sleep(_reset_seconds(e) if e.code == 429 else TIMEOUT_WAIT)
-    raise AssertionError("unreachable")
 
 
 def _params(subreddit: str, pagesize: int) -> dict:
@@ -93,18 +101,31 @@ def fetch(limit: int, conf: dict, cursors: dict[str, int] | None = None) -> list
 
     和其他源一样每次只取最新 limit 条：版块日发帖量超过 limit 时中间的会跳过，调大 --limit 即可。
     游标按抓到的全部帖子推进，关键词没命中的也算见过，下次不再拉。
+
+    一个版块重试后仍 422 / 429 只跳过它（游标不动，下次再拉），其他版块照抓；全部版块都失败才算该源失败。
     """
     keywords = conf.get("keywords") or {}
     items: list[SourceItem] = []
-    for i, sub in enumerate(conf.get("subreddits", [])):
+    subs = conf.get("subreddits", [])
+    failed: list[tuple[str, Exception]] = []
+    for i, sub in enumerate(subs):
         if i:
             time.sleep(SUB_INTERVAL)
         params = _params(sub, limit)
         if cursors and cursors.get(sub):
             params["after"] = cursors[sub]
-        got = parse(_get(params))
+        try:
+            got = parse(_get(params))
+        except urllib.error.HTTPError as e:
+            if e.code not in (422, 429):
+                raise
+            print(f"      ✗ arctic_shift r/{sub} 跳过：HTTP {e.code}（服务端超时或限流，下次再拉）", file=sys.stderr)
+            failed.append((sub, e))
+            continue
         cursor.advance(cursors, sub, got)
         items += [it for it in got if matches(it, keywords.get(sub))]
+    if failed and len(failed) == len(subs):
+        raise failed[-1][1]
     return items
 
 

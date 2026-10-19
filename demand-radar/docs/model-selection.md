@@ -83,6 +83,18 @@ Apple 的 MLX 团队说明过：生成每个 token 的速度受内存带宽限�
 ## 八、补充实测（2026-10-19）
 
 - **并发抽取**（v0.2 的 `--workers`）在 mlx-lm 上有效：mlx-lm 会把同时到达的请求合批，M5 上 8 条 Qwen3-4B 抽取，1 / 2 / 4 个并发分别 29.3 / 17.2 / 11.7 秒。`docker-compose.mac-gpu.yml` 默认 4 个并发。容器里的 Ollama 默认一次只处理一个请求（`OLLAMA_NUM_PARALLEL=1`），并发对它无效。
-- **mlx_lm.server 不提供 `/v1/embeddings`**，相似需求合并要的向量得另找服务：容器里的 Ollama 可以跑 `nomic-embed-text`（274MB，CPU 够快）。
-- **容器路径的协议问题有解**：Ollama 库里有 `qwen3:4b-instruct-2507-q4`（Apache-2.0、非思考版，和 Mac 上用的是同一个模型），待在容器 CPU 上评测后替换默认的 qwen2.5:3b（Qwen Research License）。
+- **mlx_lm.server 不提供 `/v1/embeddings`**，相似需求合并要的向量得另找服务：容器里的 Ollama 跑嵌入模型（CPU 够快）。**`nomic-embed-text` 不懂中文**（23 对标注准确率 43.5%），默认用 `qwen3-embedding:0.6b`（640MB，Apache-2.0，最佳阈值下 87.0%，和 `bge-m3` 打平），见 `demand_radar/cluster.py` 顶部的实测记录。
+- **容器路径的协议问题已解决**：Ollama 库里的 `qwen3:4b-instruct-2507-q4_K_M`（Apache-2.0、非思考版，和 Mac 上用的是同一个模型）在容器 CPU 上 61 条评测中文 F1 95.2%、英文 96.8%，每条约 7 秒；2026-10-20 起作为容器默认，替换 qwen2.5:3b（Qwen Research License）。
+
+## 九、补充实测（2026-10-20，评测集扩到 116 条之后）
+
+| 模型 | 跑在哪 | 评测集 | 中文 F1 | 英文 F1 | 有害需求进清单 | 每条 |
+|---|---|---|---|---|---|---|
+| Qwen3-4B-Instruct-2507-4bit | mlx-lm，M5 GPU | 116 条 | **92.4%** | **90.9%** | 0 / 10 | 约 2.6 秒（116 条 301 / 292 秒） |
+| qwen3:4b-instruct-2507-q4_K_M | 容器 Ollama，CPU | 61 条 | 95.2% | 96.8% | 0 | 约 7 秒 |
+| qwen2.5:3b | 容器 Ollama，CPU | 61 条 | 83.6% | 89.7% | 0 | 4–6 秒 |
+
+116 条上比 61 条低 4–6 个百分点，是新样本更难（GitHub 那批要区分「给平台产品提的功能请求」和「给开源项目提的、个人可贡献的请求」，模型容易都判成可做），两种语言的差错集中在这类样本上。
+
+嵌入模型（相似需求合并，23 对标注、容器 Ollama CPU）：`nomic-embed-text` 阈值 0.85 准确率 43.5%，中文 16 对只对 5 对，不懂中文；`bge-m3` 与 `qwen3-embedding:0.6b` 阈值 0.85 都是 60.9%（精确率 100%、召回 18%），各自最佳阈值 0.770 / 0.767 时都是 87.0%。默认取 `qwen3-embedding:0.6b`（640MB、Apache-2.0）、阈值 0.78：实测 82.6%（精确率 100%、召回 63.6%，英文 7/7、中文 12/16）。
 

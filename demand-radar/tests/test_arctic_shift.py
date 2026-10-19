@@ -138,15 +138,28 @@ class RetryTest(unittest.TestCase):
         _, _, sleep = self._fetch([http_error(429, "9999"), {"data": []}])
         sleep.assert_called_once_with(arctic_shift.RATE_WAIT_MAX)
 
-    def test_422_timeout_retried_once(self):
-        items, g, sleep = self._fetch([http_error(422), {"data": []}])
-        self.assertEqual(items, [])
-        self.assertEqual(g.call_count, 2)
-        sleep.assert_called_once_with(arctic_shift.TIMEOUT_WAIT)
+    def test_422_timeout_retried_with_backoff(self):
+        # 实测同一查询连续 422 之后原样重发就能过，所以退避重试三次
+        items, g, sleep = self._fetch([http_error(422), http_error(422), http_error(422), fixture()])
+        self.assertEqual(len(items), 3)
+        self.assertEqual(g.call_count, 4)
+        self.assertEqual([c.args[0] for c in sleep.call_args_list], list(arctic_shift.TIMEOUT_WAITS))
 
-    def test_gives_up_after_one_retry(self):
-        with self.assertRaises(urllib.error.HTTPError):
-            self._fetch([http_error(422), http_error(422)])
+    def test_one_subreddit_failing_does_not_kill_the_others(self):
+        # 第一个版块重试耗尽仍 422：跳过它、游标不动，第二个版块照抓
+        cursors: dict[str, int] = {}
+        errors = [http_error(422)] * (len(arctic_shift.TIMEOUT_WAITS) + 1)
+        with mock.patch.object(arctic_shift, "get_json", side_effect=[*errors, fixture()]), \
+             mock.patch.object(arctic_shift.time, "sleep"), \
+             mock.patch.object(arctic_shift.sys, "stderr"):
+            items = arctic_shift.fetch(10, {"subreddits": ["SomebodyMakeThis", "macapps"]}, cursors)
+        self.assertEqual(len(items), 3)
+        self.assertEqual(set(cursors), {"macapps"})
+
+    def test_gives_up_when_every_subreddit_fails(self):
+        errors = [http_error(422)] * (len(arctic_shift.TIMEOUT_WAITS) + 1)
+        with mock.patch.object(arctic_shift.sys, "stderr"), self.assertRaises(urllib.error.HTTPError):
+            self._fetch(errors)
 
     def test_other_errors_not_retried(self):
         with mock.patch.object(arctic_shift, "get_json", side_effect=[http_error(400)]) as g, \

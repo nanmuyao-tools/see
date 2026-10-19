@@ -36,13 +36,17 @@ services:
       MONGO_URI: "mongodb://mongo:27017"
       OLLAMA_API: "http://ollama:11434"            # 入口脚本拉模型用
       OLLAMA_BASE_URL: "http://ollama:11434/v1"    # Instructor 调用用
-      OLLAMA_MODEL: "qwen2.5:3b"                    # 评测 F1 85%，8GB 内存可跑；低配可改 qwen2.5:1.5b，有 GPU 可试 7b
-      DR_PROVIDER: "ollama/qwen2.5:3b"              # 和上面保持一致
+      OLLAMA_MODEL: "qwen3:4b-instruct-2507-q4_K_M"   # Apache-2.0，约 2.5GB，8GB 内存可跑；61 条评测中文 F1 95.2% / 英文 96.8%，容器 CPU 每条约 7 秒。低配可改 qwen2.5:1.5b
+      DR_PROVIDER: "ollama/qwen3:4b-instruct-2507-q4_K_M"   # 和上面保持一致
       DR_OUTPUT_LANGUAGE: "${DR_OUTPUT_LANGUAGE:-zh}"  # 输出语言：zh 中文 / en 英文
       DR_LIMIT: "10"                                 # 每个源/查询最多抓多少条
       DR_MIN_CONFIDENCE: "0.5"
       DR_WORKERS: "2"                                # 同时发给模型的请求数；ollama 默认串行，需配 OLLAMA_NUM_PARALLEL 才并行
       DR_OUTPUT: "out/demands.md"
+      # 相似需求合并（cluster 命令 / run --cluster）：嵌入模型由入口脚本代拉；DR_CLUSTER=1 让 run 和 scheduler 顺手合并
+      DR_CLUSTER: "${DR_CLUSTER:-0}"
+      DR_EMBED_MODEL: "${DR_EMBED_MODEL:-qwen3-embedding:0.6b}"   # 要懂中文；选型见 demand_radar/cluster.py
+      DR_CLUSTER_THRESHOLD: "${DR_CLUSTER_THRESHOLD:-0.78}"
       # 可选：提高限额。不设也能用
       GITHUB_TOKEN: "${GITHUB_TOKEN:-}"            # GitHub 搜索：10 → 30 次/分钟
       SE_API_KEY: "${SE_API_KEY:-}"                # StackExchange：300 → 1 万次/天

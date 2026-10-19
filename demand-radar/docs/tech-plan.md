@@ -155,7 +155,7 @@ fetched_at / extracted_at
 ### v0.3：合并与看板（约 2 周）
 
 **1. 相似需求合并** `cluster.py`
-- 向量化：通过 Ollama 跑本地 embedding 模型（候选 `bge-m3`，支持中英文；或 `nomic-embed-text`，更小）
+- 向量化：通过 Ollama 跑本地 embedding 模型。已定 `qwen3-embedding:0.6b`（2026-10-20 实测：`nomic-embed-text` 不懂中文，`bge-m3` 同等准确率但大一倍）
 - 合并：先用简单方法（相似度超过阈值就归为一类）；数据量上来、效果不够时再换 sift 用的 UMAP + HDBSCAN
 - 合并后热度 = 各条之和，记录来自几个来源
 - 几千条规模**不需要向量数据库**：向量存在 MongoDB，计算在内存里做
@@ -181,7 +181,7 @@ fetched_at / extracted_at
 | 不推荐 | qwen2.5:0.5b | F1 0%，基本不可用 |
 | 不推荐 | qwen3:1.7b | 默认开启思考模式，每条 30 多秒，比 3b 还慢 |
 | 有 GPU 的机器 | qwen2.5:7b | 未在沙箱实测，需要在真机上评测后再推荐 |
-| 向量化（v0.3） | bge-m3 或 nomic-embed-text | 待评测 |
+| 向量化（v0.3） | qwen3-embedding:0.6b | 23 对标注、阈值 0.78：见 ROADMAP；`nomic-embed-text` 中文不可用 |
 
 （llama3.2:1b、gemma3:1b 的评测还在进行，结果出来后补充。）
 
