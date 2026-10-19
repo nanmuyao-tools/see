@@ -6,6 +6,7 @@
 - 技术选型与实测记录：[`../docs/ideas/demand-radar-tech.md`](../docs/ideas/demand-radar-tech.md)
 - 同类项目调研：[`docs/landscape.md`](docs/landscape.md)
 - 市场调研与潜力分析：[`docs/market.md`](docs/market.md)
+- 技术路线规划：[`docs/tech-plan.md`](docs/tech-plan.md)
 - 路线图：[`ROADMAP.md`](ROADMAP.md)
 
 ## 做了什么
@@ -156,6 +157,7 @@ demand_radar/
     rss.py          # 通用 RSS / Atom
 docs/landscape.md   # 同类项目调研与方向分析
 docs/market.md      # 市场调研与潜力分析
+docs/tech-plan.md   # 技术路线规划
 ROADMAP.md          # 路线图
 tests/              # 离线单元测试，fixture 取自各源真实返回
 eval/eval_set.json  # 评测标注集（45 条真实样本）
