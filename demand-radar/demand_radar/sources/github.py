@@ -52,3 +52,25 @@ def fetch(limit: int, conf: dict, cursors: dict[str, int] | None = None) -> list
         cursor.advance(cursors, q, got)
         items += got
     return items
+
+
+# ---- 历史回填 ----
+
+def units(conf: dict) -> list[str]:
+    return conf.get("queries", [])
+
+
+def interval() -> float:
+    """翻页间隔：搜索接口不带 token 每分钟 10 次、带 token 30 次，各留一点余量。"""
+    return 2.5 if os.getenv("GITHUB_TOKEN") else 6.5
+
+
+def page_before(conf: dict, query: str, before: int | None, pagesize: int) -> list[SourceItem]:
+    """回填用：按创建时间倒序取 before 之前新开的 issue。
+
+    和日常抓取不同，这里不按点赞排序：要把符合条件的 issue 完整往回遍历，只能按时间切；
+    搜索接口每个查询最多给 1000 条，按时间不断缩小范围也绕开了这个上限。
+    """
+    q = f"{query} created:<{cursor.github_time(before)}" if before else query
+    params = {"q": q, "sort": "created", "order": "desc", "per_page": min(pagesize, 100)}
+    return parse(get_json(f"{API}?{urllib.parse.urlencode(params)}", _headers()))

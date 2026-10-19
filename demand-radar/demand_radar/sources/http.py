@@ -17,6 +17,10 @@ RETRIES = 2
 MAX_WAIT = 30  # 单次重试最多等待秒数
 
 
+class QuotaExhausted(Exception):
+    """数据源的调用配额快用完了。回填时应就此停下，把剩余配额留给每天的增量抓取。"""
+
+
 def _wait_seconds(e: urllib.error.HTTPError, attempt: int) -> float:
     retry_after = e.headers.get("Retry-After") if e.headers else None
     if retry_after and retry_after.isdigit():

@@ -34,6 +34,7 @@ class Config:
     verbose: bool = False  # eval 命令：逐条打印
     days: int = 7  # digest 命令：汇总最近多少天新增的需求
     digest_output: str = ""  # digest 命令输出路径；空则为 out/digest-<日期>.md
+    pages: int = 10  # backfill 命令：本次最多往回拉多少页（各查询轮流）
 
     @staticmethod
     def from_args(argv: list[str] | None = None) -> "Config":
@@ -73,15 +74,22 @@ class Config:
         dg.add_argument("--min-confidence", type=float, default=d.min_confidence)
         dg.add_argument("--output", dest="digest_output", default=d.digest_output)
 
+        bf = sub.add_parser("backfill", help="按页往回拉一个源的历史内容，可中断后继续")
+        bf.add_argument("--source", required=True, help="一次一个源：softwarerecs / hn_algolia / github")
+        bf.add_argument("--pages", type=int, default=d.pages, help="本次最多拉多少页，各查询轮流")
+        bf.add_argument("--limit", type=int, default=100,
+                        help="每页条数（StackExchange、GitHub 上限 100，HN 1000）")
+        bf.add_argument("--workers", type=int, default=d.workers)
+
         # 调模型的命令共用
-        for sp in (run, ev):
+        for sp in (run, ev, bf):
             sp.add_argument("--provider", default=d.provider)
             sp.add_argument("--ollama-base-url", dest="ollama_base_url", default=d.ollama_base_url)
         # 读写数据库的命令共用
-        for sp in (run, dg):
+        for sp in (run, dg, bf):
             sp.add_argument("--mongo-uri", dest="mongo_uri", default=d.mongo_uri)
             sp.add_argument("--db-name", dest="db_name", default=d.db_name)
-        for sp in (run, ev, dg):
+        for sp in (run, ev, dg, bf):
             sp.add_argument("--sources-file", dest="sources_file", default=d.sources_file)
             sp.add_argument("--lang", dest="output_language", choices=("zh", "en"),
                             default=d.output_language, help="输出语言")
@@ -104,4 +112,5 @@ class Config:
             output_language=getattr(ns, "output_language", d.output_language),
             days=getattr(ns, "days", d.days),
             digest_output=getattr(ns, "digest_output", d.digest_output),
+            pages=getattr(ns, "pages", d.pages),
         )

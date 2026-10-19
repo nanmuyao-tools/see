@@ -7,13 +7,26 @@ import tomllib
 from ..models import SourceItem
 from . import github, hn_algolia, rss, softwarerecs
 
-# 源名 → 抓取函数(limit, 该源的配置) -> list[SourceItem]
+# 源名 → 抓取函数(limit, 该源的配置, 游标) -> list[SourceItem]
 REGISTRY = {
     "softwarerecs": softwarerecs.fetch,
     "hn_algolia": hn_algolia.fetch,
     "github": github.fetch,
     "rss": rss.fetch,
 }
+
+# 支持历史回填的源：模块要提供 units(conf)、page_before(conf, unit, before, pagesize)、interval()
+BACKFILL = {
+    "softwarerecs": softwarerecs,
+    "hn_algolia": hn_algolia,
+    "github": github,
+}
+
+
+def backfill_module(name: str):
+    if name not in BACKFILL:
+        raise ValueError(f"{name} 不支持回填（RSS 订阅没有翻页）；可回填的源: {', '.join(BACKFILL)}")
+    return BACKFILL[name]
 
 
 def load_config(path: str) -> dict:

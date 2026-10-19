@@ -3,12 +3,14 @@
 from __future__ import annotations
 
 import sys
+import time
 from datetime import datetime, timedelta, timezone
 
 from . import filters, rank, report, sources, store
 from .config import Config
 from .extract import build_client, extract_many
 from .models import SourceItem
+from .sources.http import QuotaExhausted
 
 
 def _reason(e: Exception) -> str:
@@ -90,6 +92,77 @@ def run(cfg: Config) -> None:
     print(f"完成，耗时 {took:.0f} 秒。运行记录在 MongoDB 的 runs 集合。")
 
 
+def backfill(cfg: Config) -> None:
+    """按页往回拉一个源的历史内容。每页处理完就记进度，中断后从上次位置继续。
+
+    各查询轮流拉，--pages 是本次总预算：几个查询各拉几页就停，下次再接着拉。
+    拉到空页视为到头；之后再运行会跳过它。
+    """
+    conf = sources.load_config(cfg.sources_file)
+    try:
+        mod = sources.backfill_module(cfg.source)
+    except ValueError as e:
+        sys.exit(str(e))
+    sconf = conf.get(cfg.source) or {}
+    coll = store.connect(cfg.mongo_uri, cfg.db_name)
+    progress = {u: store.load_backfill(coll, cfg.source, u) for u in mod.units(sconf)}
+    pending = [u for u, p in progress.items() if not p["done"]]
+    if not pending:
+        print(f"{cfg.source} 的全部查询都已回填到头。")
+        return
+
+    client = build_client(cfg.provider, cfg.ollama_base_url)
+    fconf = conf.get("filters") or {}
+    run_id = store.start_run(coll, "backfill", sources=[cfg.source], limit=cfg.limit, pages=cfg.pages,
+                             provider=cfg.provider, language=cfg.output_language)
+    print(f"回填 {cfg.source}：{len(pending)} 个查询待拉，本次最多 {cfg.pages} 页、每页 {cfg.limit} 条 …")
+    totals = {"pages": 0, "fetched": 0, "filtered": 0, "extracted": 0, "failed": 0}
+    budget, status = cfg.pages, "done"
+    try:
+        while budget and pending:
+            for unit in list(pending):
+                if not budget:
+                    break
+                budget -= 1  # 失败的页也算预算，否则持续失败会死循环
+                p = progress[unit]
+                try:
+                    items = mod.page_before(sconf, unit, p["oldest"] or None, cfg.limit)
+                except QuotaExhausted as e:
+                    print(f"      ✗ {e}", file=sys.stderr)
+                    status, pending = "quota", []
+                    break
+                except Exception as e:  # 网络等问题：这一页下次再拉，先换下一个查询
+                    print(f"      ✗ {unit[:40]} 抓取失败：{_reason(e)}", file=sys.stderr)
+                    continue
+                totals["pages"] += 1
+                oldest = min((it.created_at for it in items if it.created_at), default=0)
+                if not oldest:  # 空页 = 到头；源没给发布时间也没法再往回翻
+                    p["done"] = True
+                    pending.remove(unit)
+                    store.save_backfill(coll, cfg.source, unit, p)
+                    print(f"      {unit[:40]}：到头了，共 {p['pages']} 页")
+                    continue
+                todo = [it for it in items if store.should_process(coll, it)]
+                print(f"      {unit[:40]} 第 {p['pages'] + 1} 页：{len(items)} 条，新 {len(todo)} 条，"
+                      f"最早到 {datetime.fromtimestamp(oldest, tz=timezone.utc):%Y-%m-%d}")
+                stats = _process(coll, client, todo, cfg, fconf)
+                p.update(oldest=oldest, pages=p["pages"] + 1)
+                store.save_backfill(coll, cfg.source, unit, p)
+                totals["fetched"] += len(items)
+                for k, v in stats.items():
+                    totals[k] += v
+                if budget and pending:
+                    time.sleep(mod.interval())
+    except KeyboardInterrupt:
+        status = "interrupted"
+        print("\n已中断。拉完的页都已记录，再运行一次从上次位置继续。")
+    took = store.finish_run(coll, run_id, status=status, **totals)
+    left = [u for u, p in progress.items() if not p["done"]]
+    print(f"本次拉了 {totals['pages']} 页 {totals['fetched']} 条，抽取 {totals['extracted']} 条，"
+          f"耗时 {took:.0f} 秒。" + (f"还有 {len(left)} 个查询没到头，再运行一次继续。" if left else "全部到头。"))
+    coll.database.client.close()
+
+
 def digest(cfg: Config) -> None:
     """汇总最近 N 天新增的需求，按领域分组写成周报。不调模型。"""
     conf = sources.load_config(cfg.sources_file)
@@ -110,6 +183,9 @@ def main(argv: list[str] | None = None) -> None:
         raise SystemExit(evaluate.run(cfg))
     if cfg.command == "digest":
         digest(cfg)
+        return
+    if cfg.command == "backfill":
+        backfill(cfg)
         return
     run(cfg)
 

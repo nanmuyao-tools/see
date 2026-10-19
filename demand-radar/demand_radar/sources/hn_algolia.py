@@ -54,3 +54,24 @@ def fetch(limit: int, conf: dict, cursors: dict[str, int] | None = None) -> list
         cursor.advance(cursors, q, got)
         items += got
     return items
+
+
+# ---- 历史回填 ----
+
+MAX_PAGE = 1000  # hitsPerPage 上限
+
+
+def units(conf: dict) -> list[str]:
+    return conf.get("queries", [])
+
+
+def interval() -> float:
+    return 1.0  # 限额每小时 1 万次，很宽松；礼貌起见隔一秒
+
+
+def page_before(conf: dict, query: str, before: int | None, pagesize: int) -> list[SourceItem]:
+    """回填用：取 before 之前发布的最新 pagesize 条。按时间切而不是翻页码，新评论进来也不会错位。"""
+    params = _params(query, min(pagesize, MAX_PAGE))
+    if before:
+        params["numericFilters"] = f"created_at_i<{before}"
+    return parse(get_json(f"{API}?{urllib.parse.urlencode(params)}"))

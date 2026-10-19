@@ -10,7 +10,7 @@
   failed     抽取失败次数到上限，不再重试
 
 同库另有两个集合：
-  cursors    增量抓取的游标，每个源的每个查询一条（见 sources/cursor.py）
+  cursors    增量抓取的游标（kind=run）与历史回填的进度（kind=backfill），每个源的每个查询一条
   runs       每次运行一条：起止时间、各源抓取数、过滤 / 抽取 / 失败数、耗时，出问题时有据可查
 """
 
@@ -149,6 +149,22 @@ def save_cursors(coll, cursors: dict[str, dict[str, int]]) -> None:
                 {"_id": _id, "kind": "run", "source": source, "unit": unit, "value": value, "updated_at": now},
                 upsert=True,
             )
+
+
+def load_backfill(coll, source: str, unit: str) -> dict[str, Any]:
+    """回填进度：oldest 是已拉到的最早一条的 Unix 秒（0 = 还没开始），done 表示已到头。"""
+    d = _cursors(coll).find_one({"_id": f"backfill:{source}:{unit}"}) or {}
+    return {"oldest": d.get("oldest", 0), "pages": d.get("pages", 0), "done": d.get("done", False)}
+
+
+def save_backfill(coll, source: str, unit: str, progress: dict[str, Any]) -> None:
+    """每拉完一页就记，中断后从这里继续。和增量游标同一个集合，用 kind 区分。"""
+    _id = f"backfill:{source}:{unit}"
+    _cursors(coll).replace_one(
+        {"_id": _id},
+        {"_id": _id, "kind": "backfill", "source": source, "unit": unit, **progress, "updated_at": _now()},
+        upsert=True,
+    )
 
 
 # ---- 运行记录 ----

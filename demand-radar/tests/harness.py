@@ -8,7 +8,7 @@ from __future__ import annotations
 import io
 import os
 import tempfile
-from contextlib import redirect_stderr, redirect_stdout
+from contextlib import contextmanager, redirect_stderr, redirect_stdout
 from unittest import mock
 
 from demand_radar import cli
@@ -41,15 +41,12 @@ class FakeEnv:
     def __init__(self, **cfg):
         self.coll = mongomock.MongoClient().db.demands
         self.out = os.path.join(tempfile.mkdtemp(), "demands.md")
-        self.cfg = Config(command="run", source="softwarerecs", output_path=self.out, **cfg)
+        self.cfg = Config(**{"command": "run", "source": "softwarerecs", "output_path": self.out, **cfg})
         self.calls: list[str] = []   # 送去抽取的 external_id，按调用顺序
 
-    def run(self, fetched, errors=None, extract=None, cursor_value=42, conf=None):
-        """跑 cli.run。fetched 是假抓取结果；extract 是 item -> Demand，默认都判为需求。"""
-        def fake_fetch_all(names, limit, conf, cursors):
-            cursors.setdefault("softwarerecs", {})["softwarerecs"] = cursor_value
-            return fetched, errors or {}
-
+    @contextmanager
+    def patched(self, extract=None, conf=None):
+        """库、配置、模型客户端与抽取函数全部替换掉；yield 捕获的标准输出。"""
         def fake_extract(client, it, lang):
             self.calls.append(it.external_id)
             return (extract or (lambda it: demand()))(it)
@@ -57,11 +54,27 @@ class FakeEnv:
         buf = io.StringIO()
         with mock.patch.object(cli.store, "connect", return_value=self.coll), \
              mock.patch.object(cli.sources, "load_config", return_value=conf or CONF), \
-             mock.patch.object(cli.sources, "fetch_all", side_effect=fake_fetch_all), \
              mock.patch.object(cli, "build_client", return_value=None), \
              mock.patch.object(extract_mod, "extract", side_effect=fake_extract), \
              redirect_stdout(buf), redirect_stderr(buf):
+            yield buf
+
+    def run(self, fetched, errors=None, extract=None, cursor_value=42, conf=None):
+        """跑 cli.run。fetched 是假抓取结果；extract 是 item -> Demand，默认都判为需求。"""
+        def fake_fetch_all(names, limit, conf, cursors):
+            cursors.setdefault("softwarerecs", {})["softwarerecs"] = cursor_value
+            return fetched, errors or {}
+
+        with self.patched(extract, conf) as buf, \
+             mock.patch.object(cli.sources, "fetch_all", side_effect=fake_fetch_all):
             cli.run(self.cfg)
+        return buf.getvalue()
+
+    def backfill(self, module, extract=None, conf=None):
+        """跑 cli.backfill，module 是假的可回填源模块（units / page_before / interval）。"""
+        with self.patched(extract, conf) as buf, \
+             mock.patch.object(cli.sources, "backfill_module", return_value=module):
+            cli.backfill(self.cfg)
         return buf.getvalue()
 
     def runs(self) -> list[dict]:
