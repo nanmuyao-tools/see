@@ -1,4 +1,4 @@
-"""容器入口：等 ollama 就绪 → 拉模型（首次）→ 运行需求雷达。
+"""容器入口：等 ollama 就绪 → 拉模型（首次）→ 运行需求雷达的 run / eval / digest 命令。
 
 只用标准库，镜像无需额外安装 curl。
 """
@@ -47,11 +47,21 @@ def pull_model() -> None:
         sys.exit(f"拉取模型失败: {status}")
 
 
+COMMANDS = ("run", "eval", "digest")
+NEEDS_MODEL = ("run", "eval")
+
+
 def main() -> None:
-    wait_for_ollama()
-    pull_model()
+    args = sys.argv[1:]
+    # 第一个参数是命令名就照用；否则默认 run，其余参数原样传给它
+    # 例：docker compose run --rm app digest --days 14 / docker compose run --rm app --limit 20
+    if not args or args[0] not in COMMANDS:
+        args = ["run", *args]
+    if args[0] in NEEDS_MODEL:  # digest 只读数据库，不用等模型
+        wait_for_ollama()
+        pull_model()
     print("开始运行 …", flush=True)
-    os.execvp(sys.executable, [sys.executable, "-m", "demand_radar", "run", *sys.argv[1:]])
+    os.execvp(sys.executable, [sys.executable, "-m", "demand_radar", *args])
 
 
 if __name__ == "__main__":

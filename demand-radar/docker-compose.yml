@@ -31,8 +31,9 @@ services:
       MONGO_URI: "mongodb://mongo:27017"
       OLLAMA_API: "http://ollama:11434"            # 入口脚本拉模型用
       OLLAMA_BASE_URL: "http://ollama:11434/v1"    # Instructor 调用用
-      OLLAMA_MODEL: "qwen2.5:7b"                    # 内存小可改 qwen2.5:3b
-      DR_PROVIDER: "ollama/qwen2.5:7b"
+      OLLAMA_MODEL: "qwen2.5:3b"                    # 评测 F1 85%，8GB 内存可跑；低配可改 qwen2.5:1.5b，有 GPU 可试 7b
+      DR_PROVIDER: "ollama/qwen2.5:3b"              # 和上面保持一致
+      DR_OUTPUT_LANGUAGE: "${DR_OUTPUT_LANGUAGE:-zh}"  # 输出语言：zh 中文 / en 英文
       DR_LIMIT: "10"                                 # 每个源/查询最多抓多少条
       DR_MIN_CONFIDENCE: "0.5"
       DR_OUTPUT: "out/demands.md"
