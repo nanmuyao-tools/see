@@ -6,12 +6,13 @@ provider 字符串决定跑本地还是云（Instructor 统一接口）：
 
 输出语言由 language 决定（zh / en），只影响 need、domain、pain_point。
 摘录不由模型写，由程序从原文挑选（见 excerpt.py），始终是原文原话。
+可能有害的需求由规则标记（见 safety.py），不交给模型判断。
 """
 
 from __future__ import annotations
 
-from . import excerpt
-from .models import Demand, SafetyCheck, SourceItem
+from . import excerpt, safety
+from .models import Demand, SourceItem
 
 LANGUAGES = ("zh", "en")
 MAX_TOKENS = 512
@@ -50,31 +51,6 @@ _SYSTEM = {
         "Write need, domain and pain_point in English."
     ),
 }
-
-# 有害判断单独调一次模型，只问这一个问题。试过把 harmful 作为字段放进主抽取：3b 模型同时判十来个
-# 字段，有害判断只挡住 4 条里的 2 条，还把一条正常的科研需求判成有害；同时连带 buildable 判断变差，
-# 45 条真实样本上 F1 从 83.7% 掉到 76.0%。
-# 只判断不输出给读者，两种语言共用一份英文提示词。
-_SAFETY = (
-    "You review product ideas for safety. Given a request for a tool, decide whether the tool, as "
-    "described, would mainly be used to harm other people.\n"
-    "harmful = true when its main use is:\n"
-    "- tracking, monitoring or reading the messages of a specific person without their knowledge or consent\n"
-    "- finding or publishing private information about specific people, such as a home address or the "
-    "real identity behind an anonymous account\n"
-    "- harassing or silencing people, such as mass reporting or mass messaging\n"
-    "- deceiving people, such as impersonating a bank or company, phishing, fake reviews or scams\n"
-    "- breaking into accounts or devices that are not your own\n"
-    "harmful = false for ordinary tools, including ones that handle personal data with consent: managing "
-    "your own data, accounts, devices or deliveries; protecting your own privacy or security; sharing "
-    "information with people who agreed to it; scientific, medical or educational software.\n"
-    "Judge only by what the poster says they want to do with the tool. Do not imagine how it could be "
-    "misused: almost any software could be misused, and that alone does not make it harmful. Most tool "
-    "requests are not harmful. Answer true only when the post itself says or clearly implies that the tool "
-    "is meant to be used against a specific other person, or to deceive people.\n"
-    "First say in one short sentence what the poster wants to do with it, then decide."
-)
-
 
 def build_client(provider: str, ollama_base_url: str | None = None):
     """按 provider 构造 Instructor 客户端。延迟导入，缺依赖时报错更清晰。
@@ -122,38 +98,9 @@ def extract_raw(client, item: SourceItem, language: str = "zh") -> Demand:
     )
 
 
-def check_harmful(client, item: SourceItem, need: str = "") -> bool:
-    """单独判断这个需求做出来是否主要用来伤害他人。"""
-    content = f"Title: {item.title}\nBody: {item.text}\nSummarized need: {need}".strip()
-    r = client.chat.completions.create(
-        response_model=SafetyCheck,
-        messages=[
-            {"role": "system", "content": _SAFETY},
-            {"role": "user", "content": content},
-        ],
-        max_retries=2,
-        temperature=0,
-        max_tokens=MAX_TOKENS,
-        timeout=REQUEST_TIMEOUT,
-    )
-    return r.harmful
-
-
-def is_candidate(d: Demand) -> bool:
-    """会进清单的候选：只有这些需要做有害判断，其他的不额外调模型。"""
-    return d.is_request and d.buildable
-
-
-def judge(client, item: SourceItem, language: str = "zh") -> Demand:
-    """主抽取，候选再加一次有害判断。不含摘录。"""
-    d = extract_raw(client, item, language)
-    if is_candidate(d):
-        d.harmful = check_harmful(client, item, d.need)
-    return d
-
-
 def extract(client, item: SourceItem, language: str = "zh") -> Demand:
-    """把一条 SourceItem 抽成 Demand，并附上程序从原文挑出的摘录。"""
-    d = judge(client, item, language)
+    """把一条 SourceItem 抽成 Demand，附上程序从原文挑出的摘录和有害规则的命中情况。"""
+    d = extract_raw(client, item, language)
     d.excerpt = excerpt.pick(item)
+    d.review_cue = safety.needs_check(item)
     return d

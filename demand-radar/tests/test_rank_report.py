@@ -73,6 +73,22 @@ class ReportTest(unittest.TestCase):
         report.write_digest([], p, 7, "en")
         self.assertIn("No new needs", open(p, encoding="utf-8").read())
 
+    def test_held_section_at_end_with_cue(self):
+        held = [{**doc("盯梢工具"), "review_cue": "makes public"}]
+        for write in (lambda p: report.write_digest([doc("一个工具")], p, 7, "zh", held),
+                      lambda p: report.write_markdown([doc("一个工具")], p, "zh", held)):
+            p = self._out()
+            write(p)
+            s = open(p, encoding="utf-8").read()
+            self.assertLess(s.index("一个工具"), s.index("## 待人工确认（1）"))
+            self.assertLess(s.index("## 待人工确认（1）"), s.index("盯梢工具"))
+            self.assertIn("命中：“makes public”", s)
+
+    def test_no_held_section_when_empty(self):
+        p = self._out()
+        report.write_digest([doc("一个工具")], p, 7, "en", [])
+        self.assertNotIn("Held for review", open(p, encoding="utf-8").read())
+
 
 try:
     import mongomock

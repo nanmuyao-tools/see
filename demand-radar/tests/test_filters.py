@@ -115,39 +115,39 @@ class ExcerptTest(unittest.TestCase):
 
 def demand(**kw):
     base = dict(is_request=True, need="n", domain="d", pain_point="", excerpt="", buildable=True,
-                harmful=False,
                 clarity=3, intensity=3, feasibility=3, confidence=0.9)
     return Demand(**{**base, **kw})
 
 
-class JudgeTest(unittest.TestCase):
-    """有害判断单独调一次模型，只对会进清单的候选调用。"""
+class SafetyTest(unittest.TestCase):
+    """可能有害的需求由规则标记、转人工确认，不交给模型判断。"""
 
-    def _client(self, *responses):
+    def test_cues(self):
+        from demand_radar import safety
+        hit = ["Is there an app to see where my girlfriend is?", "find someone's home address",
+               "bot to mass report an account", "tracks and makes public movement of council members",
+               "SMS that looks like a bank", "hundreds of different 5-star Google reviews",
+               "怎么偷偷看对象的聊天记录"]
+        miss = ["Editor with doxygen preview", "Track all my packages in one place",
+                "Self-hosted password manager", "App to track a loan", "Web push notifications server"]
+        for t in hit:
+            self.assertTrue(safety.needs_check(it(t)), t)
+        for t in miss:
+            self.assertFalse(safety.needs_check(it(t)), t)
+
+    def test_extract_records_cue_with_one_model_call(self):
         from unittest import mock
+        from demand_radar.extract import extract
         client = mock.MagicMock()
-        client.chat.completions.create.side_effect = list(responses)
-        return client
-
-    def test_candidate_gets_safety_check(self):
-        from demand_radar.extract import judge
-        from demand_radar.models import SafetyCheck
-        client = self._client(demand(), SafetyCheck(reason="someone else, no consent", harmful=True))
-        d = judge(client, it("Bot to mass report an account"))
-        self.assertTrue(d.harmful)
-        second = client.chat.completions.create.call_args_list[1].kwargs
-        self.assertIs(second["response_model"], SafetyCheck)
-
-    def test_non_candidate_skips_safety_check(self):
-        from demand_radar.extract import judge
-        client = self._client(demand(buildable=False))
-        d = judge(client, it("software that destroys cancer"))
-        self.assertFalse(d.harmful)
+        client.chat.completions.create.return_value = demand()
+        d = extract(client, it("Bot to mass report an account"))
+        self.assertEqual(d.review_cue.lower(), "mass report")
         self.assertEqual(client.chat.completions.create.call_count, 1)
 
-    def test_harmful_not_in_extraction_schema(self):
-        self.assertNotIn("harmful", Demand.model_json_schema()["properties"])
-        self.assertNotIn("excerpt", Demand.model_json_schema()["properties"])
+    def test_internal_fields_not_in_extraction_schema(self):
+        props = Demand.model_json_schema()["properties"]
+        self.assertNotIn("review_cue", props)
+        self.assertNotIn("excerpt", props)
 
 
 try:
@@ -179,13 +179,15 @@ class StoreStatusTest(unittest.TestCase):
         self.assertEqual(self.coll.find_one()["status"], "failed")
         self.assertFalse(self.store.should_process(self.coll, item))
 
-    def test_harmful_never_listed(self):
+    def test_flagged_demands_are_held_not_listed(self):
         self.store.save(self.coll, it("ok", external_id="t3_ok"), demand())
-        self.store.save(self.coll, it("bad", external_id="t3_bad"), demand(harmful=True))
+        self.store.save(self.coll, it("bad", external_id="t3_bad"), demand(review_cue="mass report"))
         self.coll.insert_one({"_id": "legacy", "is_request": True, "buildable": True,
-                              "confidence": 0.9})  # 旧数据没有 harmful 字段
+                              "confidence": 0.9})  # 旧数据没有 review_cue 字段
         got = {d["_id"] for d in self.store.top_demands(self.coll, 0.5)}
         self.assertEqual(got, {"reddit/x:t3_ok", "legacy"})
+        held = {d["_id"] for d in self.store.held_demands(self.coll, 0.5)}
+        self.assertEqual(held, {"reddit/x:t3_bad"})
 
     def test_success_after_failure_overwrites(self):
         item = it("x")

@@ -52,15 +52,20 @@ def run(cfg: Config) -> None:
             continue
         store.save(coll, item, demand)
         new += 1
-        mark = "✓" if (demand.is_request and demand.buildable and not demand.harmful) else "·"
+        if demand.is_request and demand.buildable:
+            mark = "?" if demand.review_cue else "✓"  # ? 待人工确认
+        else:
+            mark = "·"
         print(f"      {mark} {(demand.need or item.title)[:50]}")
     print(f"      规则过滤 {filtered} 条，抽取 {new} 条，失败 {failed} 条")
 
     print(f"[3/4] 筛选（可信度 ≥ {cfg.min_confidence}）并排序 …")
-    rows = rank.sort(store.top_demands(coll, cfg.min_confidence), rank.weights(conf.get("ranking")))
+    w = rank.weights(conf.get("ranking"))
+    rows = rank.sort(store.top_demands(coll, cfg.min_confidence), w)
+    held = rank.sort(store.held_demands(coll, cfg.min_confidence), w)
 
-    print(f"[4/4] 写出 {cfg.output_path}（{len(rows)} 条）")
-    report.write_markdown(rows, cfg.output_path, cfg.output_language)
+    print(f"[4/4] 写出 {cfg.output_path}（{len(rows)} 条，另有 {len(held)} 条待人工确认）")
+    report.write_markdown(rows, cfg.output_path, cfg.output_language, held)
     coll.database.client.close()
     print("完成。")
 
@@ -70,12 +75,13 @@ def digest(cfg: Config) -> None:
     conf = sources.load_config(cfg.sources_file)
     coll = store.connect(cfg.mongo_uri, cfg.db_name)
     since = datetime.now(timezone.utc) - timedelta(days=cfg.days)
-    rows = rank.sort(store.recent_demands(coll, cfg.min_confidence, since),
-                     rank.weights(conf.get("ranking")))
+    w = rank.weights(conf.get("ranking"))
+    rows = rank.sort(store.recent_demands(coll, cfg.min_confidence, since), w)
+    held = rank.sort(store.held_demands(coll, cfg.min_confidence, since), w)
     path = cfg.digest_output or f"out/digest-{datetime.now():%Y-%m-%d}.md"
-    report.write_digest(rows, path, cfg.days, cfg.output_language)
+    report.write_digest(rows, path, cfg.days, cfg.output_language, held)
     coll.database.client.close()
-    print(f"最近 {cfg.days} 天新增 {len(rows)} 条需求，已写出 {path}")
+    print(f"最近 {cfg.days} 天新增 {len(rows)} 条需求，另有 {len(held)} 条待人工确认，已写出 {path}")
 
 
 def main(argv: list[str] | None = None) -> None:

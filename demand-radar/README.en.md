@@ -50,7 +50,8 @@ docker compose run --rm app eval --lang en             # evaluate the current mo
 Public sources (configured in sources.toml)
   → Rule-based pre-filter: empty posts, launch posts (Show HN, "I built…"), bot output never reach the model
   → Local LLM extraction: is it a need, can one person build it, three 1–5 scores
-  → Harm check: candidates get one more focused model call; needs that track, expose, harass or deceive specific people are left out
+  → Harm flag: needs that mention specific other people (covert tracking, finding someone's address, mass reporting,
+    posing as a bank…) stay out of the list and go to a "Held for review" section at the end, with the matching phrase
   → Quote: the program picks the sentence from the post that reads most like a request (small models asked to copy one often translate or paraphrase it)
   → MongoDB: every post gets a status, so nothing is processed twice; failures are retried up to 3 times
   → Ranking: weighted scores + post popularity (log-scaled)
@@ -76,13 +77,13 @@ Needs are written in Chinese by default; use `--lang en` or `DR_OUTPUT_LANGUAGE=
 
 ## Evaluation
 
-After changing the prompt, the rules or the model, measure instead of guessing. [`eval/eval_set.json`](eval/eval_set.json) holds 60 items: 45 hand-labeled real posts plus 15 constructed ones covering harmful requests (tracking or exposing specific people) and benign look-alikes.
+After changing the prompt, the rules or the model, measure instead of guessing. [`eval/eval_set.json`](eval/eval_set.json) holds 61 items: 46 hand-labeled real posts plus 15 constructed ones covering harmful requests (tracking or exposing specific people) and benign look-alikes.
 
 ```bash
 python -m demand_radar eval -v --lang en
 ```
 
-It reports accuracy on "is this a need" and "can one person build it", end-to-end precision / recall / F1 for "should this be listed", how many posts the rules filtered (and whether any good ones were wrongly dropped), and whether any harmful request made it into the list (must be 0). `-v` prints the quote for every listed need so you can check it by hand. Latest results are in [`ROADMAP.md`](ROADMAP.md) (in Chinese).
+It reports accuracy on "is this a need" and "can one person build it", end-to-end precision / recall / F1 for "should this be listed", how many posts the rules filtered (and whether any good ones were wrongly dropped), and whether any harmful request made it into the list (must be 0) and how many normal needs were held for review. `-v` prints the quote for every listed need so you can check it by hand. Latest results are in [`ROADMAP.md`](ROADMAP.md) (in Chinese).
 
 ## Running without Docker
 

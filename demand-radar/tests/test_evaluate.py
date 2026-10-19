@@ -19,9 +19,9 @@ EVAL_SET = os.path.join(HERE, "..", "eval", "eval_set.json")
 _FIELDS = ("is_request", "need", "domain", "pain_point", "buildable", "confidence")
 
 
-def demand(is_request, buildable, confidence=0.9, harmful=False):
+def demand(is_request, buildable, confidence=0.9):
     return Demand(is_request=is_request, need="x" if is_request else "", domain="d",
-                  pain_point="", buildable=buildable, harmful=harmful,
+                  pain_point="", buildable=buildable,
                   clarity=3, intensity=3, feasibility=3, confidence=confidence)
 
 
@@ -33,7 +33,7 @@ def run_eval(eset, fake, min_confidence=0.5, fconf=None):
     buf = io.StringIO()
     with mock.patch.object(evaluate, "build_client", return_value=None), \
          mock.patch.object(evaluate, "_filter_conf", return_value=fconf or {}), \
-         mock.patch.object(evaluate, "judge", lambda c, it, lang: fake(c, it)), \
+         mock.patch.object(evaluate, "extract_raw", lambda c, it, lang: fake(c, it)), \
          redirect_stdout(buf):
         evaluate.run(cfg)
     return buf.getvalue()
@@ -99,7 +99,7 @@ class MetricsTest(unittest.TestCase):
 
         out = run_eval(eset, fake)
         self.assertEqual(calls, ["Show HN: x"])
-        self.assertIn("规则过滤          : 1 条，误杀应入选 0 条；调用模型 2 次", out)  # 抽取 1 次 + 候选的有害判断 1 次
+        self.assertIn("规则过滤          : 1 条，误杀应入选 0 条；调用模型 1 次", out)
         self.assertIn("TP=1 FP=0 FN=0 TN=1", out)
 
     def test_filter_false_kill_reported(self):
@@ -109,19 +109,21 @@ class MetricsTest(unittest.TestCase):
         self.assertIn("FN=1", out)
 
     def test_harmful_listed_is_reported(self):
+        # 规则没命中：有害需求进了清单，必须被报出来
         eset = [item("1", True, True, harmful=True), item("2", True, True)]
-        # 模型没识别出有害：有害需求进了清单，必须被报出来
         out = run_eval(eset, lambda c, it: demand(True, True))
-        self.assertIn("被判入选 1 条", out)
+        self.assertIn("进了清单 1 条", out)
         self.assertIn("TP=1 FP=1", out)
-        # 模型识别出有害：不入选，算对
-        out = run_eval(eset, lambda c, it: demand(True, True, harmful=(it.title == "t1")))
-        self.assertIn("被判入选 0 条", out)
+        # 规则命中：转人工确认，不入选，算对
+        eset[0]["title"] = "Bot to mass report an account"
+        out = run_eval(eset, lambda c, it: demand(True, True))
+        self.assertIn("进了清单 0 条（必须为 0），转人工确认 1 条", out)
         self.assertIn("TP=1 FP=0 FN=0 TN=1", out)
 
-    def test_benign_flagged_harmful_is_reported(self):
-        out = run_eval([item("1", True, True)], lambda c, it: demand(True, True, harmful=True))
-        self.assertIn("正常需求被误判有害 1 条", out)
+    def test_benign_held_is_reported(self):
+        eset = [item("1", True, True, title="An app to share a grocery list with my wife")]
+        out = run_eval(eset, lambda c, it: demand(True, True))
+        self.assertIn("正常需求被转人工确认 1 条", out)
         self.assertIn("FN=1", out)
 
     def test_extraction_failure_counted(self):

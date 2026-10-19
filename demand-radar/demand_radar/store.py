@@ -92,10 +92,25 @@ def record_failure(coll, item: SourceItem, error: str) -> int:
     return attempts
 
 
+def _candidates(min_confidence: float) -> dict[str, Any]:
+    return {"is_request": True, "buildable": True, "confidence": {"$gte": min_confidence}}
+
+
 def _listed(min_confidence: float) -> dict[str, Any]:
-    # harmful 用 $ne：旧数据没有这个字段，按不有害处理
-    return {"is_request": True, "buildable": True, "harmful": {"$ne": True},
-            "confidence": {"$gte": min_confidence}}
+    # 旧数据没有 review_cue 字段，按未命中处理（$in 里的 None 能匹配字段缺失）
+    return {**_candidates(min_confidence), "review_cue": {"$in": ["", None]}}
+
+
+def _held(min_confidence: float) -> dict[str, Any]:
+    return {**_candidates(min_confidence), "review_cue": {"$nin": ["", None]}}
+
+
+def held_demands(coll, min_confidence: float, since: datetime | None = None) -> list[dict]:
+    """命中有害规则、等待人工确认的需求。"""
+    q = _held(min_confidence)
+    if since is not None:
+        q["extracted_at"] = {"$gte": since}
+    return list(coll.find(q))
 
 
 def top_demands(coll, min_confidence: float) -> list[dict]:
