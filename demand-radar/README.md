@@ -2,7 +2,10 @@
 
 抓取社区里用户对工具的吐槽 / 许愿，用本地 LLM 归纳成结构化「需求」，输出按可信度排序的清单。
 
-方案与选型见 [`../docs/ideas/demand-radar.md`](../docs/ideas/demand-radar.md) 和 [`../docs/ideas/demand-radar-tech.md`](../docs/ideas/demand-radar-tech.md)。
+- 方案：[`../docs/ideas/demand-radar.md`](../docs/ideas/demand-radar.md)
+- 技术选型与实测记录：[`../docs/ideas/demand-radar-tech.md`](../docs/ideas/demand-radar-tech.md)
+- 同类项目调研：[`docs/landscape.md`](docs/landscape.md)
+- 路线图：[`ROADMAP.md`](ROADMAP.md)
 
 ## 做了什么
 
@@ -13,6 +16,23 @@
   → 过滤噪音（is_request / buildable / confidence）
   → 输出按可信度、热度排序的 Markdown 需求清单
 ```
+
+## 和同类项目的区别
+
+从社区挖痛点找产品点子，GitHub 上已经有不少项目，比如
+[Reddit_Scrapper](https://github.com/Mohamedsaleh14/Reddit_Scrapper)、
+[pain-miner](https://github.com/AdvancingTitans/pain-miner)、
+[sift](https://github.com/Gitter09/sift)。它们都还在早期，最大的也只有两百来颗星。
+需求雷达的不同在于：
+
+| | 需求雷达 | 同类项目普遍情况 |
+|---|---|---|
+| 模型 | 全本地（Ollama + Qwen），不需要任何 API key | 大多依赖 OpenAI / Claude / Gemini 的付费 API |
+| 部署 | `docker compose up` 一条命令 | 本地装 Python 环境，几乎都没有 Docker |
+| 质量 | 有人工标注的评测集，`eval` 命令给出可复现的 F1 | 没有公开的评测方法或准确率 |
+| 数据源 | HN、Reddit、StackExchange 软件推荐站、GitHub issues | 大多只有 Reddit |
+
+完整对比、各项目可借鉴的做法和风险分析见 [`docs/landscape.md`](docs/landscape.md)。
 
 ## 数据源
 
@@ -133,6 +153,8 @@ demand_radar/
     hn_algolia.py   # Hacker News 全文搜索
     github.py       # GitHub issues
     rss.py          # 通用 RSS / Atom
+docs/landscape.md   # 同类项目调研与方向分析
+ROADMAP.md          # 路线图
 tests/              # 离线单元测试，fixture 取自各源真实返回
 eval/eval_set.json  # 评测标注集（45 条真实样本）
 sources.toml        # 数据源配置
@@ -143,4 +165,4 @@ docker/entrypoint.py
 
 ## 状态
 
-MVP 骨架。判断标准：自己看输出的清单，是否觉得「这些点子真能做」。是则加数据源、加聚类、加看板；否则调 prompt / schema / 过滤策略。
+MVP。qwen2.5:3b 在评测集上 F1 = 85.1%。下一步见 [`ROADMAP.md`](ROADMAP.md)。
