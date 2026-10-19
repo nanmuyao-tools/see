@@ -67,6 +67,20 @@ services:
       DR_DIGEST_WEEKDAY: "${DR_DIGEST_WEEKDAY:-1}"  # ISO 周几出周报：1 周一 … 7 周日，0 不出
       DR_RUN_ON_START: "${DR_RUN_ON_START:-1}"      # 启动时先跑一次
 
+  # 可选的 Web 看板：常驻，直接读 MongoDB、不需要模型，浏览器打开 http://localhost:8501
+  # 默认不启动（profile 为 web）：docker compose --profile web up -d web
+  # 配置、挂载继承 app，只改启动命令；只依赖 mongo（入口脚本看到 serve 也不会去等 ollama）
+  web:
+    extends:
+      service: app
+    profiles: ["web"]
+    restart: unless-stopped
+    depends_on: !override
+      - mongo
+    command: ["serve"]
+    ports:
+      - "${DR_WEB_PORT:-8501}:8501"   # 宿主机端口被占时：DR_WEB_PORT=8600 docker compose --profile web up -d web
+
 volumes:
   mongo-data:
   ollama-models:

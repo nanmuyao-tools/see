@@ -36,5 +36,10 @@ services:
     extra_hosts:
       - "host.docker.internal:host-gateway"
 
+  # web 看板只读库、不碰模型，但同样 extends app，这里只需去掉 ollama 依赖
+  web:
+    depends_on: !override
+      - mongo
+
   ollama:
     profiles: ["bundled"]          # 本模式下不启动容器里的 ollama
