@@ -80,3 +80,9 @@ Apple 的 MLX 团队说明过：生成每个 token 的速度受内存带宽限�
 
 两段式（小模型跑全量、27B 每周复核）暂不需要：4B 的精确率已经 93.8%。
 
+## 八、补充实测（2026-10-19）
+
+- **并发抽取**（v0.2 的 `--workers`）在 mlx-lm 上有效：mlx-lm 会把同时到达的请求合批，M5 上 8 条 Qwen3-4B 抽取，1 / 2 / 4 个并发分别 29.3 / 17.2 / 11.7 秒。`docker-compose.mac-gpu.yml` 默认 4 个并发。容器里的 Ollama 默认一次只处理一个请求（`OLLAMA_NUM_PARALLEL=1`），并发对它无效。
+- **mlx_lm.server 不提供 `/v1/embeddings`**，相似需求合并要的向量得另找服务：容器里的 Ollama 可以跑 `nomic-embed-text`（274MB，CPU 够快）。
+- **容器路径的协议问题有解**：Ollama 库里有 `qwen3:4b-instruct-2507-q4`（Apache-2.0、非思考版，和 Mac 上用的是同一个模型），待在容器 CPU 上评测后替换默认的 qwen2.5:3b（Qwen Research License）。
+
