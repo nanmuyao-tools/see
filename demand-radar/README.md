@@ -49,7 +49,8 @@ docker compose run --rm app eval                   # 在标注集上评测当前
 ```
 公开数据源（sources.toml 配置）
   → 规则预过滤：空帖、作品发布帖（Show HN、「我做了一个」）、机器人内容等不交给模型
-  → 本地模型抽取：是不是需求、个人能否做成、三项打分、原文摘录（程序校验确实出自原文）
+  → 本地模型抽取：是不是需求、个人能否做成、是否有害、三项打分
+  → 原文摘录：程序从原帖挑一句最像需求的原话，不让模型抄写（小模型抄写时常会翻译或改写）
   → 存入 MongoDB：每条都记处理状态，已处理的不再重复；失败的下次重试，最多 3 次
   → 综合排序：三项打分加权 + 原帖热度（取对数）
   → 全量清单 out/demands.md ／ 周报 out/digest-<日期>.md
@@ -74,14 +75,14 @@ docker compose run --rm app eval                   # 在标注集上评测当前
 
 ## 评测
 
-改 prompt、改规则或换模型之后，用标注集量化效果，而不是凭感觉。标注集 [`eval/eval_set.json`](eval/eval_set.json) 是 45 条人工标注的真实样本。
+改 prompt、改规则或换模型之后，用标注集量化效果，而不是凭感觉。标注集 [`eval/eval_set.json`](eval/eval_set.json) 有 52 条：45 条人工标注的真实样本，加 7 条构造样本（覆盖「追踪、曝光特定的人」这类有害需求和容易被误判的正常需求）。
 
 ```bash
 python -m demand_radar eval -v                 # 逐条打印
 python -m demand_radar eval --lang en          # 英文输出模式下评测
 ```
 
-输出：是否需求的准确率、能否做成的准确率、端到端「应入选」的精确率 / 召回率 / F1、规则过滤了多少条（以及有没有误杀）、摘录确实出自原文的比例。最新结果见 [`ROADMAP.md`](ROADMAP.md)。
+输出：是否需求的准确率、能否做成的准确率、端到端「应入选」的精确率 / 召回率 / F1、规则过滤了多少条（以及有没有误杀）、有害需求有没有混进清单（必须为 0）。加 `-v` 会打印每条入选需求的原文摘录，方便人工核对。最新结果见 [`ROADMAP.md`](ROADMAP.md)。
 
 ## 不用 Docker 本地运行
 
@@ -107,6 +108,20 @@ pip install -r requirements-dev.txt
 python -m unittest discover -s tests
 ```
 
+## Mac 上用 GPU 跑模型（可选）
+
+Docker Desktop 在 Mac 上不能把 GPU 交给容器，容器里的模型只能用 CPU。想用 Apple GPU，可以让模型服务在 macOS 上原生运行，MongoDB 仍然用 Docker。任何 OpenAI 兼容的本地服务都能接（mlx-lm、LM Studio、llama.cpp），provider 写成 `local/<模型名>`：
+
+```bash
+pip install mlx-lm
+mlx_lm.server --model mlx-community/Qwen2.5-3B-Instruct-4bit --port 8080
+
+python -m demand_radar eval --provider local/mlx-community/Qwen2.5-3B-Instruct-4bit \
+  --base-url http://localhost:8080/v1
+```
+
+模型选型的调研见 [`docs/model-selection.md`](docs/model-selection.md)。
+
 ## 用云模型（可选）
 
 没有合适的机器时，可以换成云模型（需要 API key，会产生费用，数据会发给服务商）：
@@ -122,13 +137,13 @@ python -m demand_radar run --provider "openai/gpt-4o-mini"
 |---|---|---|
 | `--limit` | 10 | 每个源最多抓多少条（RSS 按每个订阅、HN/GitHub 按每个查询计） |
 | `--source` | `all` | 只跑部分源，如 `github,rss` |
-| `--provider` | `ollama/qwen2.5:3b` | 模型，本地和云模型都用这一个参数切换 |
+| `--provider` | `ollama/qwen2.5:3b` | 模型，本地和云模型都用这一个参数切换；其他本地服务用 `local/<模型名>` |
 | `--lang` | `zh` | 输出语言：`zh` / `en` |
 | `--min-confidence` | 0.5 | 低于此可信度的需求不进清单 |
 | `--days` | 7 | `digest`：汇总最近多少天 |
 | `--sources-file` | `sources.toml` | 数据源、过滤规则、排序权重的配置文件 |
 | `--mongo-uri` / `--db-name` | `mongodb://localhost:27017` / `demand_radar` | 数据库 |
-| `--ollama-base-url` | `http://localhost:11434/v1` | 本地模型服务地址 |
+| `--base-url` | `http://localhost:11434/v1` | 本地模型服务地址（旧名 `--ollama-base-url` 仍可用） |
 
 这些参数也都能用环境变量设置（Docker 部署时用）：`DR_SOURCE`、`DR_LIMIT`、`DR_PROVIDER`、`DR_OUTPUT_LANGUAGE`、`DR_MIN_CONFIDENCE`、`DR_SOURCES_FILE`、`MONGO_URI`、`DR_DB_NAME`、`OLLAMA_BASE_URL`、`DR_OUTPUT`。
 
@@ -173,6 +188,7 @@ GitHub 上已有一些同类项目，比如 [Reddit_Scrapper](https://github.com
 | [`docs/tech-plan.md`](docs/tech-plan.md) | 技术路线规划 |
 | [`docs/landscape.md`](docs/landscape.md) | 同类项目调研 |
 | [`docs/market.md`](docs/market.md) | 市场调研与潜力分析 |
+| [`docs/model-selection.md`](docs/model-selection.md) | 模型选型（含 Mac GPU） |
 
 ## 目录结构
 
@@ -182,7 +198,8 @@ demand_radar/
   config.py         # 运行配置（命令行 > 环境变量 > 默认值）
   sources/          # 数据源：softwarerecs、hn_algolia、github、rss
   filters.py        # 规则预过滤
-  extract.py        # 模型抽取、原文摘录校验
+  extract.py        # 模型抽取
+  excerpt.py        # 从原文挑摘录
   models.py         # 数据结构
   store.py          # MongoDB 存储与处理状态
   rank.py           # 综合排序

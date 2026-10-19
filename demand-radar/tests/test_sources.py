@@ -203,6 +203,21 @@ class ReasonTest(unittest.TestCase):
         self.assertEqual(_reason(OSError("timed out")), "timed out")
 
 
+class BuildClientTest(unittest.TestCase):
+    def test_local_prefix_uses_openai_compatible_server(self):
+        import instructor
+        from demand_radar.extract import build_client
+        with mock.patch.object(instructor, "from_provider") as fp:
+            build_client("local/mlx-community/Qwen3-4B", "http://localhost:8080/v1")
+        fp.assert_called_once_with("ollama/mlx-community/Qwen3-4B", mode=instructor.Mode.JSON,
+                                   base_url="http://localhost:8080/v1")
+
+    def test_base_url_flag(self):
+        from demand_radar.config import Config
+        cfg = Config.from_args(["eval", "--provider", "local/m", "--base-url", "http://h:8080/v1"])
+        self.assertEqual(cfg.ollama_base_url, "http://h:8080/v1")
+
+
 class FetchAllTest(unittest.TestCase):
     def test_one_source_failure_does_not_stop_others(self):
         ok = [SourceItem("s", "1", "t", "", "u"), SourceItem("s", "1", "t", "", "u")]  # 重复
