@@ -7,7 +7,8 @@
    "story_title": null,
    "comment_text": null,
    "points": 1,
-   "created_at": "2026-10-02T19:36:13Z"
+   "created_at": "2026-10-02T19:36:13Z",
+   "created_at_i": 1790969773
   },
   {
    "objectID": "49751471",
@@ -16,7 +17,8 @@
    "story_title": "Qwen 3.8 Omni Flash",
    "comment_text": "I&#x27;m wondering, is there a tool or something out there that helps me pick a model, in the vast sea of models out there these days? Every time I need a model for something I see the list on openrouter and I&#x27;m completely overwhelmed.<p>I&#x27;d love to be able to explain my use case, my cost preferences and have a tool select a few good models to try.<p>E.g. I wrote a tool that cleans out my email spam box. It classifies emails that are already flagged as spam, and if it&#x27;s very obviously spam it removes it permanently (keeps a copy on disk though). And after x emails, it goes through the list of deleted spam mails and suggests email rules. What model would be best suited? I&#x27;d love to be able to explain this use case and get this info served to me. The list of models and the information about what they&#x27;re good at is just too splintered and spread out. I landed on google&#x2F;gemma-4-31b for now, because it&#x27;s cheap and good enough and also supports Dutch and French a bit. But I can&#x27;t realistically try them all.",
    "points": null,
-   "created_at": "2026-09-18T08:08:22Z"
+   "created_at": "2026-09-18T08:08:22Z",
+   "created_at_i": 1789718902
   }
  ]
 }

@@ -10,6 +10,7 @@ import os
 import urllib.parse
 
 from ..models import SourceItem
+from . import cursor
 from .http import clean, get_json
 
 API = "https://api.github.com/search/issues"
@@ -26,16 +27,28 @@ def parse(data: dict) -> list[SourceItem]:
             text=clean(i.get("body")),
             url=i.get("html_url", ""),
             score=(i.get("reactions") or {}).get("+1", 0),
+            created_at=cursor.epoch(i.get("created_at")),
         ))
     return items
 
 
-def fetch(limit: int, conf: dict) -> list[SourceItem]:
+def _headers() -> dict[str, str]:
     headers = {"Accept": "application/vnd.github+json", "X-GitHub-Api-Version": "2022-11-28"}
     if token := os.getenv("GITHUB_TOKEN"):
         headers["Authorization"] = f"Bearer {token}"
+    return headers
+
+
+def fetch(limit: int, conf: dict, cursors: dict[str, int] | None = None) -> list[SourceItem]:
+    """每个查询按点赞数取前 limit 条。有游标时查询加 created:>，只要游标之后新开的 issue。"""
+    headers = _headers()
     items: list[SourceItem] = []
     for q in conf.get("queries", []):
-        params = {"q": q, "sort": "reactions", "order": "desc", "per_page": min(limit, 100)}
-        items += parse(get_json(f"{API}?{urllib.parse.urlencode(params)}", headers))
+        query = q
+        if cursors and cursors.get(q):
+            query = f"{q} created:>{cursor.github_time(cursors[q])}"
+        params = {"q": query, "sort": "reactions", "order": "desc", "per_page": min(limit, 100)}
+        got = parse(get_json(f"{API}?{urllib.parse.urlencode(params)}", headers))
+        cursor.advance(cursors, q, got)
+        items += got
     return items

@@ -9,6 +9,7 @@ from __future__ import annotations
 import urllib.parse
 
 from ..models import SourceItem
+from . import cursor
 from .http import clean, get_json
 
 API = "https://hn.algolia.com/api/v1/search_by_date"
@@ -33,13 +34,23 @@ def parse(data: dict) -> list[SourceItem]:
             url=f"https://news.ycombinator.com/item?id={h['objectID']}",
             score=h.get("points") or 0,
             kind=kind,
+            created_at=h.get("created_at_i") or 0,
         ))
     return items
 
 
-def fetch(limit: int, conf: dict) -> list[SourceItem]:
+def _params(query: str, pagesize: int) -> dict:
+    return {"query": f'"{query}"', "tags": "(story,comment)", "hitsPerPage": pagesize}
+
+
+def fetch(limit: int, conf: dict, cursors: dict[str, int] | None = None) -> list[SourceItem]:
+    """每个查询抓最新 limit 条。有游标时用 numericFilters 只要游标之后发布的。"""
     items: list[SourceItem] = []
     for q in conf.get("queries", []):
-        params = {"query": f'"{q}"', "tags": "(story,comment)", "hitsPerPage": limit}
-        items += parse(get_json(f"{API}?{urllib.parse.urlencode(params)}"))
+        params = _params(q, limit)
+        if cursors and cursors.get(q):
+            params["numericFilters"] = f"created_at_i>{cursors[q]}"
+        got = parse(get_json(f"{API}?{urllib.parse.urlencode(params)}"))
+        cursor.advance(cursors, q, got)
+        items += got
     return items

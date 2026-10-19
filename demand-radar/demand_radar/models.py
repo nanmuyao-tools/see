@@ -69,3 +69,4 @@ class SourceItem:
     url: str             # 原帖链接
     score: int = 0       # 热度：GitHub 点赞、HN 得分、StackExchange 投票；RSS 无此信息为 0
     kind: str = "post"   # post 帖子本身；comment 帖子下的评论（标题是所在帖子的标题）
+    created_at: int = 0  # 原帖发布时间（Unix 秒），增量抓取的游标据此推进；源没给就是 0

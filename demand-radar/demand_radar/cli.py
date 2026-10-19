@@ -8,6 +8,7 @@ from datetime import datetime, timedelta, timezone
 from . import filters, rank, report, sources, store
 from .config import Config
 from .extract import build_client, extract
+from .models import SourceItem
 
 
 def _reason(e: Exception) -> str:
@@ -19,24 +20,17 @@ def _reason(e: Exception) -> str:
     return " / ".join(lines)[:200] or type(e).__name__
 
 
-def run(cfg: Config) -> None:
-    conf = sources.load_config(cfg.sources_file)
-    names = sources.enabled(conf) if cfg.source == "all" else cfg.source.split(",")
-    print(f"[1/4] 抓取 {', '.join(names)}，每个源/查询最多 {cfg.limit} 条 …")
-    items, errors = sources.fetch_all(names, cfg.limit, conf)
-    for name, err in errors.items():
-        print(f"      ✗ {name} 抓取失败：{err}", file=sys.stderr)
-    if not items:
-        sys.exit("所有数据源都没抓到内容，请检查网络或 sources.toml")
-    print(f"      抓到 {len(items)} 条")
+def _todo(coll, items: list[SourceItem]) -> list[SourceItem]:
+    """这次要处理的：新抓到且没见过的 + 上次失败待重试的。两边可能重叠，以新抓到的为准。"""
+    seen: dict[tuple[str, str], SourceItem] = {}
+    for it in [it for it in items if store.should_process(coll, it)] + store.retry_items(coll):
+        seen.setdefault((it.source, it.external_id), it)
+    return list(seen.values())
 
-    coll = store.connect(cfg.mongo_uri, cfg.db_name)
-    client = build_client(cfg.provider, cfg.ollama_base_url)
-    fconf = conf.get("filters") or {}
 
-    todo = [it for it in items if store.should_process(coll, it)]
-    print(f"[2/4] 新内容 {len(todo)} 条，先过规则，再用 {cfg.provider} 抽取 …")
-    new = filtered = failed = 0
+def _process(coll, client, todo: list[SourceItem], cfg: Config, fconf: dict) -> dict[str, int]:
+    """先过规则，再逐条抽取并入库。单条失败不中断整批。返回各步计数。"""
+    extracted = filtered = failed = 0
     for item in todo:
         reason = filters.check(item, fconf)
         if reason:
@@ -45,16 +39,40 @@ def run(cfg: Config) -> None:
             continue
         try:
             demand = extract(client, item, cfg.output_language)
-        except Exception as e:  # 单条失败不中断整批，记下来下次重试
+        except Exception as e:  # 记下来下次重试
             n = store.record_failure(coll, item, _reason(e))
             failed += 1
             print(f"      跳过 {item.external_id}（第 {n} 次失败）: {_reason(e)}", file=sys.stderr)
             continue
         store.save(coll, item, demand)
-        new += 1
+        extracted += 1
         mark = "✓" if (demand.is_request and demand.buildable) else "·"
         print(f"      {mark} {(demand.need or item.title)[:50]}")
-    print(f"      规则过滤 {filtered} 条，抽取 {new} 条，失败 {failed} 条")
+    print(f"      规则过滤 {filtered} 条，抽取 {extracted} 条，失败 {failed} 条")
+    return {"filtered": filtered, "extracted": extracted, "failed": failed}
+
+
+def run(cfg: Config) -> None:
+    conf = sources.load_config(cfg.sources_file)
+    names = sources.enabled(conf) if cfg.source == "all" else cfg.source.split(",")
+    coll = store.connect(cfg.mongo_uri, cfg.db_name)
+    cursors = store.load_cursors(coll)
+    resumed = sum(len(cursors.get(n, {})) for n in names)
+    print(f"[1/4] 抓取 {', '.join(names)}，每个源/查询最多 {cfg.limit} 条"
+          + (f"，{resumed} 个查询从上次位置继续" if resumed else "") + " …")
+    items, errors = sources.fetch_all(names, cfg.limit, conf, cursors)
+    for name, err in errors.items():
+        print(f"      ✗ {name} 抓取失败：{err}", file=sys.stderr)
+    if names and len(errors) == len(names):
+        sys.exit("所有数据源都抓取失败，请检查网络或 sources.toml")
+    # 增量抓取后「没有新内容」是平常事，不是错误；照常重试失败条目、重新出清单
+    print(f"      抓到 {len(items)} 条" + ("" if items else "（上次之后没有新内容）"))
+
+    client = build_client(cfg.provider, cfg.ollama_base_url)
+    todo = _todo(coll, items)
+    print(f"[2/4] 待处理 {len(todo)} 条（含上次失败待重试的），先过规则，再用 {cfg.provider} 抽取 …")
+    _process(coll, client, todo, cfg, conf.get("filters") or {})
+    store.save_cursors(coll, cursors)  # 这批全处理完才记游标；中途崩溃就不记，下次重抓
 
     print(f"[3/4] 筛选（可信度 ≥ {cfg.min_confidence}）并排序 …")
     rows = rank.sort(store.top_demands(coll, cfg.min_confidence), rank.weights(conf.get("ranking")))

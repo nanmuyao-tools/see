@@ -68,6 +68,8 @@ docker compose run --rm app eval                   # 在标注集上评测当前
 
 某个源失败（网络、限流）只跳过它，其他源照常跑。限流时会按服务器要求等待后自动重试。
 
+**增量抓取**：每个源的每个查询都记住上次抓到的最新一条（存在 MongoDB 的 `cursors` 集合），下次只抓更新的内容；RSS 没有按时间过滤的参数，靠入库去重。首次运行没有游标，行为和以前一样抓最新 N 条。游标在整批处理完才写入，中途崩溃下次会重抓这一批（已处理过的不会重复抽取）。抽取失败的条目存了原文，即使之后不再被抓到也会从库里重试，最多 3 次。
+
 ## 输出语言
 
 需求描述默认用中文，也可以用英文：`--lang en`，或在 `docker-compose.yml` 里设 `DR_OUTPUT_LANGUAGE: "en"`。**原文摘录始终保留原帖语言，不翻译。**
@@ -160,7 +162,7 @@ GitHub 上已有一些同类项目，比如 [Reddit_Scrapper](https://github.com
 demand_radar/
   cli.py            # 入口：run / eval / digest 三个命令
   config.py         # 运行配置（命令行 > 环境变量 > 默认值）
-  sources/          # 数据源：softwarerecs、hn_algolia、github、rss
+  sources/          # 数据源：softwarerecs、hn_algolia、github、rss；cursor.py 增量游标
   filters.py        # 规则预过滤
   extract.py        # 模型抽取、原文摘录校验
   models.py         # 数据结构
