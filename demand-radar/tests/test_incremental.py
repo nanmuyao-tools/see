@@ -86,16 +86,19 @@ class HnCursorTest(unittest.TestCase):
 
 
 class GithubCursorTest(unittest.TestCase):
-    def test_created_filter_appended_to_query(self):
+    def test_cursor_ignored_always_top_by_reactions(self):
+        """GitHub 是「当前最热」榜单而非时间流：有游标也不加 created:>，也不推进游标。"""
         data = json.loads(fixture("github_issues.json"))
         q = "is:issue reactions:>50"
         cur = {q: 1714566896}
         with mock.patch.object(github, "get_json", return_value=data) as g, \
              mock.patch.dict(os.environ, {}, clear=True):
             items = github.fetch(5, {"queries": [q]}, cur)
-        self.assertIn("created%3A%3E2024-05-01T12%3A34%3A56Z", g.call_args[0][0])
-        self.assertEqual(items[0].created_at, 1714566896)
-        self.assertEqual(cur[q], 1714566896)  # 游标键仍是原查询，不含附加条件
+        url = g.call_args[0][0]
+        self.assertNotIn("created", url)
+        self.assertIn("sort=reactions", url)
+        self.assertEqual(items[0].created_at, 1714566896)  # 发布时间仍解析，回填要用
+        self.assertEqual(cur, {q: 1714566896})  # 游标原样不动
 
 
 class RssCreatedAtTest(unittest.TestCase):
