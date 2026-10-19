@@ -109,6 +109,7 @@ def backfill(cfg: Config) -> None:
     pending = [u for u, p in progress.items() if not p["done"]]
     if not pending:
         print(f"{cfg.source} 的全部查询都已回填到头。")
+        coll.database.client.close()
         return
 
     client = build_client(cfg.provider, cfg.ollama_base_url)
@@ -186,6 +187,10 @@ def main(argv: list[str] | None = None) -> None:
         return
     if cfg.command == "backfill":
         backfill(cfg)
+        return
+    if cfg.command == "schedule":
+        from . import schedule
+        schedule.main_loop(cfg, run, digest)
         return
     run(cfg)
 

@@ -31,7 +31,7 @@ cd demand-radar
 docker compose up        # 首次会下载模型（约 2GB），之后走缓存
 ```
 
-会起三个容器：**app**（抓取 + 抽取）、**mongo**（存储）、**ollama**（本地模型）。跑完一轮 app 自动退出，结果在 **`./out/demands.md`**。
+会起三个容器：**app**（抓取 + 抽取）、**mongo**（存储）、**ollama**（本地模型）。跑完一轮 app 自动退出，结果在 **`./out/demands.md`**。想每天自动跑，见下文「定时运行」。
 
 之后常用的命令：
 
@@ -77,6 +77,20 @@ docker compose exec mongo mongosh demand_radar --eval 'db.runs.find().sort({star
 某个源失败（网络、限流）只跳过它，其他源照常跑。限流时会按服务器要求等待后自动重试。
 
 **增量抓取**：每个源的每个查询都记住上次抓到的最新一条（存在 MongoDB 的 `cursors` 集合），下次只抓更新的内容；RSS 没有按时间过滤的参数，靠入库去重。首次运行没有游标，行为和以前一样抓最新 N 条。游标在整批处理完才写入，中途崩溃下次会重抓这一批（已处理过的不会重复抽取）。抽取失败的条目存了原文，即使之后不再被抓到也会从库里重试，最多 3 次。
+
+## 定时运行
+
+想让它持续积累，起一个常驻的定时服务（默认不启动，用 `cron` profile 打开）：
+
+```bash
+docker compose --profile cron up -d scheduler     # 启动先跑一次，之后每天 03:00（UTC）跑 run，每周一再出周报
+docker compose logs -f scheduler                   # 看进度
+DR_RUN_AT=18:00 DR_DIGEST_WEEKDAY=5 docker compose --profile cron up -d scheduler   # 改成每天 18:00、周五出周报
+```
+
+它和 `app` 用同一份配置和挂载，结果照样在 `./out/`。环境变量：`DR_RUN_AT`（每天几点，HH:MM，按容器时钟即 UTC）、`DR_DIGEST_WEEKDAY`（ISO 周几出周报，1 周一 … 7 周日，0 不出）、`DR_RUN_ON_START`（启动时先跑一次，默认 1）。单次运行失败只记日志，不会让服务退出。
+
+不用 Docker 时直接 `python -m demand_radar schedule --run-at 03:00 --digest-weekday 1`，或者用系统 cron 分别调 `run` 和 `digest`。
 
 ## 历史回填
 
@@ -152,6 +166,7 @@ python -m demand_radar run --provider "openai/gpt-4o-mini"
 | `--workers` | 2 | 同时发给模型的请求数。Ollama 默认一次只处理一个请求，要在 ollama 服务上设 `OLLAMA_NUM_PARALLEL` 才真正并行；云模型直接生效 |
 | `--days` | 7 | `digest`：汇总最近多少天 |
 | `--pages` | 10 | `backfill`：本次最多往回拉多少页；`--limit` 在这里是每页条数，默认 100 |
+| `--run-at` / `--digest-weekday` | `03:00` / 1 | `schedule`：每天几点跑、ISO 周几出周报（0 不出）；`--no-run-on-start` 启动时不先跑 |
 | `--sources-file` | `sources.toml` | 数据源、过滤规则、排序权重的配置文件 |
 | `--mongo-uri` / `--db-name` | `mongodb://localhost:27017` / `demand_radar` | 数据库 |
 | `--ollama-base-url` | `http://localhost:11434/v1` | 本地模型服务地址 |
@@ -186,7 +201,8 @@ GitHub 上已有一些同类项目，比如 [Reddit_Scrapper](https://github.com
 
 ```
 demand_radar/
-  cli.py            # 入口：run / eval / digest / backfill 四个命令
+  cli.py            # 入口：run / eval / digest / backfill / schedule 五个命令
+  schedule.py       # 定时运行：每天 run、每周 digest
   config.py         # 运行配置（命令行 > 环境变量 > 默认值）
   sources/          # 数据源：softwarerecs、hn_algolia、github、rss；cursor.py 增量游标
   filters.py        # 规则预过滤
@@ -199,7 +215,7 @@ demand_radar/
 eval/eval_set.json  # 评测标注集
 tests/              # 离线单元测试
 sources.toml        # 数据源、过滤规则、排序权重
-docker-compose.yml  # app + mongo + ollama
+docker-compose.yml  # app + mongo + ollama，可选的 scheduler（定时）
 ```
 
 ## 协议

@@ -51,7 +51,7 @@
 - [x] 历史回填：softwarerecs 有 2.3 万条、HN 关键词能命中上万条，分批拉，可中断续跑（`backfill --source … --pages N`）
 - [x] 并发调用模型（`--workers`，默认 2；纯 CPU + Ollama 默认串行时提升有限，待真机实测）
 - [x] 运行记录：每次运行的抓取数、过滤数、失败数、耗时
-- [ ] 定时运行：每天抓取，每周出摘要
+- [x] 定时运行：每天抓取，每周出摘要（compose 里可选的 `scheduler` 服务，`--profile cron`）
 - [ ] 实测 Arctic Shift 作为 Reddit 数据源（可能同时解决限流和历史数据问题）
 
 验收：连续运行一周不重复处理；回填能中断续跑。
