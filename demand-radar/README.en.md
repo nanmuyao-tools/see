@@ -49,7 +49,10 @@ docker compose run --rm app eval --lang en             # evaluate the current mo
 ```
 Public sources (configured in sources.toml)
   → Rule-based pre-filter: empty posts, launch posts (Show HN, "I built…"), bot output never reach the model
-  → Local LLM extraction: is it a need, can one person build it, three 1–5 scores, a quote (verified to be in the post)
+  → Local LLM extraction: is it a need, can one person build it, three 1–5 scores
+  → Harm flag: needs that mention specific other people (covert tracking, finding someone's address, mass reporting,
+    posing as a bank…) stay out of the list and go to a "Held for review" section at the end, with the matching phrase
+  → Quote: the program picks the sentence from the post that reads most like a request (small models asked to copy one often translate or paraphrase it)
   → MongoDB: every post gets a status, so nothing is processed twice; failures are retried up to 3 times
   → Ranking: weighted scores + post popularity (log-scaled)
   → Full list out/demands.md / weekly digest out/digest-<date>.md
@@ -74,13 +77,13 @@ Needs are written in Chinese by default; use `--lang en` or `DR_OUTPUT_LANGUAGE=
 
 ## Evaluation
 
-After changing the prompt, the rules or the model, measure instead of guessing. [`eval/eval_set.json`](eval/eval_set.json) holds 45 hand-labeled real posts.
+After changing the prompt, the rules or the model, measure instead of guessing. [`eval/eval_set.json`](eval/eval_set.json) holds 61 items: 46 hand-labeled real posts plus 15 constructed ones covering harmful requests (tracking or exposing specific people) and benign look-alikes.
 
 ```bash
 python -m demand_radar eval -v --lang en
 ```
 
-It reports accuracy on "is this a need" and "can one person build it", end-to-end precision / recall / F1 for "should this be listed", how many posts the rules filtered (and whether any good ones were wrongly dropped), and how many quotes really come from the post. Latest results are in [`ROADMAP.md`](ROADMAP.md) (in Chinese).
+It reports accuracy on "is this a need" and "can one person build it", end-to-end precision / recall / F1 for "should this be listed", how many posts the rules filtered (and whether any good ones were wrongly dropped), and whether any harmful request made it into the list (must be 0) and how many normal needs were held for review. `-v` prints the quote for every listed need so you can check it by hand. Latest results are in [`ROADMAP.md`](ROADMAP.md) (in Chinese).
 
 ## Running without Docker
 
@@ -105,6 +108,18 @@ pip install -r requirements-dev.txt
 python -m unittest discover -s tests
 ```
 
+## Using the GPU on a Mac (optional)
+
+Docker Desktop on macOS cannot pass the GPU to containers, so the model in the container runs on the CPU. To use the Apple GPU, run the model server natively and keep MongoDB in Docker. Any OpenAI-compatible local server works (mlx-lm, LM Studio, llama.cpp); write the provider as `local/<model>`:
+
+```bash
+pip install mlx-lm
+mlx_lm.server --model mlx-community/Qwen2.5-3B-Instruct-4bit --port 8080
+
+python -m demand_radar eval --provider local/mlx-community/Qwen2.5-3B-Instruct-4bit \
+  --base-url http://localhost:8080/v1 --lang en
+```
+
 ## Cloud models (optional)
 
 Without a suitable machine you can use a hosted model. It needs an API key, costs money, and sends the posts to the provider:
@@ -120,13 +135,13 @@ python -m demand_radar run --provider "openai/gpt-4o-mini" --lang en
 |---|---|---|
 | `--limit` | 10 | Max posts per source (per feed for RSS, per query for HN/GitHub) |
 | `--source` | `all` | Run only some sources, e.g. `github,rss` |
-| `--provider` | `ollama/qwen2.5:3b` | Model; switches between local and hosted |
+| `--provider` | `ollama/qwen2.5:3b` | Model; switches between local and hosted. Other local servers: `local/<model>` |
 | `--lang` | `zh` | Output language: `zh` / `en` |
 | `--min-confidence` | 0.5 | Needs below this confidence are left out |
 | `--days` | 7 | `digest`: how many days back |
 | `--sources-file` | `sources.toml` | Sources, filter rules and ranking weights |
 | `--mongo-uri` / `--db-name` | `mongodb://localhost:27017` / `demand_radar` | Database |
-| `--ollama-base-url` | `http://localhost:11434/v1` | Local model server |
+| `--base-url` | `http://localhost:11434/v1` | Local model server (`--ollama-base-url` still works) |
 
 Every option can also be set through an environment variable (handy with Docker): `DR_SOURCE`, `DR_LIMIT`, `DR_PROVIDER`, `DR_OUTPUT_LANGUAGE`, `DR_MIN_CONFIDENCE`, `DR_SOURCES_FILE`, `MONGO_URI`, `DR_DB_NAME`, `OLLAMA_BASE_URL`, `DR_OUTPUT`.
 

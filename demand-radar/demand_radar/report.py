@@ -25,6 +25,10 @@ _LABELS = {
         "source": "来源",
         "empty": "这段时间没有新的需求。",
         "other": "其他",
+        "held": "待人工确认（{n}）",
+        "held_note": "以下需求提到了特定的他人，可能被用来追踪、监视、曝光、骚扰或欺骗别人，没有列入正文。"
+                     "请人工确认后再决定是否发布。",
+        "cue": "命中",
         "sep": "：",
     },
     "en": {
@@ -42,6 +46,10 @@ _LABELS = {
         "source": "Source",
         "empty": "No new needs in this period.",
         "other": "Other",
+        "held": "Held for review ({n})",
+        "held_note": "These needs mention specific other people and could be used to track, monitor, expose, "
+                     "harass or deceive someone, so they are not in the list above. Check them before publishing.",
+        "cue": "Matched",
         "sep": ": ",
     },
 }
@@ -54,6 +62,8 @@ def _labels(lang: str) -> dict[str, str]:
 def _entry(r: dict, heading: str, L: dict[str, str]) -> list[str]:
     sep = L["sep"]
     lines = [heading, ""]
+    if r.get("review_cue"):
+        lines.append(f"- {L['cue']}{sep}“{r['review_cue']}”")
     if r.get("domain"):
         lines.append(f"- {L['domain']}{sep}{r['domain']}")
     if r.get("pain_point"):
@@ -77,8 +87,18 @@ def _write(path: str, lines: list[str]) -> None:
         f.write("\n".join(lines))
 
 
-def write_markdown(rows: list[dict], output_path: str, lang: str = "zh") -> None:
-    """全量清单，按 rows 的顺序（调用方先排好序）。"""
+def _held_section(held: list[dict], L: dict[str, str]) -> list[str]:
+    if not held:
+        return []
+    lines = [f"## {L['held'].format(n=len(held))}", "", L["held_note"], ""]
+    for r in held:
+        lines += _entry(r, f"### {r.get('need') or r['title']}", L)
+    return lines
+
+
+def write_markdown(rows: list[dict], output_path: str, lang: str = "zh",
+                   held: list[dict] | None = None) -> None:
+    """全量清单，按 rows 的顺序（调用方先排好序）。held 是待人工确认的需求，附在末尾。"""
     L = _labels(lang)
     lines = [
         f"# {L['list_title']}",
@@ -88,11 +108,14 @@ def write_markdown(rows: list[dict], output_path: str, lang: str = "zh") -> None
     ]
     for i, r in enumerate(rows, 1):
         lines += _entry(r, f"## {i}. {r.get('need') or r['title']}", L)
+    lines += _held_section(held or [], L)
     _write(output_path, lines)
 
 
-def write_digest(rows: list[dict], output_path: str, days: int, lang: str = "zh") -> None:
-    """每周摘要：按领域分组，组按条数降序，组内按 rows 的顺序（调用方先排好序）。"""
+def write_digest(rows: list[dict], output_path: str, days: int, lang: str = "zh",
+                 held: list[dict] | None = None) -> None:
+    """每周摘要：按领域分组，组按条数降序，组内按 rows 的顺序（调用方先排好序）。
+    held 是待人工确认的需求，附在末尾。"""
     L = _labels(lang)
     lines = [
         f"# {L['digest_title']} · {datetime.now():%Y-%m-%d}",
@@ -101,7 +124,8 @@ def write_digest(rows: list[dict], output_path: str, days: int, lang: str = "zh"
         "",
     ]
     if not rows:
-        lines.append(L["empty"])
+        lines += [L["empty"], ""]
+        lines += _held_section(held or [], L)
         _write(output_path, lines)
         return
     groups: dict[str, list[dict]] = defaultdict(list)
@@ -111,4 +135,5 @@ def write_digest(rows: list[dict], output_path: str, days: int, lang: str = "zh"
         lines += [f"## {domain}（{len(items)}）" if lang == "zh" else f"## {domain} ({len(items)})", ""]
         for r in items:
             lines += _entry(r, f"### {r.get('need') or r['title']}", L)
+    lines += _held_section(held or [], L)
     _write(output_path, lines)

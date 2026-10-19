@@ -2,13 +2,16 @@
 
 标注集（eval/eval_set.json）每条带 label：
   is_request  bool          该内容是否在表达需求
-  buildable   bool | null   个人能否做成；null 表示存疑，不计入 buildable 和入选评分
+  buildable   bool | null   个人能否做成（只看技术上）；null 表示存疑，不计入 buildable 和入选评分
+  harmful     bool          做出来是否主要用于追踪、监视、曝光、骚扰、欺骗特定的人；缺省为 false
   note        str           标注理由
 
 评测指标：
   - is_request：判断「是不是需求」的准确率（被规则过滤的按「判为非需求」计）
   - buildable：在「是需求」且标注非 null 的条目上，判断「能否做成」的准确率
-  - 入选（端到端）：is_request ∧ buildable ∧ confidence≥阈值，与标准答案算精确率/召回率/F1
+  - 入选（端到端）：is_request ∧ buildable ∧ 未命中有害规则 ∧ confidence≥阈值，与标准答案（¬harmful）
+    算精确率/召回率/F1。命中有害规则的转人工确认，按「不入选」计
+  - 有害：标为有害的需求进入正文清单的条数（必须为 0）；正常需求被转人工确认的条数
   - 规则过滤：挡掉多少条，其中有没有误杀应入选的（误杀必须为 0）
   - 摘录：由程序从原文挑选，-v 时逐条打印，供人工核对挑得对不对
 不写数据库。
@@ -19,7 +22,7 @@ from __future__ import annotations
 import json
 import sys
 
-from . import filters, sources
+from . import filters, safety, sources
 from .config import Config
 from . import excerpt
 from .extract import build_client, extract_raw
@@ -57,13 +60,16 @@ def run(cfg: Config) -> int:
     fails = 0
     filtered = filter_kills = 0
     model_calls = 0
+    harmful_listed = harmful_total = harmful_held = benign_held = 0
     mistakes: list[str] = []
 
     for d in data:
         label = d["label"]
         item = SourceItem(**{k: d.get(k, "post" if k == "kind" else None) for k in _ITEM_FIELDS})
+        harmful = label.get("harmful", False)
         uncertain = label["is_request"] and label["buildable"] is None
-        gold_listed = bool(label["is_request"] and label["buildable"])
+        gold_listed = bool(label["is_request"] and label["buildable"] and not harmful)
+        harmful_total += harmful
 
         reason = filters.check(item, fconf)
         if reason:
@@ -100,7 +106,17 @@ def run(cfg: Config) -> int:
             bld_ok += r.buildable == label["buildable"]
 
         # 端到端「应入选」。可做性存疑的需求没有标准答案，跳过
-        pred_listed = bool(r.is_request and r.buildable and r.confidence >= cfg.min_confidence)
+        candidate = bool(r.is_request and r.buildable and r.confidence >= cfg.min_confidence)
+        cue = safety.needs_check(item)
+        pred_listed = candidate and not cue
+        if harmful and pred_listed:
+            harmful_listed += 1
+            mistakes.append(f"  ☠ 有害需求进了清单  {item.title[:46]}")
+        if harmful and candidate and cue:
+            harmful_held += 1
+        if gold_listed and candidate and cue:
+            benign_held += 1
+            mistakes.append(f"  ⚠ 正常需求被转人工确认（命中“{cue}”）  {item.title[:46]}")
         if uncertain:
             if cfg.verbose or not req_hit:
                 mistakes.append(
@@ -143,6 +159,8 @@ def run(cfg: Config) -> int:
     print(f"           召回率 : {rec*100:4.1f}%  （该入选的里抓到多少）")
     print(f"           F1     : {f1*100:4.1f}%")
     print(f"规则过滤          : {filtered} 条，误杀应入选 {filter_kills} 条；调用模型 {model_calls} 次")
+    print(f"有害需求          : 共 {harmful_total} 条，进了清单 {harmful_listed} 条（必须为 0），"
+          f"转人工确认 {harmful_held} 条；正常需求被转人工确认 {benign_held} 条")
     if fails:
         print(f"抽取失败          : {fails} 条")
     print("=" * 48)

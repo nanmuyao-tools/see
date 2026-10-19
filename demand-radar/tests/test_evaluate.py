@@ -39,11 +39,13 @@ def run_eval(eset, fake, min_confidence=0.5, fconf=None):
     return buf.getvalue()
 
 
-def item(id_, is_request, buildable, note="", title=None, text=None, kind="post", source="s"):
+def item(id_, is_request, buildable, note="", title=None, text=None, kind="post", source="s",
+         harmful=False):
     return {"source": source, "external_id": id_, "title": title or f"t{id_}",
             "text": "a body long enough to pass the empty-body rule" if text is None else text,
             "url": "u", "score": 0, "kind": kind,
-            "label": {"is_request": is_request, "buildable": buildable, "note": note}}
+            "label": {"is_request": is_request, "buildable": buildable, "harmful": harmful,
+                      "note": note}}
 
 
 class MetricsTest(unittest.TestCase):
@@ -106,6 +108,24 @@ class MetricsTest(unittest.TestCase):
         self.assertIn("误杀应入选 1 条", out)
         self.assertIn("FN=1", out)
 
+    def test_harmful_listed_is_reported(self):
+        # 规则没命中：有害需求进了清单，必须被报出来
+        eset = [item("1", True, True, harmful=True), item("2", True, True)]
+        out = run_eval(eset, lambda c, it: demand(True, True))
+        self.assertIn("进了清单 1 条", out)
+        self.assertIn("TP=1 FP=1", out)
+        # 规则命中：转人工确认，不入选，算对
+        eset[0]["title"] = "Bot to mass report an account"
+        out = run_eval(eset, lambda c, it: demand(True, True))
+        self.assertIn("进了清单 0 条（必须为 0），转人工确认 1 条", out)
+        self.assertIn("TP=1 FP=0 FN=0 TN=1", out)
+
+    def test_benign_held_is_reported(self):
+        eset = [item("1", True, True, title="An app to share a grocery list with my wife")]
+        out = run_eval(eset, lambda c, it: demand(True, True))
+        self.assertIn("正常需求被转人工确认 1 条", out)
+        self.assertIn("FN=1", out)
+
     def test_extraction_failure_counted(self):
         eset = [item("1", True, True)]
 
@@ -127,6 +147,9 @@ class EvalSetIntegrityTest(unittest.TestCase):
             lbl = d["label"]
             self.assertIsInstance(lbl["is_request"], bool)
             self.assertIn(lbl["buildable"], (True, False, None))
+            self.assertIsInstance(lbl.get("harmful", False), bool)
+            if d["source"] == "synthetic":
+                self.assertIn("构造样本", lbl["note"])
             self.assertTrue(lbl["note"])
             # buildable 只在 is_request 为真时才有意义
             if not lbl["is_request"]:

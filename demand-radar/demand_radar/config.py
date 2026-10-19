@@ -99,7 +99,9 @@ class Config:
         # 调模型的命令共用
         for sp in (run, ev, bf, sc):
             sp.add_argument("--provider", default=d.provider)
-            sp.add_argument("--ollama-base-url", dest="ollama_base_url", default=d.ollama_base_url)
+            sp.add_argument("--base-url", "--ollama-base-url", dest="ollama_base_url",
+                            default=d.ollama_base_url,
+                            help="本地模型服务地址（ollama/ 与 local/ 两种 provider 用）")
         # 读写数据库的命令共用
         for sp in (run, dg, bf, sc):
             sp.add_argument("--mongo-uri", dest="mongo_uri", default=d.mongo_uri)
