@@ -1,6 +1,6 @@
 # 需求雷达：路线图
 
-更新：2026-10-19。方案见 [`../docs/ideas/demand-radar.md`](../docs/ideas/demand-radar.md)，技术选型与实测记录见 [`../docs/ideas/demand-radar-tech.md`](../docs/ideas/demand-radar-tech.md)，同类项目调研见 [`docs/landscape.md`](docs/landscape.md)。
+更新：2026-10-19。方案见 [`../docs/ideas/demand-radar.md`](../docs/ideas/demand-radar.md)，技术选型与实测记录见 [`../docs/ideas/demand-radar-tech.md`](../docs/ideas/demand-radar-tech.md)，同类项目调研见 [`docs/landscape.md`](docs/landscape.md)，市场调研见 [`docs/market.md`](docs/market.md)。
 
 ## 定位
 
