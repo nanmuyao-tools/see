@@ -38,6 +38,8 @@ class Config:
     run_at: str = "03:00"  # schedule 命令：每天几点跑 run，按本机 / 容器时钟（容器默认 UTC）
     digest_weekday: int = 1  # schedule 命令：ISO 周几出周报，1 = 周一 … 7 = 周日，0 = 不出
     run_on_start: bool = True  # schedule 命令：启动时先跑一次，不等到点
+    host: str = "0.0.0.0"  # serve 命令：监听地址；容器里要 0.0.0.0 才能从宿主机访问
+    port: int = 8501  # serve 命令：看板端口
 
     @staticmethod
     def from_args(argv: list[str] | None = None) -> "Config":
@@ -58,6 +60,8 @@ class Config:
             run_at=_env("DR_RUN_AT", Config.run_at),
             digest_weekday=int(_env("DR_DIGEST_WEEKDAY", str(Config.digest_weekday))),
             run_on_start=_env("DR_RUN_ON_START", "1").lower() in ("1", "true", "yes"),
+            host=_env("DR_HOST", Config.host),
+            port=int(_env("DR_PORT", str(Config.port))),
         )
 
         p = argparse.ArgumentParser(prog="demand_radar")
@@ -68,6 +72,7 @@ class Config:
         dg = sub.add_parser("digest", help="汇总最近 N 天新增的需求，按领域分组输出周报")
         bf = sub.add_parser("backfill", help="按页往回拉一个源的历史内容，可中断后继续")
         sc = sub.add_parser("schedule", help="常驻：每天定时 run，每周定时 digest")
+        sv = sub.add_parser("serve", help="常驻：Web 看板，直接读库，不调模型")
 
         for sp in (run, sc):
             sp.add_argument("--source", default=d.source)
@@ -95,6 +100,14 @@ class Config:
                         help="ISO 周几出周报：1 周一 … 7 周日，0 不出")
         sc.add_argument("--no-run-on-start", dest="run_on_start", action="store_false",
                         default=d.run_on_start, help="启动时不先跑一次，等到点再跑")
+
+        sv.add_argument("--host", default=d.host, help="监听地址，容器里保持 0.0.0.0")
+        sv.add_argument("--port", type=int, default=d.port, help="看板端口")
+        # 看板只读库：数据库、筛选阈值、权重文件三项和 digest 一样，没有模型参数
+        sv.add_argument("--min-confidence", type=float, default=d.min_confidence)
+        sv.add_argument("--mongo-uri", dest="mongo_uri", default=d.mongo_uri)
+        sv.add_argument("--db-name", dest="db_name", default=d.db_name)
+        sv.add_argument("--sources-file", dest="sources_file", default=d.sources_file)
 
         # 调模型的命令共用
         for sp in (run, ev, bf, sc):
@@ -133,4 +146,6 @@ class Config:
             run_at=getattr(ns, "run_at", d.run_at),
             digest_weekday=getattr(ns, "digest_weekday", d.digest_weekday),
             run_on_start=getattr(ns, "run_on_start", d.run_on_start),
+            host=getattr(ns, "host", d.host),
+            port=getattr(ns, "port", d.port),
         )

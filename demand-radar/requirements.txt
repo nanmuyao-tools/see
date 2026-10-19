@@ -3,3 +3,6 @@
 instructor>=1.0.0
 pydantic>=2.0.0
 pymongo>=4.6.0
+# Web 看板（serve 命令）
+fastapi>=0.110
+uvicorn>=0.29

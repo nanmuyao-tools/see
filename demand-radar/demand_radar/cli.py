@@ -1,4 +1,4 @@
-"""入口与编排：抓取 → 抽取 → 存储 → 输出。"""
+"""入口与编排：抓取 → 抽取 → 存储 → 输出；另有只读库的 digest / serve。"""
 
 from __future__ import annotations
 
@@ -183,6 +183,31 @@ def digest(cfg: Config) -> None:
     print(f"最近 {cfg.days} 天新增 {len(rows)} 条需求，另有 {len(held)} 条待人工确认，已写出 {path}")
 
 
+def _connect_patiently(cfg: Config, attempts: int = 30):
+    """compose 里 web 和 mongo 一起起，mongo 还没就绪就连会失败；等它几十秒，不靠容器反复重启。"""
+    for i in range(attempts):
+        try:
+            return store.connect(cfg.mongo_uri, cfg.db_name)
+        except Exception as e:  # pymongo 的 ServerSelectionTimeoutError 等；缺依赖是 SystemExit，照常抛出
+            if i == attempts - 1:
+                raise
+            print(f"等待 MongoDB {cfg.mongo_uri} …（{type(e).__name__}）", file=sys.stderr, flush=True)
+            time.sleep(2)
+
+
+def serve(cfg: Config) -> None:
+    """起 Web 看板：直接读库，不调模型。排序权重和出清单一样取自 sources.toml。"""
+    import uvicorn
+    from .api import create_app
+
+    conf = sources.load_config(cfg.sources_file)
+    coll = _connect_patiently(cfg)
+    app = create_app(coll, rank.weights(conf.get("ranking")), cfg.min_confidence)
+    shown = "localhost" if cfg.host in ("0.0.0.0", "::") else cfg.host
+    print(f"看板已启动：http://{shown}:{cfg.port}/ （英文界面加 ?lang=en；接口文档 /api/docs）", flush=True)
+    uvicorn.run(app, host=cfg.host, port=cfg.port)
+
+
 def main(argv: list[str] | None = None) -> None:
     cfg = Config.from_args(argv)
     if cfg.command == "eval":
@@ -197,6 +222,9 @@ def main(argv: list[str] | None = None) -> None:
     if cfg.command == "schedule":
         from . import schedule
         schedule.main_loop(cfg, run, digest)
+        return
+    if cfg.command == "serve":
+        serve(cfg)
         return
     run(cfg)
 
