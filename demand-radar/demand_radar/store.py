@@ -11,6 +11,7 @@
 
 同库另有两个集合：
   cursors    增量抓取的游标，每个源的每个查询一条（见 sources/cursor.py）
+  runs       每次运行一条：起止时间、各源抓取数、过滤 / 抽取 / 失败数、耗时，出问题时有据可查
 """
 
 from __future__ import annotations
@@ -48,13 +49,13 @@ def _now() -> datetime:
     return datetime.now(timezone.utc)
 
 
+def _aware(dt: datetime) -> datetime:
+    """pymongo 默认返回不带时区的 UTC 时间，补上时区再参与计算。"""
+    return dt if dt.tzinfo else dt.replace(tzinfo=timezone.utc)
+
+
 def _to_epoch(dt: datetime | None) -> int:
-    """库里读出的时间转回 Unix 秒。pymongo 默认返回不带时区的 UTC 时间，补上时区再算。"""
-    if dt is None:
-        return 0
-    if dt.tzinfo is None:
-        dt = dt.replace(tzinfo=timezone.utc)
-    return int(dt.timestamp())
+    return int(_aware(dt).timestamp()) if dt else 0
 
 
 def _base(item: SourceItem) -> dict[str, Any]:
@@ -148,6 +149,36 @@ def save_cursors(coll, cursors: dict[str, dict[str, int]]) -> None:
                 {"_id": _id, "kind": "run", "source": source, "unit": unit, "value": value, "updated_at": now},
                 upsert=True,
             )
+
+
+# ---- 运行记录 ----
+
+def _runs(coll):
+    return coll.database["runs"]
+
+
+def start_run(coll, command: str, **meta) -> Any:
+    """运行一开始就写一条 status=running：进程中途死掉也留痕。返回记录 id，结束时用。"""
+    doc = {"command": command, "status": "running", "started_at": _now(), **meta}
+    return _runs(coll).insert_one(doc).inserted_id
+
+
+def finish_run(coll, run_id, status: str = "done", **stats) -> float:
+    """补上结束时间、耗时和各步计数，返回耗时（秒）。"""
+    now = _now()
+    doc = _runs(coll).find_one({"_id": run_id}, {"started_at": 1}) or {}
+    duration = round((now - _aware(doc["started_at"])).total_seconds(), 1) if doc.get("started_at") else 0.0
+    _runs(coll).update_one({"_id": run_id}, {"$set": {
+        "status": status, "finished_at": now, "duration_s": duration, **stats}})
+    return duration
+
+
+def source_counts(items: list[SourceItem]) -> list[dict[str, Any]]:
+    """各源抓到几条，按数量降序。用列表而不是 {源名: 数} 的字典：源名可能含「.」，不能当字段名。"""
+    counts: dict[str, int] = {}
+    for it in items:
+        counts[it.source] = counts.get(it.source, 0) + 1
+    return [{"source": s, "count": n} for s, n in sorted(counts.items(), key=lambda kv: -kv[1])]
 
 
 def _listed(min_confidence: float) -> dict[str, Any]:

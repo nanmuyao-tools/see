@@ -53,6 +53,13 @@ docker compose run --rm app eval                   # 在标注集上评测当前
   → 存入 MongoDB：每条都记处理状态，已处理的不再重复；失败的下次重试，最多 3 次
   → 综合排序：三项打分加权 + 原帖热度（取对数）
   → 全量清单 out/demands.md ／ 周报 out/digest-<日期>.md
+  → 每次运行在 MongoDB 的 runs 集合记一条：各源抓取数、过滤 / 抽取 / 失败数、耗时
+```
+
+出了问题先看运行记录（`status` 停在 `running` 说明进程中途死了）：
+
+```bash
+docker compose exec mongo mongosh demand_radar --eval 'db.runs.find().sort({started_at:-1}).limit(5)'
 ```
 
 ## 数据源

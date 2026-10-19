@@ -2,17 +2,14 @@
 
 from __future__ import annotations
 
-import io
 import json
 import os
-import tempfile
 import unittest
-from contextlib import redirect_stderr, redirect_stdout
 from unittest import mock
 
 from demand_radar import sources
-from demand_radar.models import Demand, SourceItem
 from demand_radar.sources import cursor, github, hn_algolia, rss, softwarerecs
+from harness import demand, item, mongomock
 
 HERE = os.path.dirname(__file__)
 
@@ -20,11 +17,6 @@ HERE = os.path.dirname(__file__)
 def fixture(name: str) -> bytes:
     with open(os.path.join(HERE, "fixtures", name), "rb") as f:
         return f.read()
-
-
-def item(id_, created_at=0, source="s", text="a body long enough to pass the empty-body rule"):
-    return SourceItem(source=source, external_id=id_, title=f"Is there a tool {id_}", text=text,
-                      url="u", created_at=created_at)
 
 
 class CursorHelpersTest(unittest.TestCase):
@@ -152,18 +144,6 @@ class FetchAllCursorTest(unittest.TestCase):
         self.assertEqual(cur["github"], {"q": 9})
 
 
-try:
-    import mongomock
-except ImportError:  # pragma: no cover
-    mongomock = None
-
-
-def demand(**kw):
-    base = dict(is_request=True, need="n", domain="d", pain_point="", excerpt="", buildable=True,
-                clarity=3, intensity=3, feasibility=3, confidence=0.9)
-    return Demand(**{**base, **kw})
-
-
 @unittest.skipIf(mongomock is None, "需要 mongomock：pip install -r requirements-dev.txt")
 class StoreCursorTest(unittest.TestCase):
     def setUp(self):
@@ -206,67 +186,40 @@ class StoreCursorTest(unittest.TestCase):
 class RunCommandTest(unittest.TestCase):
     """run 的编排：游标在整批处理完后落库；没有新内容不算错；失败条目从库里重试。"""
 
-    CONF = {"softwarerecs": {"enabled": True}, "filters": {}, "ranking": {}}
-
     def setUp(self):
-        from demand_radar import cli
-        from demand_radar.config import Config
-        self.cli = cli
-        self.coll = mongomock.MongoClient().db.demands
-        self.out = os.path.join(tempfile.mkdtemp(), "demands.md")
-        self.cfg = Config(command="run", source="softwarerecs", output_path=self.out)
-
-    def _run(self, fetched, errors=None, extract=None, cursor_value=42):
-        def fake_fetch_all(names, limit, conf, cursors):
-            cursors.setdefault("softwarerecs", {})["softwarerecs"] = cursor_value
-            return fetched, errors or {}
-
-        calls = []
-
-        def fake_extract(client, it, lang):
-            calls.append(it.external_id)
-            return (extract or (lambda it: demand()))(it)
-
-        buf = io.StringIO()
-        with mock.patch.object(self.cli.store, "connect", return_value=self.coll), \
-             mock.patch.object(self.cli.sources, "load_config", return_value=self.CONF), \
-             mock.patch.object(self.cli.sources, "fetch_all", side_effect=fake_fetch_all), \
-             mock.patch.object(self.cli, "build_client", return_value=None), \
-             mock.patch.object(self.cli, "extract", side_effect=fake_extract), \
-             redirect_stdout(buf), redirect_stderr(buf):
-            self.cli.run(self.cfg)
-        return calls, buf.getvalue()
+        from harness import FakeEnv
+        self.env = FakeEnv()
 
     def test_cursor_saved_after_processing(self):
         from demand_radar import store
-        calls, out = self._run([item("1"), item("2")])
-        self.assertEqual(sorted(calls), ["1", "2"])
-        self.assertEqual(store.load_cursors(self.coll), {"softwarerecs": {"softwarerecs": 42}})
-        self.assertTrue(os.path.exists(self.out))
+        self.env.run([item("1"), item("2")])
+        self.assertEqual(sorted(self.env.calls), ["1", "2"])
+        self.assertEqual(store.load_cursors(self.env.coll), {"softwarerecs": {"softwarerecs": 42}})
+        self.assertTrue(os.path.exists(self.env.out))
 
     def test_no_new_items_is_not_an_error(self):
-        calls, out = self._run([])
-        self.assertEqual(calls, [])
+        out = self.env.run([])
+        self.assertEqual(self.env.calls, [])
         self.assertIn("没有新内容", out)
-        self.assertTrue(os.path.exists(self.out))  # 清单照常从库里重新生成
+        self.assertTrue(os.path.exists(self.env.out))  # 清单照常从库里重新生成
 
     def test_all_sources_failing_exits(self):
         with self.assertRaises(SystemExit):
-            self._run([], errors={"softwarerecs": "down"})
+            self.env.run([], errors={"softwarerecs": "down"})
 
     def test_failed_item_retried_from_db_without_refetch(self):
         from demand_radar import store
-        bad = item("1")
 
         def flaky(it):
             raise RuntimeError("model down")
 
-        self._run([bad], extract=flaky)
-        self.assertEqual(self.coll.find_one()["status"], "retry")
-        calls, _ = self._run([])  # 第二次没抓到它，仍从库里重试
-        self.assertEqual(calls, ["1"])
-        self.assertEqual(self.coll.find_one()["status"], "extracted")
-        self.assertEqual(store.retry_items(self.coll), [])
+        self.env.run([item("1")], extract=flaky)
+        self.assertEqual(self.env.coll.find_one()["status"], "retry")
+        self.env.calls.clear()
+        self.env.run([])  # 第二次没抓到它，仍从库里重试
+        self.assertEqual(self.env.calls, ["1"])
+        self.assertEqual(self.env.coll.find_one()["status"], "extracted")
+        self.assertEqual(store.retry_items(self.env.coll), [])
 
 
 if __name__ == "__main__":

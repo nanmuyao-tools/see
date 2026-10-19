@@ -56,6 +56,8 @@ def run(cfg: Config) -> None:
     conf = sources.load_config(cfg.sources_file)
     names = sources.enabled(conf) if cfg.source == "all" else cfg.source.split(",")
     coll = store.connect(cfg.mongo_uri, cfg.db_name)
+    run_id = store.start_run(coll, "run", sources=names, limit=cfg.limit, provider=cfg.provider,
+                             language=cfg.output_language)
     cursors = store.load_cursors(coll)
     resumed = sum(len(cursors.get(n, {})) for n in names)
     print(f"[1/4] 抓取 {', '.join(names)}，每个源/查询最多 {cfg.limit} 条"
@@ -64,6 +66,7 @@ def run(cfg: Config) -> None:
     for name, err in errors.items():
         print(f"      ✗ {name} 抓取失败：{err}", file=sys.stderr)
     if names and len(errors) == len(names):
+        store.finish_run(coll, run_id, status="failed", fetch_errors=errors)
         sys.exit("所有数据源都抓取失败，请检查网络或 sources.toml")
     # 增量抓取后「没有新内容」是平常事，不是错误；照常重试失败条目、重新出清单
     print(f"      抓到 {len(items)} 条" + ("" if items else "（上次之后没有新内容）"))
@@ -71,7 +74,7 @@ def run(cfg: Config) -> None:
     client = build_client(cfg.provider, cfg.ollama_base_url)
     todo = _todo(coll, items)
     print(f"[2/4] 待处理 {len(todo)} 条（含上次失败待重试的），先过规则，再用 {cfg.provider} 抽取 …")
-    _process(coll, client, todo, cfg, conf.get("filters") or {})
+    stats = _process(coll, client, todo, cfg, conf.get("filters") or {})
     store.save_cursors(coll, cursors)  # 这批全处理完才记游标；中途崩溃就不记，下次重抓
 
     print(f"[3/4] 筛选（可信度 ≥ {cfg.min_confidence}）并排序 …")
@@ -79,8 +82,10 @@ def run(cfg: Config) -> None:
 
     print(f"[4/4] 写出 {cfg.output_path}（{len(rows)} 条）")
     report.write_markdown(rows, cfg.output_path, cfg.output_language)
+    took = store.finish_run(coll, run_id, fetched=store.source_counts(items), fetched_total=len(items),
+                            fetch_errors=errors, todo=len(todo), listed=len(rows), **stats)
     coll.database.client.close()
-    print("完成。")
+    print(f"完成，耗时 {took:.0f} 秒。运行记录在 MongoDB 的 runs 集合。")
 
 
 def digest(cfg: Config) -> None:
