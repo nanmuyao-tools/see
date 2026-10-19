@@ -226,3 +226,60 @@ def top_demands(coll, min_confidence: float) -> list[dict]:
 def recent_demands(coll, min_confidence: float, since: datetime) -> list[dict]:
     """取出 since 之后抽取、通过筛选的需求，给每周摘要用。"""
     return list(coll.find({**_listed(min_confidence), "extracted_at": {"$gte": since}}))
+
+
+# ---- 相似需求合并（v0.3）：向量与簇 ----
+# demands 文档加 embedding / embedding_model / cluster_id；同库 clusters 集合每簇一条：
+#   rep_id 代表（簇内排序分最高的那条）、need、domain、members（成员 id，按排序分降序）、sources（去重）、
+#   total_score（成员热度之和）、best_rank_score、size、model（向量模型，换模型要重建）、updated_at
+
+def _clusters(coll):
+    return coll.database["clusters"]
+
+
+def to_embed(coll, model: str, min_confidence: float) -> list[dict]:
+    """通过筛选、还没有当前模型向量的需求。只取向量化要用的字段。"""
+    q = {**_listed(min_confidence),
+         "$or": [{"embedding": {"$exists": False}}, {"embedding_model": {"$ne": model}}]}
+    return list(coll.find(q, {"need": 1, "title": 1}))
+
+
+def save_embedding(coll, _id: str, vector: list[float], model: str) -> None:
+    coll.update_one({"_id": _id}, {"$set": {"embedding": list(vector), "embedding_model": model}})
+
+
+def unclustered(coll, model: str, min_confidence: float) -> list[dict]:
+    """通过筛选、已有当前模型的向量、还没归簇的需求，连向量和排序要用的字段一起取出。"""
+    q = {**_listed(min_confidence), "embedding_model": model, "cluster_id": {"$in": [None]}}
+    return list(coll.find(q, {"need": 1, "title": 1, "embedding": 1, "score": 1,
+                              "clarity": 1, "intensity": 1, "feasibility": 1}))
+
+
+def member_docs(coll, ids) -> list[dict]:
+    """按 id 取成员文档，不带向量（展示和算统计用不着，几百维 × 几千条白白占内存）。"""
+    return list(coll.find({"_id": {"$in": list(ids)}}, {"embedding": 0}))
+
+
+def load_clusters(coll) -> list[dict]:
+    return list(_clusters(coll).find())
+
+
+def rep_vectors(coll, clusters: list[dict]) -> dict[str, list[float]]:
+    """簇 id → 代表的向量。向量只存在 demands 里，不在 clusters 里重复一份。"""
+    rep_of = {c["rep_id"]: c["_id"] for c in clusters if c.get("rep_id")}
+    docs = coll.find({"_id": {"$in": list(rep_of)}, "embedding": {"$exists": True}}, {"embedding": 1})
+    return {rep_of[d["_id"]]: d["embedding"] for d in docs}
+
+
+def save_cluster(coll, doc: dict) -> None:
+    _clusters(coll).replace_one({"_id": doc["_id"]}, doc, upsert=True)
+
+
+def set_cluster(coll, ids: list[str], cluster_id: str) -> None:
+    coll.update_many({"_id": {"$in": ids}}, {"$set": {"cluster_id": cluster_id}})
+
+
+def clear_clusters(coll) -> None:
+    """丢掉全部簇和归属，向量保留（换模型时向量会按 embedding_model 不匹配自动重算）。"""
+    _clusters(coll).delete_many({})
+    coll.update_many({"cluster_id": {"$exists": True}}, {"$unset": {"cluster_id": ""}})
