@@ -10,6 +10,7 @@
 | [`docs/market.md`](docs/market.md) | 市场调研与潜力分析 |
 | [`docs/tech-plan.md`](docs/tech-plan.md) | **技术路线规划**：架构、数据结构、每个版本的具体改动和验收标准 |
 | [`docs/model-selection.md`](docs/model-selection.md) | 模型选型：Mac GPU、候选模型和测试计划 |
+| [`docs/arctic-shift.md`](docs/arctic-shift.md) | Arctic Shift 作为 Reddit 数据源的调研与条款 |
 
 本文件只列做什么、为什么、做到哪了；怎么做见技术路线规划。
 
@@ -64,7 +65,7 @@ v0.1 功能已全部完成：四类公开数据源 → 规则预过滤 → 本�
 - [x] 并发调用模型（`--workers`，默认 2；纯 CPU + Ollama 默认串行时提升有限，待真机实测）
 - [x] 运行记录：每次运行的抓取数、过滤数、失败数、耗时
 - [x] 定时运行：每天抓取，每周出摘要（compose 里可选的 `scheduler` 服务，`--profile cron`）
-- [ ] 实测 Arctic Shift 作为 Reddit 数据源（可能同时解决限流和历史数据问题）
+- [x] 实测 Arctic Shift 作为 Reddit 数据源：公开无 key、30 次实测无 429、能按时间增量和回填，已接入为 `arctic_shift` 源；但服务端关键词搜索超时（改本地筛）、新帖 score 要 36 小时后才准、第三方免费服务无可用性承诺且条款是灰色地带，所以 RSS 保留兜底、合规由你判断（见 [docs/arctic-shift.md](docs/arctic-shift.md)）
 
 验收：连续运行一周不重复处理；回填能中断续跑。
 

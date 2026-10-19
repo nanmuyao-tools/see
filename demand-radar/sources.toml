@@ -27,7 +27,23 @@ queries = [
   'is:issue is:open "feature request" in:title reactions:>20',
 ]
 
+# Reddit（走 Arctic Shift 第三方归档 API，无需 key）：按版块拉最新帖子，关键词在本地筛。
+# 比 RSS 好在不限流、能回填历史、老帖带 score；但它是志愿者维护的免费服务、不保证可用，
+# 所以下面四个 Reddit RSS 订阅保留做兜底——同一帖子两边都抓到会按 id 去重，不会重复抽取。
+# 调研与条款见 docs/arctic-shift.md
+[arctic_shift]
+enabled = true
+subreddits = ["SomebodyMakeThis", "macapps", "androidapps", "software"]
+
+# 本地关键词过滤：标题或正文含任一短语才保留（不区分大小写）；没列出的版块全部保留。
+# 只作用于日常抓取，回填拉整个版块（原因见 demand_radar/sources/arctic_shift.py）
+[arctic_shift.keywords]
+macapps = ["is there a", "looking for", "any app", "recommend"]
+androidapps = ["is there a", "looking for", "any app", "recommend"]
+software = ["is there a", "looking for", "recommend", "alternative to"]
+
 # RSS / Atom 订阅，加一个 [[rss]] 块就是加一个源
+# 下面四个 Reddit 订阅和 [arctic_shift] 覆盖同样的版块，是它的兜底；嫌 429 日志吵可以删掉
 [[rss]]
 name = "reddit/SomebodyMakeThis"
 url = "https://www.reddit.com/r/SomebodyMakeThis/new/.rss"

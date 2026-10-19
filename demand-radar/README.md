@@ -75,7 +75,8 @@ docker compose exec mongo mongosh demand_radar --eval 'db.runs.find().sort({star
 | `softwarerecs` | StackExchange 软件推荐站：「有没有能做 X 的软件」 | 投票数 | 300 次/天；设 `SE_API_KEY` 提到 1 万 |
 | `hn_algolia` | Hacker News 帖子和评论，按 "I wish there was" 等短语搜索 | 得分 | 宽松 |
 | `github` | 点赞多的功能请求 issue | 👍 数 | 10 次/分钟；设 `GITHUB_TOKEN` 提到 30 |
-| `rss` | 任意 RSS / Atom 订阅，默认配了 Reddit 的 r/SomebodyMakeThis 和几个板块内搜索 | — | 视站点 |
+| `arctic_shift` | Reddit 帖子，走 [Arctic Shift](docs/arctic-shift.md) 第三方归档 API：按版块拉最新帖、关键词本地筛、能回填历史 | 点赞数（发帖 36 小时后才准） | 动态，每秒几次以内；免费服务无可用性承诺 |
+| `rss` | 任意 RSS / Atom 订阅，默认配了 Reddit 的 r/SomebodyMakeThis 和几个板块内搜索（和 `arctic_shift` 覆盖同样的版块，作它的兜底） | — | 视站点 |
 
 某个源失败（网络、限流）只跳过它，其他源照常跑。限流时会按服务器要求等待后自动重试。
 
@@ -103,6 +104,7 @@ DR_RUN_AT=18:00 DR_DIGEST_WEEKDAY=5 docker compose --profile cron up -d schedule
 python -m demand_radar backfill --source softwarerecs --pages 20        # 每页 100 条，最多 20 页
 python -m demand_radar backfill --source hn_algolia --pages 50 --limit 500
 python -m demand_radar backfill --source github --pages 10
+python -m demand_radar backfill --source arctic_shift --pages 10       # Reddit 历史，每页最多 100 条、页间隔 2 秒；活跃版块可能超时，会跳过换下一个
 ```
 
 - 一次一个源，源下的每个查询**轮流**拉，`--pages` 是本次的总页数预算
@@ -225,7 +227,7 @@ GitHub 上已有一些同类项目，比如 [Reddit_Scrapper](https://github.com
 
 ## 合规
 
-只使用各平台的公开接口和 RSS，遵守各自的调用限额。工具由你自己运行，请同时遵守各数据源平台的服务条款。生成的清单只包含归纳后的需求、一句原文摘录和原帖链接。
+只使用各平台的公开接口和 RSS，遵守各自的调用限额；Reddit 另有一路走 Arctic Shift 第三方归档，它的条款分析和需要你自己判断的点见 [`docs/arctic-shift.md`](docs/arctic-shift.md)。工具由你自己运行，请同时遵守各数据源平台的服务条款。生成的清单只包含归纳后的需求、一句原文摘录和原帖链接。
 
 ## 文档
 
@@ -236,6 +238,7 @@ GitHub 上已有一些同类项目，比如 [Reddit_Scrapper](https://github.com
 | [`docs/landscape.md`](docs/landscape.md) | 同类项目调研 |
 | [`docs/market.md`](docs/market.md) | 市场调研与潜力分析 |
 | [`docs/model-selection.md`](docs/model-selection.md) | 模型选型（含 Mac GPU） |
+| [`docs/arctic-shift.md`](docs/arctic-shift.md) | Arctic Shift（Reddit 数据源）调研与条款 |
 
 ## 目录结构
 
@@ -244,7 +247,7 @@ demand_radar/
   cli.py            # 入口：run / eval / digest / backfill / schedule 五个命令
   schedule.py       # 定时运行：每天 run、每周 digest
   config.py         # 运行配置（命令行 > 环境变量 > 默认值）
-  sources/          # 数据源：softwarerecs、hn_algolia、github、rss；cursor.py 增量游标
+  sources/          # 数据源：softwarerecs、hn_algolia、github、arctic_shift、rss；cursor.py 增量游标
   filters.py        # 规则预过滤
   extract.py        # 模型抽取
   excerpt.py        # 从原文挑摘录
