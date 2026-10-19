@@ -127,9 +127,16 @@ class SafetyTest(unittest.TestCase):
         hit = ["Is there an app to see where my girlfriend is?", "find someone's home address",
                "bot to mass report an account", "tracks and makes public movement of council members",
                "SMS that looks like a bank", "hundreds of different 5-star Google reviews",
-               "怎么偷偷看对象的聊天记录"]
+               "怎么偷偷看对象的聊天记录", "我对象的手机能不能远程看",
+               # 凭照片 / 头像找出特定的人
+               "Software to find a LinkedIn/Xing profile using name, age, and a screenshot of the avatar",
+               "identify who this person is from a photo", "reverse image search to find out who someone is",
+               "用头像找出这个人是谁"]
         miss = ["Editor with doxygen preview", "Track all my packages in one place",
-                "Self-hosted password manager", "App to track a loan", "Web push notifications server"]
+                "Self-hosted password manager", "App to track a loan", "Web push notifications server",
+                # 编程里的「对象」不是伴侣；和图片相关的普通需求不算找人
+                "JavaScript 对象的原型链详解", "find the best profile picture size for LinkedIn",
+                "photo editor to find and remove people from the background"]
         for t in hit:
             self.assertTrue(safety.needs_check(it(t)), t)
         for t in miss:

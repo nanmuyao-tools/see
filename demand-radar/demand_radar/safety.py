@@ -46,8 +46,18 @@ _CUES = [
     # 冒充欺骗
     r"\b(look|looks|appear|appears)\s+like\s+(it\s+)?(comes?\s+from\s+)?(a|the|my|their)\s+bank\b",
     r"\b(spoof\w*|phish\w*|impersonat\w*|scam\s+(people|users|customers))\b",
-    # 中文
-    r"(老婆|老公|女朋友|男朋友|对象|前任|前女友|前男友|同事|领导|邻居|室友)的",
+    # 凭照片 / 人脸 / 头像找出特定的人（评测集里「用姓名、年龄和头像截图找 LinkedIn 账号」这类）
+    r"\b(find|finds|identify|identifies|look\s*up|locate|match|track\s+down)\b[^.]{0,60}"
+    r"\b(person|people|someone|somebody|identity|who\s+(this|that|he|she)\s+is)\b[^.]{0,60}"
+    r"\b(photo|photos|picture|face|faces|headshot|avatar|selfie|image)\b",
+    r"\b(find|finds|identify|identifies|look\s*up|locate|match|track\s+down)\b[^.]{0,40}"
+    r"\b(linkedin|facebook|instagram|xing|twitter|tiktok|social\s+media)\s+(profile|account)s?\b[^.]{0,80}"
+    r"\b(photo|photos|picture|face|faces|headshot|avatar|selfie|screenshot)\b",
+    r"\b(facial?\s+recognition|face\s+match\w*|reverse\s+image\s+search)\b[^.]{0,80}\b(person|people|someone|profile|account|who|identity)\b",
+    # 中文。「对象」单独出现多半是编程里的对象（评测集里一篇 JS 博客因此误报），只在带人称时算伴侣
+    r"(老婆|老公|女朋友|男朋友|前任|前女友|前男友|同事|领导|邻居|室友)的",
+    r"(我|他|她|你)对象的",
+    r"(通过|用|凭|根据)(头像|照片|人脸|长相)(找|查|搜|识别|认出)", r"(人脸识别|以图搜人)[^。]{0,30}(找|查|识别)(人|他|她|某人|身份)",
     r"(偷偷|悄悄|秘密|暗中|不让(他|她|对方)知道|不被(他|她|对方)发现)",
     r"(人肉|开盒|定位(他|她|别人|对方)|查(他|她|别人|对方)的?(住址|地址|位置))",
     r"(批量|群发|刷)(举报|好评|评论|短信|账号)", r"(冒充|仿冒|伪装成)",
