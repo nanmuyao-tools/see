@@ -19,9 +19,9 @@ EVAL_SET = os.path.join(HERE, "..", "eval", "eval_set.json")
 _FIELDS = ("is_request", "need", "domain", "pain_point", "buildable", "confidence")
 
 
-def demand(is_request, buildable, confidence=0.9, excerpt=""):
+def demand(is_request, buildable, confidence=0.9):
     return Demand(is_request=is_request, need="x" if is_request else "", domain="d",
-                  pain_point="", excerpt=excerpt, buildable=buildable,
+                  pain_point="", buildable=buildable,
                   clarity=3, intensity=3, feasibility=3, confidence=confidence)
 
 
@@ -105,13 +105,6 @@ class MetricsTest(unittest.TestCase):
         out = run_eval(eset, lambda c, it: demand(True, True))
         self.assertIn("误杀应入选 1 条", out)
         self.assertIn("FN=1", out)
-
-    def test_excerpt_validity(self):
-        eset = [item("1", True, True, text="I want a tool that does X"),
-                item("2", True, True, text="Something else entirely here")]
-        ex = {"t1": "I want a tool that does X", "t2": "made-up sentence"}
-        out = run_eval(eset, lambda c, it: demand(True, True, excerpt=ex[it.title]))
-        self.assertIn("摘录有效率        : 1/2", out)
 
     def test_extraction_failure_counted(self):
         eset = [item("1", True, True)]

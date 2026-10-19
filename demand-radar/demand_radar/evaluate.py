@@ -10,7 +10,7 @@
   - buildable：在「是需求」且标注非 null 的条目上，判断「能否做成」的准确率
   - 入选（端到端）：is_request ∧ buildable ∧ confidence≥阈值，与标准答案算精确率/召回率/F1
   - 规则过滤：挡掉多少条，其中有没有误杀应入选的（误杀必须为 0）
-  - 摘录有效率：模型给出的摘录里，确实出自原文的比例
+  - 摘录：由程序从原文挑选，-v 时逐条打印，供人工核对挑得对不对
 不写数据库。
 """
 
@@ -21,7 +21,8 @@ import sys
 
 from . import filters, sources
 from .config import Config
-from .extract import build_client, excerpt_in_source, extract_raw
+from . import excerpt
+from .extract import build_client, extract_raw
 from .models import SourceItem
 
 _ITEM_FIELDS = ("source", "external_id", "title", "text", "url", "score", "kind")
@@ -55,7 +56,6 @@ def run(cfg: Config) -> int:
     tp = fp = fn = tn = 0  # 以「应入选」为正类
     fails = 0
     filtered = filter_kills = 0
-    ex_given = ex_valid = 0
     model_calls = 0
     mistakes: list[str] = []
 
@@ -89,14 +89,6 @@ def run(cfg: Config) -> int:
             mistakes.append(f"  ⚠ 抽取失败  {item.title[:50]}  （{type(e).__name__}）")
             continue
 
-        # 摘录有效率：只统计模型给了摘录的
-        if r.excerpt:
-            ex_given += 1
-            ok = excerpt_in_source(r.excerpt, item)
-            ex_valid += ok
-            if not ok and cfg.verbose:
-                mistakes.append(f"  ✂ 摘录不在原文  {item.title[:30]}  摘录：{r.excerpt[:80]!r}")
-
         # is_request
         req_total += 1
         req_hit = r.is_request == label["is_request"]
@@ -129,6 +121,8 @@ def run(cfg: Config) -> int:
                 f"conf={r.confidence:.2f}  {item.title[:46]}"
                 + ("" if req_hit else f"  [is_request 判成 {r.is_request}]")
             )
+            if cfg.verbose and pred_listed:
+                mistakes.append(f"      摘录：{excerpt.pick(item)[:120]}")
 
     def pct(a: int, b: int) -> str:
         return f"{a}/{b} = {a / b * 100:4.1f}%" if b else "—"
@@ -149,7 +143,6 @@ def run(cfg: Config) -> int:
     print(f"           召回率 : {rec*100:4.1f}%  （该入选的里抓到多少）")
     print(f"           F1     : {f1*100:4.1f}%")
     print(f"规则过滤          : {filtered} 条，误杀应入选 {filter_kills} 条；调用模型 {model_calls} 次")
-    print(f"摘录有效率        : {pct(ex_valid, ex_given)}  （给出的摘录里确实出自原文的）")
     if fails:
         print(f"抽取失败          : {fails} 条")
     print("=" * 48)

@@ -7,7 +7,7 @@ import os
 import unittest
 
 from demand_radar import filters
-from demand_radar.extract import excerpt_in_source
+from demand_radar import excerpt
 from demand_radar.models import Demand, SourceItem
 
 HERE = os.path.dirname(__file__)
@@ -69,19 +69,48 @@ class RuleTest(unittest.TestCase):
 
 
 class ExcerptTest(unittest.TestCase):
-    item = it("Is there an app for this?",
-              "I’ve tried everything.  I want a tool that saves my thoughts while reading.")
+    """摘录由程序从原文挑选，必须是原文原话。"""
 
-    def test_exact_and_normalized_match(self):
-        self.assertTrue(excerpt_in_source("I want a tool that saves my thoughts while reading.", self.item))
-        # 大小写、弯引号、多余空白、首尾引号和省略号不影响
-        self.assertTrue(excerpt_in_source("“i've tried everything. i want a tool…”", self.item))
-        self.assertTrue(excerpt_in_source("Is there an app for this?", self.item))  # 来自标题
+    def test_post_title_with_cue_preferred(self):
+        item = it("Is there a program to retrieve the focused window?",
+                  "I'd like to spend less than $100. I've written most of it already.")
+        self.assertEqual(excerpt.pick(item), "Is there a program to retrieve the focused window?")
 
-    def test_invented_excerpt_rejected(self):
-        self.assertFalse(excerpt_in_source("I need a note-taking app for books", self.item))
-        self.assertFalse(excerpt_in_source("", self.item))
-        self.assertFalse(excerpt_in_source("...", self.item))
+    def test_first_body_sentence_with_cue(self):
+        item = it("Web push notifications server",
+                  "Browsers support web push. I need a self-hosted server for it. Is there one?")
+        self.assertEqual(excerpt.pick(item), "I need a self-hosted server for it.")
+
+    def test_bare_question_is_not_a_cue(self):
+        # 「Does this exist?」这类泛泛的问句不该被选中，回退到标题
+        item = it("Voting bot that changes flairs", "Use case: people vote on posts. Does this exist?")
+        self.assertEqual(excerpt.pick(item), "Voting bot that changes flairs")
+
+    def test_comment_never_uses_story_title(self):
+        # 评论的标题是所在帖子的标题，不是评论者的话
+        item = it("Show HN: Audiomass – an audio editor",
+                  "Great work. I need an audio tool to remaster old songs.", kind="comment")
+        self.assertEqual(excerpt.pick(item), "I need an audio tool to remaster old songs.")
+        plain = it("Show HN: Is there a tool", "Nice project, congrats on shipping it.", kind="comment")
+        self.assertEqual(excerpt.pick(plain), "Nice project, congrats on shipping it.")
+
+    def test_chinese_cue(self):
+        item = it("截图工具", "现在用的太卡了。有没有好用的开源截图工具？")
+        self.assertEqual(excerpt.pick(item), "有没有好用的开源截图工具？")
+
+    def test_excerpt_is_always_verbatim(self):
+        data = json.load(open(os.path.join(HERE, "..", "eval", "eval_set.json"), encoding="utf-8"))
+        for d in data:
+            item = SourceItem(**{k: d[k] for k in
+                                 ("source", "external_id", "title", "text", "url", "score", "kind")})
+            e = excerpt.pick(item)
+            self.assertIn(e, f"{item.title}\n{item.text}", d["title"])
+
+    def test_long_sentence_trimmed_to_prefix(self):
+        long = "I need a tool that " + "does many things " * 40
+        e = excerpt.pick(it("x", long))
+        self.assertLessEqual(len(e), excerpt.MAX_LEN)
+        self.assertTrue(long.startswith(e))
 
 
 def demand(**kw):

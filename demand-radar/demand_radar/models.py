@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pydantic import BaseModel, Field, field_validator
+from pydantic.json_schema import SkipJsonSchema
 
 
 class Demand(BaseModel):
@@ -20,10 +21,8 @@ class Demand(BaseModel):
     need: str = Field(description="What the user wants, in one sentence. Empty if is_request is false.")
     domain: str = Field(description="Short category, e.g. screenshot tool, productivity, developer tools.")
     pain_point: str = Field(description="What is wrong with existing solutions; empty if none.")
-    excerpt: str = Field(
-        description="Copy, word for word, the one sentence from the original post that best "
-        "shows the need. Keep the original language. Empty if is_request is false."
-    )
+    # 摘录由程序从原文挑选（见 excerpt.py），不进发给模型的 schema
+    excerpt: SkipJsonSchema[str] = ""
     buildable: bool = Field(
         description="Whether a solo developer could build it as a standalone tool or product."
     )
