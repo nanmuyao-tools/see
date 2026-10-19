@@ -1,29 +1,114 @@
-"""输出层：把筛选后的需求写成 Markdown 清单。"""
+"""输出层：全量需求清单、每周摘要，支持中英文。
+
+每条需求附原文摘录和原帖链接，读者可以一眼核对模型有没有概括偏。
+"""
 
 from __future__ import annotations
 
 import os
+from collections import defaultdict
 from datetime import datetime
 
+_LABELS = {
+    "zh": {
+        "list_title": "需求雷达清单",
+        "digest_title": "需求雷达周报",
+        "generated": "生成时间",
+        "total": "共 {n} 条",
+        "range": "最近 {days} 天新增",
+        "domain": "领域",
+        "pain": "现有痛点",
+        "excerpt": "原文",
+        "scores": "清晰度 {c} · 迫切度 {i} · 可实现性 {f}",
+        "heat": "热度",
+        "rank": "排序分",
+        "source": "来源",
+        "empty": "这段时间没有新的需求。",
+        "other": "其他",
+        "sep": "：",
+    },
+    "en": {
+        "list_title": "Demand Radar",
+        "digest_title": "Demand Radar Weekly",
+        "generated": "Generated",
+        "total": "{n} needs",
+        "range": "new in the last {days} days",
+        "domain": "Domain",
+        "pain": "Pain point",
+        "excerpt": "Quote",
+        "scores": "clarity {c} · intensity {i} · feasibility {f}",
+        "heat": "heat",
+        "rank": "rank",
+        "source": "Source",
+        "empty": "No new needs in this period.",
+        "other": "Other",
+        "sep": ": ",
+    },
+}
 
-def write_markdown(rows: list[dict], output_path: str) -> None:
-    os.makedirs(os.path.dirname(output_path) or ".", exist_ok=True)
+
+def _labels(lang: str) -> dict[str, str]:
+    return _LABELS.get(lang, _LABELS["zh"])
+
+
+def _entry(r: dict, heading: str, L: dict[str, str]) -> list[str]:
+    sep = L["sep"]
+    lines = [heading, ""]
+    if r.get("domain"):
+        lines.append(f"- {L['domain']}{sep}{r['domain']}")
+    if r.get("pain_point"):
+        lines.append(f"- {L['pain']}{sep}{r['pain_point']}")
+    if r.get("excerpt"):
+        lines.append(f"- {L['excerpt']}{sep}“{r['excerpt']}”")
+    meta = L["scores"].format(c=r.get("clarity", "—"), i=r.get("intensity", "—"), f=r.get("feasibility", "—"))
+    if r.get("score"):
+        meta += f" · {L['heat']} {r['score']}"
+    if "rank_score" in r:
+        meta += f" · {L['rank']} {r['rank_score']}"
+    lines.append(f"- {meta}")
+    lines.append(f"- {L['source']}{sep}[{r['source']}]({r['url']}) {r['title']}")
+    lines.append("")
+    return lines
+
+
+def _write(path: str, lines: list[str]) -> None:
+    os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
+    with open(path, "w", encoding="utf-8") as f:
+        f.write("\n".join(lines))
+
+
+def write_markdown(rows: list[dict], output_path: str, lang: str = "zh") -> None:
+    """全量清单，按 rows 的顺序（调用方先排好序）。"""
+    L = _labels(lang)
     lines = [
-        "# 需求雷达清单",
+        f"# {L['list_title']}",
         "",
-        f"生成时间：{datetime.now():%Y-%m-%d %H:%M}　|　共 {len(rows)} 条",
+        f"{L['generated']}: {datetime.now():%Y-%m-%d %H:%M} | {L['total'].format(n=len(rows))}",
         "",
     ]
     for i, r in enumerate(rows, 1):
-        lines += [
-            f"## {i}. {r['need'] or r['title']}",
-            "",
-            f"- 领域：{r['domain'] or '—'}",
-            f"- 现有痛点：{r['pain_point'] or '—'}",
-            f"- 可信度：{r['confidence']:.2f}"
-            + (f"　|　热度：{r['score']}" if r.get("score") else ""),
-            f"- 来源：[{r['source']}]({r['url']})　{r['title']}",
-            "",
-        ]
-    with open(output_path, "w", encoding="utf-8") as f:
-        f.write("\n".join(lines))
+        lines += _entry(r, f"## {i}. {r.get('need') or r['title']}", L)
+    _write(output_path, lines)
+
+
+def write_digest(rows: list[dict], output_path: str, days: int, lang: str = "zh") -> None:
+    """每周摘要：按领域分组，组按条数降序，组内按 rows 的顺序（调用方先排好序）。"""
+    L = _labels(lang)
+    lines = [
+        f"# {L['digest_title']} · {datetime.now():%Y-%m-%d}",
+        "",
+        f"{L['range'].format(days=days)} | {L['total'].format(n=len(rows))}",
+        "",
+    ]
+    if not rows:
+        lines.append(L["empty"])
+        _write(output_path, lines)
+        return
+    groups: dict[str, list[dict]] = defaultdict(list)
+    for r in rows:
+        groups[(r.get("domain") or "").strip() or L["other"]].append(r)
+    for domain, items in sorted(groups.items(), key=lambda kv: -len(kv[1])):
+        lines += [f"## {domain}（{len(items)}）" if lang == "zh" else f"## {domain} ({len(items)})", ""]
+        for r in items:
+            lines += _entry(r, f"### {r.get('need') or r['title']}", L)
+    _write(output_path, lines)

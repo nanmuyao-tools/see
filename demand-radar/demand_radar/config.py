@@ -31,6 +31,8 @@ class Config:
     eval_set: str = "eval/eval_set.json"  # eval 命令用的标注集
     output_language: str = "zh"  # 需求描述用的语言：zh 中文 / en 英文；摘录始终保留原文
     verbose: bool = False  # eval 命令：逐条打印
+    days: int = 7  # digest 命令：汇总最近多少天新增的需求
+    digest_output: str = ""  # digest 命令输出路径；空则为 out/digest-<日期>.md
 
     @staticmethod
     def from_args(argv: list[str] | None = None) -> "Config":
@@ -54,11 +56,8 @@ class Config:
 
         run = sub.add_parser("run", help="抓取 → 抽取 → 存储 → 输出清单")
         run.add_argument("--source", default=d.source)
-        run.add_argument("--sources-file", dest="sources_file", default=d.sources_file)
         run.add_argument("--limit", type=int, default=d.limit)
         run.add_argument("--min-confidence", type=float, default=d.min_confidence)
-        run.add_argument("--mongo-uri", dest="mongo_uri", default=d.mongo_uri)
-        run.add_argument("--db-name", dest="db_name", default=d.db_name)
         run.add_argument("--output", dest="output_path", default=d.output_path)
 
         ev = sub.add_parser("eval", help="在标注集上评测抽取质量，不写库")
@@ -66,12 +65,23 @@ class Config:
         ev.add_argument("--min-confidence", type=float, default=d.min_confidence)
         ev.add_argument("--verbose", "-v", action="store_true", default=d.verbose)
 
-        # 两个命令共用的模型参数
+        dg = sub.add_parser("digest", help="汇总最近 N 天新增的需求，按领域分组输出周报")
+        dg.add_argument("--days", type=int, default=d.days)
+        dg.add_argument("--min-confidence", type=float, default=d.min_confidence)
+        dg.add_argument("--output", dest="digest_output", default=d.digest_output)
+
+        # 调模型的命令共用
         for sp in (run, ev):
             sp.add_argument("--provider", default=d.provider)
             sp.add_argument("--ollama-base-url", dest="ollama_base_url", default=d.ollama_base_url)
+        # 读写数据库的命令共用
+        for sp in (run, dg):
+            sp.add_argument("--mongo-uri", dest="mongo_uri", default=d.mongo_uri)
+            sp.add_argument("--db-name", dest="db_name", default=d.db_name)
+        for sp in (run, ev, dg):
+            sp.add_argument("--sources-file", dest="sources_file", default=d.sources_file)
             sp.add_argument("--lang", dest="output_language", choices=("zh", "en"),
-                            default=d.output_language, help="需求描述的输出语言")
+                            default=d.output_language, help="输出语言")
 
         ns = p.parse_args(argv)
         return Config(
@@ -79,8 +89,8 @@ class Config:
             source=getattr(ns, "source", d.source),
             sources_file=getattr(ns, "sources_file", d.sources_file),
             limit=getattr(ns, "limit", d.limit),
-            provider=ns.provider,
-            ollama_base_url=ns.ollama_base_url,
+            provider=getattr(ns, "provider", d.provider),
+            ollama_base_url=getattr(ns, "ollama_base_url", d.ollama_base_url),
             min_confidence=getattr(ns, "min_confidence", d.min_confidence),
             mongo_uri=getattr(ns, "mongo_uri", d.mongo_uri),
             db_name=getattr(ns, "db_name", d.db_name),
@@ -88,4 +98,6 @@ class Config:
             eval_set=getattr(ns, "eval_set", d.eval_set),
             verbose=getattr(ns, "verbose", d.verbose),
             output_language=getattr(ns, "output_language", d.output_language),
+            days=getattr(ns, "days", d.days),
+            digest_output=getattr(ns, "digest_output", d.digest_output),
         )

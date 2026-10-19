@@ -50,3 +50,10 @@ url = "https://www.reddit.com/r/software/search.rss?q=%22looking+for%22&restrict
 disabled = []
 # 这些来源发布的是产品而不是需求，整源跳过（例如以后接入 Product Hunt 的 RSS）
 supply_sources = ["producthunt"]
+
+# 综合排序的权重：排序分 = 各项打分(1–5)×权重 + log(1+热度)×heat 权重。说明见 demand_radar/rank.py
+[ranking]
+clarity = 1.0      # 需求描述得清不清楚
+intensity = 1.5    # 用户有多想要
+feasibility = 1.0  # 个人做起来容不容易
+heat = 1.0         # 原帖热度

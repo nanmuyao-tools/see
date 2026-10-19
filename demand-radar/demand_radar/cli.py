@@ -3,8 +3,9 @@
 from __future__ import annotations
 
 import sys
+from datetime import datetime, timedelta, timezone
 
-from . import filters, sources, store
+from . import filters, rank, report, sources, store
 from .config import Config
 from .extract import build_client, extract
 
@@ -55,14 +56,26 @@ def run(cfg: Config) -> None:
         print(f"      {mark} {(demand.need or item.title)[:50]}")
     print(f"      规则过滤 {filtered} 条，抽取 {new} 条，失败 {failed} 条")
 
-    print(f"[3/4] 过滤（可信度 ≥ {cfg.min_confidence}）…")
-    rows = store.top_demands(coll, cfg.min_confidence)
+    print(f"[3/4] 筛选（可信度 ≥ {cfg.min_confidence}）并排序 …")
+    rows = rank.sort(store.top_demands(coll, cfg.min_confidence), rank.weights(conf.get("ranking")))
 
     print(f"[4/4] 写出 {cfg.output_path}（{len(rows)} 条）")
-    from .report import write_markdown
-    write_markdown(rows, cfg.output_path)
+    report.write_markdown(rows, cfg.output_path, cfg.output_language)
     coll.database.client.close()
     print("完成。")
+
+
+def digest(cfg: Config) -> None:
+    """汇总最近 N 天新增的需求，按领域分组写成周报。不调模型。"""
+    conf = sources.load_config(cfg.sources_file)
+    coll = store.connect(cfg.mongo_uri, cfg.db_name)
+    since = datetime.now(timezone.utc) - timedelta(days=cfg.days)
+    rows = rank.sort(store.recent_demands(coll, cfg.min_confidence, since),
+                     rank.weights(conf.get("ranking")))
+    path = cfg.digest_output or f"out/digest-{datetime.now():%Y-%m-%d}.md"
+    report.write_digest(rows, path, cfg.days, cfg.output_language)
+    coll.database.client.close()
+    print(f"最近 {cfg.days} 天新增 {len(rows)} 条需求，已写出 {path}")
 
 
 def main(argv: list[str] | None = None) -> None:
@@ -70,6 +83,9 @@ def main(argv: list[str] | None = None) -> None:
     if cfg.command == "eval":
         from . import evaluate
         raise SystemExit(evaluate.run(cfg))
+    if cfg.command == "digest":
+        digest(cfg)
+        return
     run(cfg)
 
 

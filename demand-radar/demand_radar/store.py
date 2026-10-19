@@ -92,13 +92,15 @@ def record_failure(coll, item: SourceItem, error: str) -> int:
     return attempts
 
 
+def _listed(min_confidence: float) -> dict[str, Any]:
+    return {"is_request": True, "buildable": True, "confidence": {"$gte": min_confidence}}
+
+
 def top_demands(coll, min_confidence: float) -> list[dict]:
-    """取出通过过滤的需求，按可信度降序，可信度相同时按热度降序。"""
-    cursor = coll.find(
-        {
-            "is_request": True,
-            "buildable": True,
-            "confidence": {"$gte": min_confidence},
-        }
-    ).sort([("confidence", -1), ("score", -1)])
-    return list(cursor)
+    """取出通过筛选的全部需求（排序交给 rank.sort）。"""
+    return list(coll.find(_listed(min_confidence)))
+
+
+def recent_demands(coll, min_confidence: float, since: datetime) -> list[dict]:
+    """取出 since 之后抽取、通过筛选的需求，给每周摘要用。"""
+    return list(coll.find({**_listed(min_confidence), "extracted_at": {"$gte": since}}))
