@@ -92,7 +92,10 @@ def run(cfg: Config) -> int:
         # 摘录有效率：只统计模型给了摘录的
         if r.excerpt:
             ex_given += 1
-            ex_valid += excerpt_in_source(r.excerpt, item)
+            ok = excerpt_in_source(r.excerpt, item)
+            ex_valid += ok
+            if not ok and cfg.verbose:
+                mistakes.append(f"  ✂ 摘录不在原文  {item.title[:30]}  摘录：{r.excerpt[:80]!r}")
 
         # is_request
         req_total += 1
