@@ -913,5 +913,830 @@
    "harmful": false,
    "note": "构造样本：仿照论坛常见说法编写，非真实抓取。提醒自己给父母打电话，正常需求"
   }
+ },
+ {
+  "source": "stackexchange/softwarerecs",
+  "external_id": "95668",
+  "title": "Is there an Android shell program which returns open windows titles in last focus sorting?",
+  "text": "On all popular operating systems are available system programs which return open windows titles sorted by some criteria. In the last 20 years or so though I've never seen or heard about one for Android, so I was wondering if it existed at all.",
+  "url": "https://softwarerecs.stackexchange.com/questions/95668/is-there-an-android-shell-program-which-returns-open-windows-titles-in-last-focu",
+  "score": 0,
+  "kind": "post",
+  "label": {
+   "is_request": true,
+   "buildable": true,
+   "note": "Android 命令行工具（按最近焦点顺序列出窗口标题），个人可做",
+   "harmful": false
+  }
+ },
+ {
+  "source": "stackexchange/softwarerecs",
+  "external_id": "95649",
+  "title": "Is there an app store from which applications can't be taken down by anybody, not even by myself?",
+  "text": "This question of mine is about whether it exists an application store from which applications can't be deleted from after published independently from one's will and even after the developer has deceased.",
+  "url": "https://softwarerecs.stackexchange.com/questions/95649/is-there-an-app-store-from-which-applications-cant-be-taken-down-by-anybody-no",
+  "score": -2,
+  "kind": "post",
+  "label": {
+   "is_request": true,
+   "buildable": null,
+   "note": "想要「任何人都删不掉应用」的应用商店；去中心化分发可做原型，但「不可删除」依赖基础设施与网络效应，可做性存疑",
+   "harmful": false
+  }
+ },
+ {
+  "source": "stackexchange/softwarerecs",
+  "external_id": "95595",
+  "title": "Offline Windows ledger for a one-person microgreens farm (trays + standing orders, no cloud)",
+  "text": "I run a one-person microgreens farm. I sow 10×20 trays on an ~11-day cycle, harvest by ounce, and sell standing orders to kitchens plus a Saturday market. A spreadsheet lets me overwrite a harvest cell. The total still looks fine. That tray is already promised. Must have Windows desktop, one operator, no user account Works with no internet after install (local file) Tray loop: sow, move to light, harvest by weight Standing orders next to what is actually on the rack (promised vs sown) Money in / money out where unpaid cannot be silently marked paid Export the books (file or CSV) so I can leave Nice to have No monthly subscription Open source Attach receipts Farm currency I pick (not locked to USD) Out of scope Field-crop ERP (farmOS-scale) Phone-first CRM Cloud farm SaaS that needs Wi-Fi to show this week’s trays What existing software actually meets the must-haves?",
+  "url": "https://softwarerecs.stackexchange.com/questions/95595/offline-windows-ledger-for-a-one-person-microgreens-farm-trays-standing-order",
+  "score": 3,
+  "kind": "post",
+  "label": {
+   "is_request": true,
+   "buildable": true,
+   "note": "单人微菜农场的离线 Windows 账本（托盘周期 + 长期订单），常规桌面开发",
+   "harmful": false
+  }
+ },
+ {
+  "source": "stackexchange/softwarerecs",
+  "external_id": "95578",
+  "title": "CLI tool to interactively fill a JSON/YAML schema and produce a project-local TOML config + shell env (Linux)",
+  "text": "I want a Linux CLI tool that helps new contributors onboard to a repo. Desired workflow: Repo ships a JSON Schema (or YAML form of it). After git clone, a developer runs a single command that interactively prompts for values, validates them against the schema (including checking that any referenced files/dirs exist), and writes a per-project TOML config file (e.g., project-config.toml) used by mise. The same command should also make those configuration values available as environment variables in the current shell session (project-local) without writing secrets into the repository. Requirements: Accept JSON Schema (YAML acceptable) and support nested objects and arrays. Validate path existence for keys flagged as paths. Allow marking fields as secrets and, if possible, store secrets in the OS keyring rather than writing them to disk. Produce TOML output suitable for mise; optionally generate small helper files so direnv or similar can expose env vars in the current shell. Linux CLI (single-binary preferred) and minimal dependencies. What I tried: Looked at mise (handles grouped TOML configs) but it doesn’t provide a generic schema-driven interactive setup wizard. Considered Cookiecutter / Yeoman (scaffolding, not schema validation/interactive environment provisioning). Considered using .env files but don’t want secrets in repo or static files loaded into every shell. What I’m asking: Is there an existing, maintained CLI tool that implements this workflow (schema → interactive",
+  "url": "https://softwarerecs.stackexchange.com/questions/95578/cli-tool-to-interactively-fill-a-json-yaml-schema-and-produce-a-project-local-to",
+  "score": 0,
+  "kind": "post",
+  "label": {
+   "is_request": true,
+   "buildable": true,
+   "note": "按 JSON Schema 交互式生成项目 TOML 配置和环境变量的 CLI，个人可做",
+   "harmful": false
+  }
+ },
+ {
+  "source": "stackexchange/softwarerecs",
+  "external_id": "95546",
+  "title": "What are the best alternatives when Zoho Payroll is not available in your country?",
+  "text": "We are considering using Zoho People for HR management, attendance, leave, overtime, and employee records for a company in Egypt. The main issue is that Zoho Payroll is not available in Egypt. The company mainly needs a reliable monthly payroll output showing things such as salary, attendance deductions, unpaid leave, overtime, penalties, bonuses, and net payable. We are currently considering using Excel or Zoho Sheet as the final payroll-calculation/reporting layer, with the relevant data exported from Zoho People each month. For anyone who has faced a similar situation: What alternatives did you use alongside Zoho People for payroll? Is Excel/Zoho Sheet a practical approach for a company of around 50 employees? Is there a better way to create a monthly payroll report without subscribing to another expensive HR/payroll platform? Are there any lightweight or free payroll solutions that integrate well with Zoho People? If you used Excel, how did you structure the workflow to keep it reliable and avoid manual errors? Interested in hearing what has worked well in real implementations.",
+  "url": "https://softwarerecs.stackexchange.com/questions/95546/what-are-the-best-alternatives-when-zoho-payroll-is-not-available-in-your-countr",
+  "score": 1,
+  "kind": "post",
+  "label": {
+   "is_request": true,
+   "buildable": null,
+   "note": "求埃及可用的工资计算方案；做一个轻量工资工具技术上可行，但依赖当地薪酬法规与合规细节，可做性存疑",
+   "harmful": false
+  }
+ },
+ {
+  "source": "stackexchange/softwarerecs",
+  "external_id": "95483",
+  "title": "Software to find a LinkedIn/Xing profile using name, age, and chat avatar (screenshot)",
+  "text": "I recently lost contact with a professional contact due to a technical glitch on a messaging platform. I am trying to find their professional profile on LinkedIn, Xing, or similar networks to reconnect. I have the following data points: Their Name (First and Last name) Their approximate age (which gives me a rough idea of their university graduation or career start year) A screenshot of their circular chat profile picture (which is relatively low-resolution). I am looking for a software tool, web service, or browser extension that can help me combine these clues to find the correct profile.",
+  "url": "https://softwarerecs.stackexchange.com/questions/95483/software-to-find-a-linkedin-xing-profile-using-name-age-and-chat-avatar-scree",
+  "score": 0,
+  "kind": "post",
+  "label": {
+   "is_request": true,
+   "buildable": true,
+   "note": "按姓名、年龄和头像截图找出特定人的社交账号，属于识别/定位特定的人；自述动机是重新联系，但工具本身是人肉搜索类，应转人工确认",
+   "harmful": true
+  }
+ },
+ {
+  "source": "stackexchange/softwarerecs",
+  "external_id": "95431",
+  "title": "A tool to stop Youtube from showing Arte videos?",
+  "text": "Arte is a French-German TV channel which produces many documentaries on all subjects. When I watch a documentary in French, I have to be very careful not to have a video from Arte coming up after my documentary finishes. Even if in my search terms I write \"-Arte\", I'm not protected. If I doze off, I'll be woken up by one of these horrible Arte videos. Using an internet filter is out, because these videos are uploaded on Youtube so I cannot block them like that without blocking Youtube. There are browser extensions which add filters to Youtube. Usually these are tuned to remove ads, but some can be tuned (ie no adult content, no profanity, etc.). But I haven't found one to block Arte videos. All suggestions welcome.",
+  "url": "https://softwarerecs.stackexchange.com/questions/95431/a-tool-to-stop-youtube-from-showing-arte-videos",
+  "score": 1,
+  "kind": "post",
+  "label": {
+   "is_request": true,
+   "buildable": true,
+   "note": "屏蔽 YouTube 上某个频道的推荐，浏览器扩展即可",
+   "harmful": false
+  }
+ },
+ {
+  "source": "stackexchange/softwarerecs",
+  "external_id": "95428",
+  "title": "Can any OCR software recognise Ogham?",
+  "text": "I possess some Ogham letters, which I have scanned as monochromatic TIFFs. I want to convert them to UTF, like “ᚆᚑᚒᚒ ᚇᚑ ᚔ ᚒᚒᚏᚔᚈᚓ ᚔᚅ ᚑᚌᚆᚐᚋ”. Conceptually, it should be trivial.",
+  "url": "https://softwarerecs.stackexchange.com/questions/95428/can-any-ocr-software-recognise-ogham",
+  "score": 1,
+  "kind": "post",
+  "label": {
+   "is_request": true,
+   "buildable": true,
+   "note": "识别欧甘文字的 OCR，用 Tesseract 等训练字体即可，个人可做",
+   "harmful": false
+  }
+ },
+ {
+  "source": "stackexchange/softwarerecs",
+  "external_id": "95339",
+  "title": "Tree-like command that only shows directories with files?",
+  "text": "The Windows tree command outputs a visual hierarchy of directories and files. But it shows all directories, empty or not. For example: BaseDir | +-SubDir1 | +-SubDir2 | | | *-File1 | | | +-File2 | +-SubDir3 | +-SubDir4 | +-SubDir5 | +-File3 Is there a form of a tree command (or series of commands piped to each other) that allows you to cull out directories that do not have files in them, but still keep the the visual representation? For example: BaseDir | +-SubDir2 | | | *-File1 | | | +-File2 | +-SubDir3 | +-SubDir5 | +-File3",
+  "url": "https://softwarerecs.stackexchange.com/questions/95339/tree-like-command-that-only-shows-directories-with-files",
+  "score": 3,
+  "kind": "post",
+  "label": {
+   "is_request": true,
+   "buildable": true,
+   "note": "只显示含文件目录的 tree 命令，简单 CLI",
+   "harmful": false
+  }
+ },
+ {
+  "source": "stackexchange/softwarerecs",
+  "external_id": "95336",
+  "title": "Do any VOIP servers support RCS?",
+  "text": "As the responses to reddit.com/r/VOIP/comments/r958pc explain, no servers (nor provders) appear to support it, let alone clients. However, it should be technically feasible. [F]OSS is ideal.",
+  "url": "https://softwarerecs.stackexchange.com/questions/95336/do-any-voip-servers-support-rcs",
+  "score": 2,
+  "kind": "post",
+  "label": {
+   "is_request": true,
+   "buildable": false,
+   "note": "想要支持 RCS 的 VoIP 服务器；RCS 必须接入运营商/Google Jibe 网络互联，个人做不了",
+   "harmful": false
+  }
+ },
+ {
+  "source": "stackexchange/softwarerecs",
+  "external_id": "95610",
+  "title": "Can an Android app track a phone’s live location using only its phone number?",
+  "text": "I came across SpyHuman’s “phone number tracker” page. The heading suggests tracking by phone number, but the page also says that live location requires its app to be installed on an authorised Android device. From Android’s perspective, does the phone number play any part in obtaining the device’s GPS location, or is the location collected by the installed app using Android’s location permission and then sent to a dashboard? I’m trying to understand the technical distinction between looking up a phone number and tracking the location of a device on which an app has been installed.",
+  "url": "https://softwarerecs.stackexchange.com/questions/95610/can-an-android-app-track-a-phone-s-live-location-using-only-its-phone-number",
+  "score": -1,
+  "kind": "post",
+  "label": {
+   "is_request": false,
+   "buildable": null,
+   "note": "在问 SpyHuman 按手机号定位的技术原理，不是在求工具",
+   "harmful": false
+  }
+ },
+ {
+  "source": "stackexchange/softwarerecs",
+  "external_id": "95351",
+  "title": "Android Offline Calendar That Repeats Notifications Until Manually Dismissed",
+  "text": "I'm looking for a calendar app for Android that: Can work offline and doesn't require any accounts or access to online calendars. Automatically repeats notification sounds (and pop-up messages) until manually dismissed (a Dismiss button is pressed). So, if a user isn't near their phone and the notification sound and/or vibration is fired, the app should automatically repeat the notification after some time (for example, play the sound and/or vibrate, silent period, repeat after, say, 10 minutes). Supports snoozing (via a Snooze button). Supports recurring events (daily, weekly, monthly, etc.). At least, has month and year views.",
+  "url": "https://softwarerecs.stackexchange.com/questions/95351/android-offline-calendar-that-repeats-notifications-until-manually-dismissed",
+  "score": 1,
+  "kind": "post",
+  "label": {
+   "is_request": true,
+   "buildable": true,
+   "note": "离线、通知反复提醒直到手动关闭的 Android 日历，常规开发",
+   "harmful": false
+  }
+ },
+ {
+  "source": "hackernews",
+  "external_id": "50110933",
+  "title": "What I Self-Host",
+  "text": "Quadlets rule, I have tons of them configured for my professional and hobby/self-hosting services. Super convenient, I wish there was something equivalent for my Mac (launchd files just don't cut it).",
+  "url": "https://news.ycombinator.com/item?id=50110933",
+  "score": 0,
+  "kind": "comment",
+  "label": {
+   "is_request": true,
+   "buildable": true,
+   "note": "想要 Mac 上类似 Quadlet 的声明式服务/容器管理（launchd 不够用），个人可做",
+   "harmful": false
+  }
+ },
+ {
+  "source": "hackernews",
+  "external_id": "50099718",
+  "title": "An Apology",
+  "text": "We have AirTags registered to my wife's account because I use Android. I have one in my work backpack, and every morning I get a notification that an unknown tracker is following me. I wish there was a way to silence the warning for that specific tag.",
+  "url": "https://news.ycombinator.com/item?id=50099718",
+  "score": 0,
+  "kind": "comment",
+  "label": {
+   "is_request": true,
+   "buildable": false,
+   "note": "想关掉 Android 对妻子账号 AirTag 的「未知追踪器」警告；这是系统级功能只能 Google/Apple 改；文中「my wife」会命中有害规则，但属正常需求",
+   "harmful": false
+  }
+ },
+ {
+  "source": "hackernews",
+  "external_id": "50060647",
+  "title": "Thinking will become a hobby",
+  "text": "I have pretty heavily dumbified iPhone just for the camera and music. I wish there was a dumbphone with a decent camera with telephoto. I have standalone camera but with a decent lens it's just too big to have on me at all times and unfortunately I like taking photos.",
+  "url": "https://news.ycombinator.com/item?id=50060647",
+  "score": 0,
+  "kind": "comment",
+  "label": {
+   "is_request": true,
+   "buildable": false,
+   "note": "想要带长焦镜头的功能机，硬件产品",
+   "harmful": false
+  }
+ },
+ {
+  "source": "hackernews",
+  "external_id": "50036481",
+  "title": "OpenSCAD the Programmers Solid 3D CAD Modeller",
+  "text": "Near impossible to do it robustly without AI, since a mesh is a blob of triangles and vertices, it doesn't really know if something is a \"face\" or an \"edge\", and mesh STL -> BREP STEP is akin to decompilation from binary than it is a simple translation. So, the most robust approach is to get a human/LLM to reconstruct the STEP file from the STL/OBJ/glTF file with a BREP kernel. I wish there was an easier way, but I've spent weeks during the course of the project working on and failing to solve a similar problem (SDF to BREP) and concluded finally that there just isn't an easier way to do this fully automated without AI. You can ask your LLM to try it with one of the OCCT wrappers or with my thing, I think Aetheris is slightly better because we added more STEP diagnostic tools like ray query depth detection and SVG sectional view during the course of development.",
+  "url": "https://news.ycombinator.com/item?id=50036481",
+  "score": 0,
+  "kind": "comment",
+  "label": {
+   "is_request": false,
+   "buildable": null,
+   "note": "关于 STL 转 BREP 的技术讨论，作者自己也说没有更简单的办法，不是具体需求",
+   "harmful": false
+  }
+ },
+ {
+  "source": "hackernews",
+  "external_id": "49936907",
+  "title": "Sites in ChatGPT",
+  "text": "uBlock needs a slop filter post haste. And I wish there was a SponsorBlock type, crowdsourced slop filter for Youtube.",
+  "url": "https://news.ycombinator.com/item?id=49936907",
+  "score": 0,
+  "kind": "comment",
+  "label": {
+   "is_request": true,
+   "buildable": true,
+   "note": "想要 YouTube 上类似 SponsorBlock 的众包「AI 垃圾内容」过滤器，浏览器扩展 + 众包数据库可做",
+   "harmful": false
+  }
+ },
+ {
+  "source": "hackernews",
+  "external_id": "49874875",
+  "title": "Have an LLC",
+  "text": "i wish there was a 'follow user' option on HN so I could subscribe to certain HNers, each time they wrote a comment.",
+  "url": "https://news.ycombinator.com/item?id=49874875",
+  "score": 0,
+  "kind": "comment",
+  "label": {
+   "is_request": true,
+   "buildable": true,
+   "note": "想在 HN 上关注特定用户的新评论；HN 本身不提供，但用公开 API 做第三方通知工具即可，不必平台改",
+   "harmful": false
+  }
+ },
+ {
+  "source": "hackernews",
+  "external_id": "48912648",
+  "title": "No Spanish reading crisis?",
+  "text": "Really? I find phone book reading to be a very primitive experience without researching SOTA book apps. Is there an app that turns ebooks into a single infinite scroll longform article with intuitive bookmarking and easy book purchase/discovery?",
+  "url": "https://news.ycombinator.com/item?id=48912648",
+  "score": 0,
+  "kind": "comment",
+  "label": {
+   "is_request": true,
+   "buildable": true,
+   "note": "把电子书变成无限滚动长文并带书签与购书发现的阅读 app，个人可做",
+   "harmful": false
+  }
+ },
+ {
+  "source": "hackernews",
+  "external_id": "47720321",
+  "title": "CPU-Z and HWMonitor compromised",
+  "text": "Is there a tool out there that you can put software releases into and it will tell you how safe it is? I don't seem to be able to buy anything to do this. Crowdstrike and other modern antivirus may react to it once it's on a device, SAST / SCA tooling will help with CVEs, but there's nothing I can give my users where they can put in some piece of random software and get a reputation metric out the other side, is there?",
+  "url": "https://news.ycombinator.com/item?id=47720321",
+  "score": 0,
+  "kind": "comment",
+  "label": {
+   "is_request": true,
+   "buildable": null,
+   "note": "把任意软件发布包丢进去就给出安全评分；可封装 VirusTotal 等 API，但「信誉度」判断依赖大量专有数据，可做性存疑",
+   "harmful": false
+  }
+ },
+ {
+  "source": "hackernews",
+  "external_id": "46763616",
+  "title": "The Holy Grail of Linux Binary Compatibility: Musl and Dlopen",
+  "text": "Is there a tool that takes an executable, collects all the required .so files and produces either a static executable, or a package that runs everywhere?",
+  "url": "https://news.ycombinator.com/item?id=46763616",
+  "score": 0,
+  "kind": "comment",
+  "label": {
+   "is_request": true,
+   "buildable": true,
+   "note": "把可执行文件连同依赖的 .so 打包成到处能跑的包，已有同类工具，个人可做",
+   "harmful": false
+  }
+ },
+ {
+  "source": "hackernews",
+  "external_id": "46620045",
+  "title": "I hate GitHub Actions with passion",
+  "text": "Do you (or does anyone) see possible value in a CI tool that just launches your script directly? It seems like if you > 2. Don't have logic in your workflows. Workflows should be dumb and simple (KISS) and they should call your scripts. then you’re basically working against or despite the CI tool, and at that point maybe someone should build a better or more suitable CI tool.",
+  "url": "https://news.ycombinator.com/item?id=46620045",
+  "score": 0,
+  "kind": "comment",
+  "label": {
+   "is_request": false,
+   "buildable": null,
+   "note": "讨论 CI 工具的设计哲学，「也许该有人做个更合适的 CI」只是顺口一提，不是具体需求",
+   "harmful": false
+  }
+ },
+ {
+  "source": "hackernews",
+  "external_id": "50085840",
+  "title": "Show HN: Guitoro, a virtual guitar you strum with your keyboard",
+  "text": "I would pay for this in a VST form",
+  "url": "https://news.ycombinator.com/item?id=50085840",
+  "score": 0,
+  "kind": "comment",
+  "label": {
+   "is_request": true,
+   "buildable": true,
+   "note": "Show HN 帖子下的评论，想要该虚拟吉他的 VST 插件版；评论不被 show_hn 规则挡，VST 插件个人可做",
+   "harmful": false
+  }
+ },
+ {
+  "source": "hackernews",
+  "external_id": "49647409",
+  "title": "Kagi Translate Is Back",
+  "text": "Kagi Translate has become my most used Kagi product. I would pay for API access",
+  "url": "https://news.ycombinator.com/item?id=49647409",
+  "score": 0,
+  "kind": "comment",
+  "label": {
+   "is_request": true,
+   "buildable": false,
+   "note": "想要 Kagi Translate 的 API 访问，只有 Kagi 自己能提供",
+   "harmful": false
+  }
+ },
+ {
+  "source": "hackernews",
+  "external_id": "50022196",
+  "title": "The Deeply Impersonal Personalized Recruiter Mail",
+  "text": "it was nice while it lasted. I guess my next step is a jev+cron to sort good from bad. Browser automation here we come. Someone want to write a Firefox extension that runs in your open browser tab? I would pay for this.",
+  "url": "https://news.ycombinator.com/item?id=50022196",
+  "score": 0,
+  "kind": "comment",
+  "label": {
+   "is_request": true,
+   "buildable": true,
+   "note": "想要一个在已打开的浏览器标签里自动筛选招聘邮件的 Firefox 扩展，愿付费，个人可做",
+   "harmful": false
+  }
+ },
+ {
+  "source": "github",
+  "external_id": "desktop/desktop#1525",
+  "title": "[desktop/desktop] GitHub Desktop for Linux?",
+  "text": "Updating this issue with response from @billygriffin from the GitHub Desktop team (updated early 2021): We have no immediate plans to support an official Linux version, but we continue to evaluate it alongside our other priorities and we know it's important to many people out there. I also know \"maybe someday\" is a disappointing response and I apologize for that. We're enormously grateful that @shiftkey has built a fork (https://github.com/shiftkey/desktop) and that many people are using that successfully, but @shiftkey is only one person and I hope people will understand that he's not always able to keep it entirely up to date with the official version. I assure you that if/when we're able to commit to supporting a Linux version, we'll update this issue accordingly, and I appreciate your ask for a more \"official\" answer. I'd also ask that others please refrain from responding to this issue with \"when though?\", \"I want this too\", or similar responses. Thanks! --- Original issue content: Please make Github Desktop available for linux user 😃 **Update** : There is a fork with prebuilt Linux binaries by @shiftkey here https://github.com/shiftkey/desktop",
+  "url": "https://github.com/desktop/desktop/issues/1525",
+  "score": 3146,
+  "kind": "post",
+  "label": {
+   "is_request": true,
+   "buildable": true,
+   "note": "给 GitHub Desktop 要 Linux 版；项目本身开源（MIT），社区 fork 已经做出来了，个人可做",
+   "harmful": false
+  }
+ },
+ {
+  "source": "github",
+  "external_id": "alacritty/alacritty#50",
+  "title": "[alacritty/alacritty] Support for ligatures",
+  "text": "I would love to see the support for ligatures (an example of their use might be found in https://github.com/tonsky/FiraCode). Please note that i have almost no idea how do they work under the hood, and so i don't know how hard is it to implement support for them, I'm just throwing an idea here. Anyhow i think this is a great project, congratulation! :)",
+  "url": "https://github.com/alacritty/alacritty/issues/50",
+  "score": 1031,
+  "kind": "post",
+  "label": {
+   "is_request": true,
+   "buildable": true,
+   "note": "给开源终端加连字支持，可以直接贡献代码",
+   "harmful": false
+  }
+ },
+ {
+  "source": "github",
+  "external_id": "astral-sh/uv#6794",
+  "title": "[astral-sh/uv] Upgrade dependencies in `pyproject.toml` (`uv upgrade`)",
+  "text": "# this will update the version pins in the pyproject.toml file prior art: - deno: https://deno.com/blog/v2.2#dependency-management - poetry: https://github.com/MousaZeidBaker/poetry-plugin-up - npm: https://docs.npmjs.com/cli/v10/commands/npm-update - npm-check-updates: https://www.npmjs.com/package/npm-check-updates ```py > uv upgrade upgraded 10 dependencies in 0.001 seconds 🚀 ``` why? when i want to update all the dependencies in a project, it can be tedious to manually search for and update each and every dependency. additionally, for application projects (not libraries), i like to be able to squizz the pyproject file for an easy overview of which dependencies are actually installed, not just some possible range",
+  "url": "https://github.com/astral-sh/uv/issues/6794",
+  "score": 537,
+  "kind": "post",
+  "label": {
+   "is_request": true,
+   "buildable": true,
+   "note": "给开源工具 uv 加 upgrade 子命令，可贡献实现或写独立脚本",
+   "harmful": false
+  }
+ },
+ {
+  "source": "github",
+  "external_id": "hashicorp/vagrant#12518",
+  "title": "[hashicorp/vagrant] Provider for UTM (VM for M1 processors)",
+  "text": "On new Mac's with M1 processors users can't use Virtualbox and VMware, but UTM works: https://mac.getutm.app/ Could you please add provider for UTM? That will save a lot of developer life :) Thanks!",
+  "url": "https://github.com/hashicorp/vagrant/issues/12518",
+  "score": 418,
+  "kind": "post",
+  "label": {
+   "is_request": true,
+   "buildable": true,
+   "note": "Vagrant 的 provider 是插件机制，个人可以写 UTM provider（社区已有）",
+   "harmful": false
+  }
+ },
+ {
+  "source": "github",
+  "external_id": "anuraghazra/github-readme-stats#1",
+  "title": "[anuraghazra/github-readme-stats] [Feature Request] Add organization stats",
+  "text": "Most of my open-source work is moved to dedicated organizations ([47ng](https://github.com/47ng), [FortySevenEffects](https://github.com/FortySevenEffects), [Chiffre](https://github.com/chiffre-io)), for scoping and to avoid cluttering my personal repos. I'd be happy to contribute a feature to include aggregated organization stats. API ideas: ``` ![Anurag's github stats](https://github-readme-stats.vercel.app/api?username=anuraghazra&orgs=acme,evilcorp,fsociety) ```",
+  "url": "https://github.com/anuraghazra/github-readme-stats/issues/1",
+  "score": 294,
+  "kind": "post",
+  "label": {
+   "is_request": true,
+   "buildable": true,
+   "note": "开源项目的功能请求，提出者自己就表示愿意贡献实现",
+   "harmful": false
+  }
+ },
+ {
+  "source": "github",
+  "external_id": "moby/moby#30623",
+  "title": "[moby/moby] [Feature request] Dry run mode for prune commands",
+  "text": "The new `prune` commands are potentially dangerous and I find it hard to predict what actually would be deleted. The user might use `docker system df` and `docker image ls --filter dangling=true` to get to this information, but this seems like an unneccessary step. I propose to add a new operating mode where the normal output is produced without actually deleting the objects. ```bash $ docker system prune --dry-run Warning: Running in dry run mode, not actually deleting anything. Deleted Volumes: dockerdev-go-pkg-cache-gopath dockerdev-go-pkg-cache-goroot-linux_amd64_netgo Total reclaimed space: 112.1 MB ``` The user could then decide to run the same command again without `--dry-run`.",
+  "url": "https://github.com/moby/moby/issues/30623",
+  "score": 393,
+  "kind": "post",
+  "label": {
+   "is_request": true,
+   "buildable": true,
+   "note": "给 docker prune 加 dry-run，开源项目可贡献，也能做外部包装脚本",
+   "harmful": false
+  }
+ },
+ {
+  "source": "github",
+  "external_id": "isaacs/github#627",
+  "title": "[isaacs/github] Contribution graph can be harmful to contributors",
+  "text": "A common well-being issue in open-source communities is the tendency of people to over-commit. Many contributors care deeply, at the risk of saying yes too often harming their well-being. Open-source communities are especially at risk, because many contributors work next to a full-time job. The contribution graph and the statistics on it, prominent on everyone's profile, basically rewards people for doing work on as many different days as possible, generally making more contributions, and making contributions on multiple days in a row without a break. Stepping away from our work regularly is not only important to uphold high quality work, but also to maintain our well-being. For example, I personally do not generally work in the weekends. That’s completely healthy. I take a step back from work and spend time on other things. But in the contribution graph it means I can never make a long streak, even though I do work virtually every day except weekends. So the graph motivates me to work in my weekends as well, and not take breaks. And when I see someone with a 416 day streak, it means they haven’t taken a break for a single day in over a year. Although everyone can make their own choices, it makes me very worried about their well-being. Any mechanism in our community that motivates people to avoid taking breaks and avoid stepping back, can be harmful to the well-being of contributors and is thereby harmful to open source as a whole. Even though it was probably introduced with ",
+  "url": "https://github.com/isaacs/github/issues/627",
+  "score": 1157,
+  "kind": "post",
+  "label": {
+   "is_request": true,
+   "buildable": false,
+   "note": "要求 GitHub 改掉贡献图的激励机制，只能平台方改；浏览器扩展只能本地隐藏，改不了平台行为",
+   "harmful": false
+  }
+ },
+ {
+  "source": "github",
+  "external_id": "actions/runner#2347",
+  "title": "[actions/runner] Please support something like \"allow-failure\" for a given job",
+  "text": "Edit from @vanZeben: > As this is a GitHub Actions platform feature request, discussion for this feature has been moved to https://github.com/orgs/community/discussions/15452, please go and put your support behind that community discussion instead of this issue. --- We use github actions in our \"snapd\" project and we love them. One small feature we would love to see is a way to mark a test job as \"allow-failure\" (or a term along these lines) [0]. This would simply mean that the overall /pulls overview page would show the PR as with the little green tick-mark (and maybe in the tooltip 5/6 OK, 1 ignored). It would still show as a failure in the details view (maybe with a different icon?). Our use-case is that we have some CI environments that fail frequently because of external factors like repository mirrors that are our of sync etc. We still want to run the CI on these systems but not get distracted too much by these out-of-our-control issues. Hope this makes sense. Thanks! Michael [0] E.g. ``` jobs: spread: runs-on: ubuntu-latest allow-failure: true steps: - do-some-flaky-stuff ```",
+  "url": "https://github.com/actions/runner/issues/2347",
+  "score": 1467,
+  "kind": "post",
+  "label": {
+   "is_request": true,
+   "buildable": false,
+   "note": "GitHub Actions 平台级功能（allow-failure），issue 里也说明已转到平台讨论区，个人做不了",
+   "harmful": false
+  }
+ },
+ {
+  "source": "github",
+  "external_id": "warpdotdev/warp#4339",
+  "title": "[warpdotdev/warp] Make Warp work with Local Language Models (like Ollama models)",
+  "text": "### Discord username (optional) _No response_ ### Describe the solution you'd like? Due to safety concerns, many users are getting paranoid about Warp's forced login and online AI assistance. Since terminals are used to access critical data on local machines and servers, adding the ability to use local language models like Llama 2 using Ollama instead of online AI engines would be a great plus to Warp terminal emulator. ### Is your feature request related to a problem? Please describe. Mostly safety concerns when using Warp for accessing password protected systems and documents. ### Additional context _No response_ ### How important is this feature to you? 4 ### Warp Internal (ignore) - linear-label:39cc6478-1249-4ee7-950b-c428edfeecd1 None",
+  "url": "https://github.com/warpdotdev/warp/issues/4339",
+  "score": 1233,
+  "kind": "post",
+  "label": {
+   "is_request": true,
+   "buildable": false,
+   "note": "Warp 终端闭源，让它支持本地模型只能由 Warp 团队做",
+   "harmful": false
+  }
+ },
+ {
+  "source": "github",
+  "external_id": "ValveSoftware/steam-for-linux#4924",
+  "title": "[ValveSoftware/steam-for-linux] [Feature Request]Need the client to support wayland(not through xwayland)",
+  "text": "This is feature request This will greatly help users with multi-gpu setups like optimus / SLI and developrs to move forward with wayland adoption",
+  "url": "https://github.com/ValveSoftware/steam-for-linux/issues/4924",
+  "score": 1454,
+  "kind": "post",
+  "label": {
+   "is_request": true,
+   "buildable": false,
+   "note": "Steam 客户端闭源，原生 Wayland 支持只能 Valve 做",
+   "harmful": false
+  }
+ },
+ {
+  "source": "github",
+  "external_id": "google/dagger#2349",
+  "title": "[google/dagger] Feature request: Support KSP",
+  "text": "For Kotlin projects, Dagger currently makes use of KAPT. This is generally quite slow since it requires generating Java stubs before the annotation processing step. [KSP](https://github.com/google/ksp) offers an alternative to this by making it easier for annotation processors like Dagger to more directly use Kotlin's compiler plugin infrastructure. Based on initial benchmarks, using KSP can speed up build times by as much as 2x.",
+  "url": "https://github.com/google/dagger/issues/2349",
+  "score": 578,
+  "kind": "post",
+  "label": {
+   "is_request": true,
+   "buildable": null,
+   "note": "Dagger 开源可贡献，但 KSP 支持是贯穿整个注解处理器的大工程，远超个人几个月，可做性存疑",
+   "harmful": false
+  }
+ },
+ {
+  "source": "github",
+  "external_id": "storytold/artcraft-services#80",
+  "title": "[storytold/artcraft-services] [Feature Request] MailCraft – an open-source Outlook alternative",
+  "text": "## Description ArtCraft already offers great open-source alternatives to well-known apps (PhotoCraft for Photoshop, LightCraft for Lightroom). I would love to see an email, calendar and contacts app in the same style – a native, open-source alternative to Microsoft Outlook, written in Rust. ## Proposed features - Email via IMAP/SMTP and Microsoft Exchange / Office 365 (EWS, ActiveSync, Microsoft Graph) - Calendar and contacts (CalDAV/CardDAV and Exchange) - Import of Outlook files: PST, OST and MSG - Unified inbox for multiple accounts - Offline mode and fast search - Privacy first: credentials stay on the user's machine, no cloud relay (unlike the \"new Outlook\", which sends IMAP/SMTP credentials to Microsoft servers) ## Helpful resources - Microsoft publishes the file and protocol formats as Open Specifications ([MS-PST], [MS-OXMSG], [MS-OXCMAPIHTTP], …) - Existing open-source projects for reference: libpff, libpst, DavMail, Evolution EWS, Grommunio ## Benefits - Many users are locked into Outlook only because of Exchange/PST support - It would fit perfectly into the ArtCraft suite and launcher - Available on macOS, Windows, Linux and Web like the other Craft apps",
+  "url": "https://github.com/storytold/artcraft-services/issues/80",
+  "score": 11,
+  "kind": "post",
+  "label": {
+   "is_request": true,
+   "buildable": null,
+   "note": "想要 Rust 写的开源 Outlook 替代；基础邮件客户端可做，但列出的 Exchange、PST 导入等全套功能远超个人几个月，可做性存疑",
+   "harmful": false
+  }
+ },
+ {
+  "source": "github",
+  "external_id": "filipedeschamps/video-maker#1",
+  "title": "[filipedeschamps/video-maker] Escopo e tarefas",
+  "text": "- [x] Especificar tarefas e escopo --- - [x] **Orquestrador** - [x] Perguntar pelo termo de busca - [x] Perguntar pelo prefixo - [x] Iniciar robô de texto - [x] Iniciar robô de imagens - [x] Iniciar robô do vídeo - [x] Iniciar robô do YouTube --- - [x] **Robô de texto** - [x] Estrutura de dados - [x] Pegar conteúdo do Wikipedia - [x] Limpar o conteúdo - [x] Quebrar em sentenças - [x] Pegar a interpretação do Watson - [x] Adicionar tags - [x] Salvar estrutura de dados --- - [x] **Robô de imagens** - [x] Carregar a estrutura de dados - [x] Buscar as imagens no Google Images - [x] Baixar as imagens - [x] Salvar a estrutura de dados --- - [x] **Robô de vídeo** - [x] Preparar/redimensionar as imagens - [x] Criar as sentenças com imagens - [x] Criar a thumbnail para o vídeo - [x] Renderizar o vídeo com After Effects --- - [x] **Robô do YouTube** - [x] Autenticar com o OAuth - [x] Upload do vídeo - [x] Upload da thumbnail",
+  "url": "https://github.com/filipedeschamps/video-maker/issues/1",
+  "score": 230,
+  "kind": "post",
+  "label": {
+   "is_request": false,
+   "buildable": null,
+   "note": "作者自己的任务清单（葡萄牙语），不是需求",
+   "harmful": false
+  }
+ },
+ {
+  "source": "github",
+  "external_id": "jordanbaird/Ice#993",
+  "title": "[jordanbaird/Ice] [Feature Request]: This project is no longer maintained by the original author",
+  "text": "### Search for Similar Requests - [x] I have searched existing issues for similar requests ### Description ## Project maintenance update This repository has not been actively maintained for the past few years. I have created and am actively maintaining a fork of this project here: 👉 **New actively maintained repository:** https://github.com/cavaldos/Ice Please use the new repository for: - New issues - Pull requests - Bug reports - Feature requests - The latest updates and releases The original project remains available for historical reference, but new development and maintenance will take place in the new repository. Thank you! ### Additional Information _No response_",
+  "url": "https://github.com/jordanbaird/Ice/issues/993",
+  "score": 0,
+  "kind": "post",
+  "label": {
+   "is_request": false,
+   "buildable": null,
+   "note": "套着 Feature Request 模板的项目停止维护公告，不是需求",
+   "harmful": false
+  }
+ },
+ {
+  "source": "github",
+  "external_id": "mqyqingfeng/Blog#2",
+  "title": "[mqyqingfeng/Blog] JavaScript深入之从原型到原型链",
+  "text": "## 构造函数创建对象 我们先使用构造函数创建一个对象： ```js function Person() { } var person = new Person(); person.name = 'Kevin'; console.log(person.name) // Kevin ``` 在这个例子中，Person 就是一个构造函数，我们使用 new 创建了一个实例对象 person。 很简单吧，接下来进入正题： ## prototype 每个函数都有一个 prototype 属性，就是我们经常在各种例子中看到的那个 prototype ，比如： ```js function Person() { } // 虽然写在注释里，但是你要注意： // prototype是函数才会有的属性 Person.prototype.name = 'Kevin'; var person1 = new Person(); var person2 = new Person(); console.log(person1.name) // Kevin console.log(person2.name) // Kevin ``` 那这个函数的 prototype 属性到底指向的是什么呢？是这个函数的原型吗？ 其实，函数的 prototype 属性指向了一个对象，这个对象正是调用该构造函数而创建的**实例**的原型，也就是这个例子中的 person1 和 person2 的原型。 那什么是原型呢？你可以这样理解：每一个JavaScript对象(null除外)在创建的时候就会与之关联另一个对象，这个对象就是我们所说的原型，每一个对象都会从原型\"继承\"属性。 让我们用一张图表示构造函数和实例原型之间的关系： ![构造函数和实例原型的关系图](https://cdn.jsdelivr.net/gh/mqyqingfeng/Blog/Images/prototype1.png) 在这张图中我们用 Object.prototype 表示实例原型。 那么我们该怎么表示实例与实例原型，也就是 person 和 Person.prototype 之间的关系呢，这时候我们就要讲到第二个属性： ## \\_\\_proto\\_\\_ 这是每一个JavaScript对象(除了 null )都具有的一个属性，叫\\_\\_proto\\_\\_，这个属性会指向该对象的原型。 为了证明这一点,我们可以在火狐或者谷歌中输入： ```js function Person() { } var person = new Person(); console.log(person.__proto__ === Person.prototype); // true ``` 于是我们更新下关系图： ![实例与实例原型的关系图](https://cdn.jsdelivr.net/gh/mqyqingfeng/Blog/Images/prototype2.png) 既然实例对象和构造函数都可以指向原型，那么原型是否有属性指向构造函数或者实例呢？ ## constructor 指向实例倒是没有，因为一个构造函数可以生成多个实例，但是原型指向构造函数倒是有的，这就要讲到第三个属性：constructor，每个原型都有一个 constructor 属性指向关联的构造函数。 为了验证这一点，我们可以尝试： ```js function Person() { } console.log(Person === Person.prototype.co",
+  "url": "https://github.com/mqyqingfeng/Blog/issues/2",
+  "score": 1784,
+  "kind": "post",
+  "label": {
+   "is_request": false,
+   "buildable": null,
+   "note": "以 issue 形式发布的中文技术博客文章，不是需求",
+   "harmful": false
+  }
+ },
+ {
+  "source": "github",
+  "external_id": "lyswhut/lx-music-desktop#1912",
+  "title": "[lyswhut/lx-music-desktop] LX Music 项目发展调整与新项目计划",
+  "text": "由于最初 LX 的开发线路是抱着对技术的学习与研究的目的，集成国内常用音乐平台以解决音乐查找与播放问题，但随着大家对音乐版权的重视，以及来自官方音乐平台的压力，这条路已难以走下去。 为了在不违反相关法律法规的情况下能随时愉快的听歌，我决定发起一个全新的项目，用于提供一套面向个人用户的个人私有云音乐解决方案。 之前用于维护 LX 的业余时间现在大部分已投入到该项目的设计与开发上，LX 也将逐渐进入维护模式，没有特殊情况下预计不会有重大的改变。 新项目预计主要由 桌面端、移动端、同步服务、歌曲管理服务 等子项目组成，计划分为以下里程碑： #### 里程碑1（计划在今年年底之前提供一个预览版） 桌面端的开发，在集成 LX 桌面版大部分现有功能的基础上，主要计划的更改如下： - 基于 LX 系列项目的开发经验，使用新的代码架构设计 - 希望提供一个现代化且符合常见播放器使用习惯的UI - 独立的播放列表、最近播放列表 - 多层级收藏列表支持 - 播放行为统计 - 软件本身只是一个可以播放本地歌曲的播放器，没有第三方在线资源功能 - 全新的扩展功能，预计提供一组包括扩展数据存储、通知、上下文菜单扩展等的API（参考 vs code 扩展API，只是预计，还在规划中） - 提供web端，web端与桌面端将共用一套UI层，web端本质将是一个运行在服务器的桌面端，但UI层运行在客户端的浏览器上 注：扩展功能将允许扩展为软件提供接入在线资源的能力，之所以不内置在线服务功能而采用这种设计： > 希望在解耦各个服务的同时，允许对接多个 _自建_ 的或如 WebDAV 等 _其他来源_ 的歌曲存储服务。 待定：其中的扩展将通过类似扩展仓库的方式集中显示并允许设置第三方仓库等方式？ #### 里程碑2 同步服务（用于多端数据同步），虽然允许支持第三方来源，但我仍然希望本项目有属于自己的同步服务，而且 WebDAV 之类的存储服务存在数据同步实时性问题。 #### 里程碑3 移动端的开发，提供桌面端的简化实现版本（由于没有 IOS 相关开发环境，所以暂定仍只支持安卓） #### 里程碑4 歌曲管理服务（用于管理服务器上的歌曲，提供类似常用音乐平台的歌曲搜索、排行榜、歌单、歌曲链接等API服务[理想]） --- **更新（2025-05-11）** 新的项目已发布： https://github.com/any-listen/any-listen 初版只对某些人有用，不适合现在的LX用户，但会继续完善。 目前计划优先开发自建服务的能力，即优先提供web端，部署到服务器上播放服务器上的歌曲，其实就是一个程序运行在服务端，UI运行在浏览器的播放器，，简单来说，现在的LX去掉所有在线功能，只有我的列表及播放器功能，可以新建列表，添加本地歌曲（指服务器上的歌曲）进来播放，大概像这样： ![Image](https://github.com/user-attachments/assets/26c028cc-dba5-417b-91d6-17c1c62cea0a) --- 以上内容只是一个计划，各里程碑的顺序也是暂定的。由于项目的开发是在业余时间进行，整个计划及开发节奏也可能会随我个人的生活情况改变，亦或者会出现项目被终止的情况。 最后，大家也可以在下面提供 **建议**。 **为了防止订阅该讨论的人收到无意义的邮件通知，灌水请点击 reactions 表情代替，谢谢 ❤️**",
+  "url": "https://github.com/lyswhut/lx-music-desktop/issues/1912",
+  "score": 564,
+  "kind": "post",
+  "label": {
+   "is_request": false,
+   "buildable": null,
+   "note": "中文项目的发展方向公告，不是需求",
+   "harmful": false
+  }
+ },
+ {
+  "source": "reddit/SomebodyMakeThis",
+  "external_id": "t3_1x9xmrw",
+  "title": "Vinted for Charity Shops",
+  "text": "submitted by /u/JMac3Turbo [link] [comments]",
+  "url": "https://www.reddit.com/r/SomebodyMakeThis/comments/1x9xmrw/vinted_for_charity_shops/",
+  "score": 0,
+  "kind": "post",
+  "label": {
+   "is_request": false,
+   "buildable": null,
+   "note": "只有标题「慈善商店版 Vinted」没有正文，无法判断具体需求；标题无求助词，规则按空帖过滤",
+   "harmful": false
+  }
+ },
+ {
+  "source": "reddit/SomebodyMakeThis",
+  "external_id": "t3_1x6sely",
+  "title": "Tuition - finding a gap",
+  "text": "I’m a science teacher and would like to have my own tuition. I would like to do something that isn’t there already. From my tuition experience it’s just teaching the kids the content and not really how to study. What do you guys think the gap is with the current state of tuition centres? submitted by /u/Ashamed_Werewolf4157 [link] [comments]",
+  "url": "https://www.reddit.com/r/SomebodyMakeThis/comments/1x6sely/tuition_finding_a_gap/",
+  "score": 0,
+  "kind": "post",
+  "label": {
+   "is_request": false,
+   "buildable": null,
+   "note": "问补习机构的市场空白在哪，征求看法，不是工具需求",
+   "harmful": false
+  }
+ },
+ {
+  "source": "reddit/SomebodyMakeThis",
+  "external_id": "t3_1x4jrqt",
+  "title": "I'm building free tools to solve real problems. What should I build next?",
+  "text": "submitted by /u/Artistic-Hearing4853 [link] [comments]",
+  "url": "https://www.reddit.com/r/SomebodyMakeThis/comments/1x4jrqt/im_building_free_tools_to_solve_real_problems/",
+  "score": 0,
+  "kind": "post",
+  "label": {
+   "is_request": false,
+   "buildable": null,
+   "note": "自我推广并征集点子，应被 self_promo 规则挡掉",
+   "harmful": false
+  }
+ },
+ {
+  "source": "reddit/SomebodyMakeThis",
+  "external_id": "t3_1x3e18y",
+  "title": "Something that organizes the app shortcut tiles on my phone",
+  "text": "I saw the Muse launch and immediately had dreams of something that could just automatically organize the app tiles on my phone screens, with some basic instructions. I'm tickled that even the in-house stuff from Google, which I would fully expect can do this, seems unable to do this. submitted by /u/GoBoldr [link] [comments]",
+  "url": "https://www.reddit.com/r/SomebodyMakeThis/comments/1x3e18y/something_that_organizes_the_app_shortcut_tiles/",
+  "score": 0,
+  "kind": "post",
+  "label": {
+   "is_request": true,
+   "buildable": true,
+   "note": "自动整理手机桌面图标；需做成自定义启动器，Android 上个人可做",
+   "harmful": false
+  }
+ },
+ {
+  "source": "reddit/SomebodyMakeThis",
+  "external_id": "t3_1x37veq",
+  "title": "Somebody make a one-tap \"we're running low\" button for shared supplies at work",
+  "text": "I work at a small day-care center for elderly people in Japan. Our supplies (paper towels, gloves, food, etc.) are kept upstairs, and most staff don't go up to check before someone does the shopping. So after every shopping trip we find out something is missing, and someone has to go out again. What I wish existed: when you take the last few of something, you tap one button on your phone, and it goes on the shopper's list. No sign-up for staff, just scan a QR code once. Does something like this already exist? I'd also like to hear from you: 1. Does this happen at your workplace (or at home)? 2. How do you handle it now? (whiteboard, group chat, an app, nothing?) 3. If you tried something that didn't work, why did it fail? Thanks for reading. English is not my first language, so sorry for any mistakes. submitted by /u/KSS_app [link] [comments]",
+  "url": "https://www.reddit.com/r/SomebodyMakeThis/comments/1x37veq/somebody_make_a_onetap_were_running_low_button/",
+  "score": 0,
+  "kind": "post",
+  "label": {
+   "is_request": true,
+   "buildable": true,
+   "note": "共享物资「快没了」一键上报到采购清单，扫码即用，小型 web app",
+   "harmful": false
+  }
+ },
+ {
+  "source": "reddit/SomebodyMakeThis",
+  "external_id": "t3_1x9t778",
+  "title": "An idea to save human history",
+  "text": "Human history is vulnerable to time. We are living on a vulnerable planet. Hence, it is difficult to preserve our history in case of any catastrophe. To solve this problem, we can build a cosmic time capsule that protects human history by sending our digital archives like AI written text and historical records into space using light. Because light does not age while traveling, beaming these thoughts to the Moon and back lets that data skip forward in time, while sending it deeper into space can delay its return by years or decades. We can start by testing this laser link between Earth and the Moon, and once that works, we build a permanent storage vault on the lunar surface. Right now, the technology exists, but nobody is connecting the pieces. NASA uses lasers just to stream videos from deep space, and other groups leave static storage discs on the Moon. This plan combines space lasers, relay satellites, and a permanent storage vault on the Moon into one connected system. That is, creating an automatic backup for human history. It keeps our collective memories safe in an untouched world so that even if Earth suffers a disaster, our history skips through time unharmed and stays ready for future generations to recover. Any future visitors to the Moon can still recover our legacy. (Anyone interested in building this is free to build it) submitted by /u/mimilumi [link] [comments]",
+  "url": "https://www.reddit.com/r/SomebodyMakeThis/comments/1x9t778/an_idea_to_save_human_history/",
+  "score": 0,
+  "kind": "post",
+  "label": {
+   "is_request": true,
+   "buildable": false,
+   "note": "往月球发激光备份人类历史，需要航天工程，个人做不了",
+   "harmful": false
+  }
+ },
+ {
+  "source": "reddit/SomebodyMakeThis",
+  "external_id": "t3_1x1cc6m",
+  "title": "[SMT] A motorized mount that rotates your existing TV for TikTok and vertical videos (3.16x video display area)",
+  "text": "I'd like a motorized mount that turns an ordinary TV 90 degrees between landscape and portrait, so vertical short videos such as TikTok, Instagram Reels and YouTube Shorts can use the screen properly. The idea is to upgrade an existing TV, with versions for different supported TV sizes. The main benefit is the video display area. On a 16:9 TV in landscape, an uncropped 9:16 video fitted to the screen uses only about 31.6% of the screen area, leaving large black bars on both sides. Rotate the same TV into portrait and that video can fill the screen: approximately 3.16 times the video display area, without cropping. That's an area comparison, not a claim about resolution. Playback or casting would also need to support portrait output. Rotation would be motorized and controlled either through a phone app or a physical switch next to the TV. You could switch back to landscape for movies and other horizontal content. The illustration shows the 0-degree, 45-degree and 90-degree positions to explain the rotation. The attached image is an AI-generated concept illustration, not a photograph of a working product. I'm sharing the idea to get feedback. Would you actually use this to watch vertical short videos on your TV? What TV size would you want it for, and what price would feel reasonable for the mount alone? submitted by /u/DifficultComplex9933 [link] [comments]",
+  "url": "https://www.reddit.com/r/SomebodyMakeThis/comments/1x1cc6m/smt_a_motorized_mount_that_rotates_your_existing/",
+  "score": 0,
+  "kind": "post",
+  "label": {
+   "is_request": true,
+   "buildable": false,
+   "note": "电动旋转电视支架，硬件产品",
+   "harmful": false
+  }
+ },
+ {
+  "source": "reddit/SomebodyMakeThis",
+  "external_id": "t3_1x9uv2y",
+  "title": "One shared public conversation across social media",
+  "text": "What if there were a website that brought together public posts from different social networks and showed everyone the same view of what people are talking about? Right now, social media algorithms give each of us a different version of the world. What goes viral, what we see, and what we think everyone is discussing depend heavily on our personal feeds. Imagine a public website that worked differently: One shared worldwide topic list. Everyone sees the same topics in the same order, regardless of their interests or browsing history. Topics, not just a feed. Related public posts from different networks are grouped into conversations, so you can see what’s emerging, what’s trending, and what people continue discussing over time. Transparent ranking. Topics are ranked using published signals such as recency, growth, activity across independent sources, and persistence—not hidden personalization or editors deciding which opinions deserve attention. Explore the original posts. Open any topic to read public posts from different platforms and follow links to the original discussions. No account required. Just visit the website and see the public conversation. The goal wouldn’t be to tell people what’s important or what to think. It would be to create a common starting point so people can see what’s happening, discover conversations outside their usual bubbles, and decide for themselves what deserves their attention. It could start with networks that offer accessible public APIs and",
+  "url": "https://www.reddit.com/r/SomebodyMakeThis/comments/1x9uv2y/one_shared_public_conversation_across_social_media/",
+  "score": 0,
+  "kind": "post",
+  "label": {
+   "is_request": true,
+   "buildable": null,
+   "note": "聚合各社交网络公开帖子的统一话题页；技术上是聚合站，但依赖各平台开放 API，可做性存疑",
+   "harmful": false
+  }
+ },
+ {
+  "source": "reddit/macapps",
+  "external_id": "t3_1wihwwd",
+  "title": "Is there an app that monitors a specific app from the menu bar?",
+  "text": "Hi, I build apps and I am pretty sensitive about memory leaks and performance. So I would like to pick just the app I am working on and watch its resource usage. What came to mind was something shown in the menu bar, or a HUD that ignores the mouse would work too. Does anything like this already exist? submitted by /u/Jumpy-Weekend6102 [link] [comments]",
+  "url": "https://www.reddit.com/r/macapps/comments/1wihwwd/is_there_an_app_that_monitors_a_specific_app_from/",
+  "score": 0,
+  "kind": "post",
+  "label": {
+   "is_request": true,
+   "buildable": true,
+   "note": "在菜单栏监控指定 app 的资源占用，macOS 小工具",
+   "harmful": false
+  }
+ },
+ {
+  "source": "reddit/macapps",
+  "external_id": "t3_1r62r0r",
+  "title": "is there an app to redact text (or images) from PDFs? I know there's cloud solutions, but for obvious reasons I want a local app",
+  "text": "this is for personal medical documentation also im broke. thx submitted by /u/Tasty-Window [link] [comments]",
+  "url": "https://www.reddit.com/r/macapps/comments/1r62r0r/is_there_an_app_to_redact_text_or_images_from/",
+  "score": 0,
+  "kind": "post",
+  "label": {
+   "is_request": true,
+   "buildable": true,
+   "note": "本地 PDF 涂黑工具，个人可做",
+   "harmful": false
+  }
+ },
+ {
+  "source": "reddit/macapps",
+  "external_id": "t3_1pen2ra",
+  "title": "Hiding desktops / separating work and personal desktops",
+  "text": "This might be a weird question. I use my mac for both work and personal stuff, and I use many full screen apps for both, which means I often have many desktops and only need about half of those at any given time. I could un-fullscreen and re-fullscreen apps every time. But is there an app that allows hiding some desktops and showing others ? Kind of how tab groups work for web browsers submitted by /u/8AqLph [link] [comments]",
+  "url": "https://www.reddit.com/r/macapps/comments/1pen2ra/hiding_desktops_separating_work_and_personal/",
+  "score": 0,
+  "kind": "post",
+  "label": {
+   "is_request": true,
+   "buildable": null,
+   "note": "隐藏/分组 macOS 桌面空间；Spaces 没有公开 API，依赖私有接口，可做性存疑",
+   "harmful": false
+  }
+ },
+ {
+  "source": "reddit/androidapps",
+  "external_id": "t3_1wsotgo",
+  "title": "Looking for a very specific app",
+  "text": "Is there an app I can use to program my phone to vibrate without sound on a specific day and at a specific time, and then turn off automatically after a certain period? I am a student and I use the Samsung Reminders app, but it is annoying because I have to stop what I am doing to turn it off when my phone is in my fanny pack, especially since I only need the reminder for that and when the school bus is about to arrive. I also find the Reminders app lacking in options, as I cannot set it to exclude weekends. submitted by /u/Desperate_Report_695 [link] [comments]",
+  "url": "https://www.reddit.com/r/androidapps/comments/1wsotgo/looking_for_a_very_specific_app/",
+  "score": 0,
+  "kind": "post",
+  "label": {
+   "is_request": true,
+   "buildable": true,
+   "note": "定时只震动、到点自动停止的提醒，Android 常规开发",
+   "harmful": false
+  }
+ },
+ {
+  "source": "reddit/androidapps",
+  "external_id": "t3_1w9pfcf",
+  "title": "Is there an app that can throttle or hide similar or duplicate notifications?",
+  "text": "I am on multiple job groups on telegram or WhatsApp and sometimes the exact same job gets posted to multiple groups/channels, is there an app that could potentially hide the notifications for the same job that's already been posted, basically something like a filter for notifications where when you get 2-3 almost identical notifications the 2nd and 3rd one get hidden/not shown? submitted by /u/bob- [link] [comments]",
+  "url": "https://www.reddit.com/r/androidapps/comments/1w9pfcf/is_there_an_app_that_can_throttle_or_hide_similar/",
+  "score": 0,
+  "kind": "post",
+  "label": {
+   "is_request": true,
+   "buildable": true,
+   "note": "过滤重复通知，Android 通知监听服务可做",
+   "harmful": false
+  }
+ },
+ {
+  "source": "reddit/androidapps",
+  "external_id": "t3_1wkjrlu",
+  "title": "Youtube Video Player",
+  "text": "I'm not sure if it's appropriate to write this here, but I want to try my luck anyway. I haven't been able to renew my YouTube Premium account for the past few months due to financial reasons. The commercials are also quite boring. Is there an app or something that would allow me to easily watch YouTube videos (while also linking my account)? I'm open to suggestions. submitted by /u/mezarlikbekcisi [link] [comments]",
+  "url": "https://www.reddit.com/r/androidapps/comments/1wkjrlu/youtube_video_player/",
+  "score": 0,
+  "kind": "post",
+  "label": {
+   "is_request": true,
+   "buildable": false,
+   "note": "想不付 Premium 也无广告看 YouTube，对应提示词例子「让某个 App 去掉广告」，只能平台方改",
+   "harmful": false
+  }
  }
 ]
