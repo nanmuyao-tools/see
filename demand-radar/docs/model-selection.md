@@ -50,12 +50,12 @@ Apple 的 MLX 团队说明过：生成每个 token 的速度受内存带宽限�
 测试方法，和之前选 3b 时一样，用评测集说话：
 
 1. `mlx_lm.server --model <模型> --port 8080`（原生运行，用 GPU）
-2. `python -m demand_radar eval --provider local/<模型> --base-url http://localhost:8080/v1`（中英文各一遍）
-3. 记录 F1、摘录有效率、每条耗时，填进下表
+2. `python -m demand_radar eval --provider local/<模型> --base-url http://localhost:8080/v1`（中英文各一遍，加 `--lang en`）
+3. 记录 F1、有害需求进清单条数、每条耗时，填进下表。基线是 v0.1 在 61 条评测集上的结果；摘录已改由程序挑选，不再随模型变化
 
-| 模型 | F1（中） | F1（英） | 摘录有效率 | 每条耗时 |
+| 模型 | F1（中） | F1（英） | 有害需求进清单 | 每条耗时 |
 |---|---|---|---|---|
-| Qwen2.5-3B（容器 CPU，基线） | 88.4% | 待测 | 71% | 4–6 秒 |
+| Qwen2.5-3B（容器 CPU，基线） | 83.6% | 89.7% | 0 | 4–6 秒 |
 | Qwen2.5-3B（MLX GPU） | | | | |
 | Qwen3-4B-Instruct-2507 | | | | |
 | Qwen2.5-7B-Instruct | | | | |
@@ -65,5 +65,5 @@ Apple 的 MLX 团队说明过：生成每个 token 的速度受内存带宽限�
 ## 六、顺带的架构建议
 
 - **两段式**：日常用小模型跑全量，每周用 27B 复核进入清单的几十条，纠正小模型的误判。27B 一条 20 多秒，几十条也就十几分钟。放进 v0.2 之后考虑。
-- **代码要改一处**：现在只认 `ollama/` 前缀。加一个 `local/<模型>` 前缀 + `--base-url`，就能连任何 OpenAI 兼容的本地服务（mlx-lm、LM Studio、llama.cpp 都是这种接口），Mac 之外的用户也受益。
+- **代码要改一处**（已完成）：加了 `local/<模型>` 前缀 + `--base-url`，能连任何 OpenAI 兼容的本地服务（mlx-lm、LM Studio、llama.cpp 都是这种接口），Mac 之外的用户也受益。
 - **Mac 用户的推荐部署**：MongoDB 用 Docker，模型服务和程序本身原生运行。compose 里的 ollama 容器保留给 Linux / Windows 用户。
