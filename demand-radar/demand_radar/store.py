@@ -16,6 +16,7 @@
 
 from __future__ import annotations
 
+import re
 from datetime import datetime, timezone
 from typing import Any
 
@@ -283,3 +284,59 @@ def clear_clusters(coll) -> None:
     """丢掉全部簇和归属，向量保留（换模型时向量会按 embedding_model 不匹配自动重算）。"""
     _clusters(coll).delete_many({})
     coll.update_many({"cluster_id": {"$exists": True}}, {"$unset": {"cluster_id": ""}})
+
+
+# ---- 看板的只读查询（api.py 用；只读，不改任何文档）----
+
+def dashboard_query(min_confidence: float, *, held: bool = False, domain: str | None = None,
+                    source: str | None = None, since: datetime | None = None,
+                    q: str | None = None) -> dict[str, Any]:
+    """看板筛选条件：入选 / 待确认二选一，再叠加领域、来源、时间、关键词。
+
+    关键词在 need 和 title 里做不分大小写的包含匹配：几千条规模不值得建全文索引，
+    而且需求描述是模型写的（中文或英文），全文分词反而不准。
+    """
+    query = _held(min_confidence) if held else _listed(min_confidence)
+    if domain:
+        query["domain"] = domain
+    if source:
+        query["source"] = source
+    if since is not None:
+        query["extracted_at"] = {"$gte": since}
+    if q and q.strip():
+        pattern = {"$regex": re.escape(q.strip()), "$options": "i"}
+        query["$or"] = [{"need": pattern}, {"title": pattern}]
+    return query
+
+
+def query_demands(coll, min_confidence: float, **filters) -> list[dict]:
+    """按看板条件取需求，排序交给 rank.sort（排序分在读取时算，不入库）。"""
+    return list(coll.find(dashboard_query(min_confidence, **filters)))
+
+
+def facet_counts(coll, field: str, min_confidence: float, **filters) -> list[dict]:
+    """某字段（domain / source）各取值的条数，按数量降序，给看板的筛选栏用。
+
+    几千条规模在内存里数就够了，不用 aggregate；空值归为空字符串，由前端显示成「其他」。
+    """
+    counts: dict[str, int] = {}
+    for d in coll.find(dashboard_query(min_confidence, **filters), {field: 1}):
+        key = (d.get(field) or "").strip()
+        counts[key] = counts.get(key, 0) + 1
+    return [{field: k, "count": n} for k, n in sorted(counts.items(), key=lambda kv: (-kv[1], kv[0]))]
+
+
+def recent_runs(coll, limit: int = 20) -> list[dict]:
+    """最近的运行记录，新的在前。同一毫秒开始的用 _id 决胜（ObjectId 单调递增），顺序才稳定。"""
+    return list(_runs(coll).find().sort([("started_at", -1), ("_id", -1)]).limit(limit))
+
+
+def overview(coll, min_confidence: float) -> dict[str, Any]:
+    """看板首屏的几个数：库里总条数、各状态条数、入选数、待确认数。"""
+    statuses = ("extracted", "filtered", "retry", "failed")
+    return {
+        "total": coll.count_documents({}),
+        "by_status": {s: coll.count_documents({"status": s}) for s in statuses},
+        "listed": coll.count_documents(_listed(min_confidence)),
+        "held": coll.count_documents(_held(min_confidence)),
+    }

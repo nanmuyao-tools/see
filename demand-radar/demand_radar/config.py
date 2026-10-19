@@ -47,6 +47,9 @@ class Config:
     cluster_eval: bool = False  # cluster 命令：不动库，在标注对上评测合并判断
     eval_pairs: str = "eval/cluster_pairs.json"  # cluster --eval 用的标注对
 
+    host: str = "0.0.0.0"  # serve 命令：监听地址；容器里要 0.0.0.0 才能从宿主机访问
+    port: int = 8501  # serve 命令：看板端口
+
     @staticmethod
     def from_args(argv: list[str] | None = None) -> "Config":
         # 默认值先吃环境变量，再被命令行覆盖
@@ -71,6 +74,9 @@ class Config:
             embed_base_url=_env("DR_EMBED_BASE_URL", Config.embed_base_url),
             cluster_threshold=float(_env("DR_CLUSTER_THRESHOLD", str(Config.cluster_threshold))),
             eval_pairs=_env("DR_EVAL_PAIRS", Config.eval_pairs),
+
+            host=_env("DR_HOST", Config.host),
+            port=int(_env("DR_PORT", str(Config.port))),
         )
 
         p = argparse.ArgumentParser(prog="demand_radar")
@@ -82,6 +88,8 @@ class Config:
         bf = sub.add_parser("backfill", help="按页往回拉一个源的历史内容，可中断后继续")
         sc = sub.add_parser("schedule", help="常驻：每天定时 run，每周定时 digest")
         cl = sub.add_parser("cluster", help="向量化并合并相似需求，重写清单；不调抽取模型")
+
+        sv = sub.add_parser("serve", help="常驻：Web 看板，直接读库，不调模型")
 
         for sp in (run, sc):
             sp.add_argument("--source", default=d.source)
@@ -128,6 +136,14 @@ class Config:
         sc.add_argument("--no-run-on-start", dest="run_on_start", action="store_false",
                         default=d.run_on_start, help="启动时不先跑一次，等到点再跑")
 
+        sv.add_argument("--host", default=d.host, help="监听地址，容器里保持 0.0.0.0")
+        sv.add_argument("--port", type=int, default=d.port, help="看板端口")
+        # 看板只读库：数据库、筛选阈值、权重文件三项和 digest 一样，没有模型参数
+        sv.add_argument("--min-confidence", type=float, default=d.min_confidence)
+        sv.add_argument("--mongo-uri", dest="mongo_uri", default=d.mongo_uri)
+        sv.add_argument("--db-name", dest="db_name", default=d.db_name)
+        sv.add_argument("--sources-file", dest="sources_file", default=d.sources_file)
+
         # 调模型的命令共用
         for sp in (run, ev, bf, sc):
             sp.add_argument("--provider", default=d.provider)
@@ -173,4 +189,7 @@ class Config:
             rebuild=getattr(ns, "rebuild", False),
             cluster_eval=getattr(ns, "cluster_eval", False),
             eval_pairs=getattr(ns, "eval_pairs", d.eval_pairs),
+
+            host=getattr(ns, "host", d.host),
+            port=getattr(ns, "port", d.port),
         )

@@ -44,6 +44,7 @@ docker compose run --rm app eval                   # 在标注集上评测当前
 docker compose exec ollama ollama pull nomic-embed-text   # 一次性：拉嵌入模型（约 270MB），下面两条要用
 docker compose run --rm app cluster                # 把不同来源里的同一需求合并成一条，重写清单
 docker compose run --rm app run --cluster          # 抓一轮并顺手合并（默认不开）
+docker compose --profile web up -d web             # Web 看板 → http://localhost:8501（见下文）
 ```
 
 **机器配置**：默认模型 qwen2.5:3b 约 2GB，8GB 内存的电脑可以跑。低配机器可在 `docker-compose.yml` 里把模型换成 `qwen2.5:1.5b`（更快，但准确率低一些）。已经装了 Ollama 的话，可以注释掉 ollama 服务，把 `OLLAMA_API` / `OLLAMA_BASE_URL` 指向本机。
@@ -100,6 +101,35 @@ DR_RUN_AT=18:00 DR_DIGEST_WEEKDAY=5 docker compose --profile cron up -d schedule
 它和 `app` 用同一份配置和挂载，结果照样在 `./out/`。环境变量：`DR_RUN_AT`（每天几点，HH:MM，按容器时钟即 UTC）、`DR_DIGEST_WEEKDAY`（ISO 周几出周报，1 周一 … 7 周日，0 不出）、`DR_RUN_ON_START`（启动时先跑一次，默认 1）。单次运行失败只记日志，不会让服务退出。
 
 不用 Docker 时直接 `python -m demand_radar schedule --run-at 03:00 --digest-weekday 1`，或者用系统 cron 分别调 `run` 和 `digest`。
+
+## Web 看板
+
+不想翻 Markdown 时，起一个常驻的看板，在浏览器里按领域、时间、来源筛选和搜索（默认不启动，用 `web` profile 打开）：
+
+```bash
+docker compose --profile web up -d web                    # 起看板，浏览器打开 http://localhost:8501
+docker compose logs -f web                                # 看日志
+DR_WEB_PORT=8600 docker compose --profile web up -d web   # 宿主机 8501 被占时换一个
+```
+
+看板直接读 MongoDB，不需要模型，和 `app` / `scheduler` 用同一份配置和排序权重；数据来自它们跑出来的结果，看板本身不抓取。能看到：
+
+- **需求**：通过筛选的需求卡片——需求描述、领域、现有痛点、原文摘录、清晰度 / 迫切度 / 可实现性、热度、排序分、原帖链接。左侧按领域（带条数）、时间范围（按抽取时间）、来源筛，搜索框在需求描述和原帖标题里做包含匹配；排序可选排序分（和清单一致）、热度、最新
+- **待人工确认**：命中有害规则、没进正文的需求，标出命中了哪句话
+- **运行记录**：每次 `run` / `backfill` 的各源抓取数、过滤 / 抽取 / 失败数、入选数、耗时和状态（停在「运行中」说明进程中途死了）
+- 顶部四个数：库里总条数、入选数、待确认数、最近一次运行
+
+界面默认中文，英文加 `?lang=en`。页面是一个文件、不引外部资源，离线也能开，手机宽度可看。接口文档在 `/api/docs`。Mac GPU 模式同样叠加覆盖文件：`docker compose -f docker-compose.yml -f docker-compose.mac-gpu.yml --profile web up -d web`。
+
+不用 Docker 时：`python -m demand_radar serve --port 8501`（`--host` 默认 `0.0.0.0`，只给本机用可加 `--host 127.0.0.1`）。
+
+| 接口 | 参数 | 返回 |
+|---|---|---|
+| `GET /api/demands` | `domain`、`days`（最近 N 天，按抽取时间）、`min_confidence`（默认取配置，0.5）、`source`、`q`（关键词）、`sort`（`rank` / `heat` / `time`，默认 `rank`）、`limit`（默认 50，最大 500）、`offset` | `{total, offset, limit, items}`，每条含 need、domain、pain_point、excerpt、clarity / intensity / feasibility、rank_score、score（热度）、source、url、title、extracted_at |
+| `GET /api/held` | 同上 | 待人工确认的需求，每条多一个 `review_cue` |
+| `GET /api/domains`、`GET /api/sources` | 同上的筛选参数；`held=true` 时数待确认的 | 各领域 / 各来源的条数，降序 |
+| `GET /api/runs` | `limit`（默认 20） | 最近的运行记录，新的在前 |
+| `GET /api/stats` | `min_confidence` | 总条数、各状态条数、入选数、待确认数、最近一次运行 |
 
 ## 历史回填
 
@@ -225,6 +255,7 @@ python -m demand_radar run --provider "openai/gpt-4o-mini"
 | `--days` | 7 | `digest`：汇总最近多少天 |
 | `--pages` | 10 | `backfill`：本次最多往回拉多少页；`--limit` 在这里是每页条数，默认 100 |
 | `--run-at` / `--digest-weekday` | `03:00` / 1 | `schedule`：每天几点跑、ISO 周几出周报（0 不出）；`--no-run-on-start` 启动时不先跑 |
+| `--host` / `--port` | `0.0.0.0` / 8501 | `serve`：Web 看板监听的地址和端口 |
 | `--sources-file` | `sources.toml` | 数据源、过滤规则、排序权重的配置文件 |
 | `--mongo-uri` / `--db-name` | `mongodb://localhost:27017` / `demand_radar` | 数据库 |
 | `--base-url` | `http://localhost:11434/v1` | 本地模型服务地址（旧名 `--ollama-base-url` 仍可用） |
@@ -234,7 +265,7 @@ python -m demand_radar run --provider "openai/gpt-4o-mini"
 | `--threshold` | 0.85 | 余弦相似度 ≥ 此值视为同一需求 |
 | `--rebuild` / `--eval` | 关 | `cluster`：丢掉已有簇重新归 / 在标注对上评测合并判断（`--pairs` 指定文件） |
 
-这些参数也都能用环境变量设置（Docker 部署时用）：`DR_SOURCE`、`DR_LIMIT`、`DR_PROVIDER`、`DR_OUTPUT_LANGUAGE`、`DR_MIN_CONFIDENCE`、`DR_WORKERS`、`DR_SOURCES_FILE`、`MONGO_URI`、`DR_DB_NAME`、`OLLAMA_BASE_URL`、`DR_OUTPUT`、`DR_CLUSTER`、`DR_EMBED_MODEL`、`DR_EMBED_BASE_URL`、`DR_CLUSTER_THRESHOLD`。
+这些参数也都能用环境变量设置（Docker 部署时用）：`DR_SOURCE`、`DR_LIMIT`、`DR_PROVIDER`、`DR_OUTPUT_LANGUAGE`、`DR_MIN_CONFIDENCE`、`DR_WORKERS`、`DR_SOURCES_FILE`、`MONGO_URI`、`DR_DB_NAME`、`OLLAMA_BASE_URL`、`DR_OUTPUT`、`DR_CLUSTER`、`DR_EMBED_MODEL`、`DR_EMBED_BASE_URL`、`DR_CLUSTER_THRESHOLD`、`DR_HOST`、`DR_PORT`（看板；compose 里宿主机端口另由 `DR_WEB_PORT` 定）。
 
 ## 和同类项目的区别
 
@@ -284,9 +315,11 @@ GitHub 上已有一些同类项目，比如 [Reddit_Scrapper](https://github.com
 
 ```
 demand_radar/
-  cli.py            # 入口：run / eval / digest / backfill / schedule / cluster 六个命令
+  cli.py            # 入口：run / eval / digest / backfill / schedule / cluster / serve 七个命令
   schedule.py       # 定时运行：每天 run、每周 digest
   cluster.py        # 相似需求合并：向量化、阈值归簇、按簇折叠展示、标注对评测
+  api.py            # Web 看板后端（FastAPI，只读库，不调模型）
+  web/index.html    # Web 看板页面：一个文件，原生 JS，中英文
   config.py         # 运行配置（命令行 > 环境变量 > 默认值）
   sources/          # 数据源：softwarerecs、hn_algolia、github、arctic_shift、rss；cursor.py 增量游标
   filters.py        # 规则预过滤
@@ -301,7 +334,7 @@ eval/eval_set.json  # 评测标注集
 eval/cluster_pairs.json  # 「是否同一需求」标注对，cluster --eval 用
 tests/              # 离线单元测试
 sources.toml        # 数据源、过滤规则、排序权重
-docker-compose.yml  # app + mongo + ollama，可选的 scheduler（定时）
+docker-compose.yml  # app + mongo + ollama，可选的 scheduler（定时）、web（看板）
 ```
 
 ## 协议
