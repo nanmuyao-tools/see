@@ -1,4 +1,4 @@
-"""容器入口：等 ollama 就绪 → 拉模型（首次）→ 运行需求雷达的 run / eval / digest 命令。
+"""容器入口：等 ollama 就绪 → 拉模型（首次）→ 运行需求雷达的 run / eval / digest / backfill / schedule 命令。
 
 只用标准库，镜像无需额外安装 curl。
 """
@@ -47,8 +47,8 @@ def pull_model() -> None:
         sys.exit(f"拉取模型失败: {status}")
 
 
-COMMANDS = ("run", "eval", "digest")
-NEEDS_MODEL = ("run", "eval")
+COMMANDS = ("run", "eval", "digest", "backfill", "schedule")
+NEEDS_MODEL = ("run", "eval", "backfill", "schedule")
 
 
 def main() -> None:

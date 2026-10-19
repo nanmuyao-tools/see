@@ -31,7 +31,7 @@ cd demand-radar
 docker compose up        # 首次会下载模型（约 2GB），之后走缓存
 ```
 
-会起三个容器：**app**（抓取 + 抽取）、**mongo**（存储）、**ollama**（本地模型）。跑完一轮 app 自动退出，结果在 **`./out/demands.md`**。
+会起三个容器：**app**（抓取 + 抽取）、**mongo**（存储）、**ollama**（本地模型）。跑完一轮 app 自动退出，结果在 **`./out/demands.md`**。想每天自动跑，见下文「定时运行」。
 
 之后常用的命令：
 
@@ -39,6 +39,7 @@ docker compose up        # 首次会下载模型（约 2GB），之后走缓存
 docker compose run --rm app                        # 再抓一轮（已分析过的不会重复处理）
 docker compose run --rm app digest                 # 生成最近 7 天的周报 → out/digest-<日期>.md
 docker compose run --rm app digest --days 14 --lang en   # 最近 14 天，英文周报
+docker compose run --rm app backfill --source softwarerecs --pages 20   # 往回拉历史，可中断续跑
 docker compose run --rm app eval                   # 在标注集上评测当前模型
 ```
 
@@ -53,6 +54,13 @@ docker compose run --rm app eval                   # 在标注集上评测当前
   → 存入 MongoDB：每条都记处理状态，已处理的不再重复；失败的下次重试，最多 3 次
   → 综合排序：三项打分加权 + 原帖热度（取对数）
   → 全量清单 out/demands.md ／ 周报 out/digest-<日期>.md
+  → 每次运行在 MongoDB 的 runs 集合记一条：各源抓取数、过滤 / 抽取 / 失败数、耗时
+```
+
+出了问题先看运行记录（`status` 停在 `running` 说明进程中途死了）：
+
+```bash
+docker compose exec mongo mongosh demand_radar --eval 'db.runs.find().sort({started_at:-1}).limit(5)'
 ```
 
 ## 数据源
@@ -67,6 +75,38 @@ docker compose run --rm app eval                   # 在标注集上评测当前
 | `rss` | 任意 RSS / Atom 订阅，默认配了 Reddit 的 r/SomebodyMakeThis 和几个板块内搜索 | — | 视站点 |
 
 某个源失败（网络、限流）只跳过它，其他源照常跑。限流时会按服务器要求等待后自动重试。
+
+**增量抓取**：每个源的每个查询都记住上次抓到的最新一条（存在 MongoDB 的 `cursors` 集合），下次只抓更新的内容；RSS 没有按时间过滤的参数，靠入库去重。首次运行没有游标，行为和以前一样抓最新 N 条。游标在整批处理完才写入，中途崩溃下次会重抓这一批（已处理过的不会重复抽取）。抽取失败的条目存了原文，即使之后不再被抓到也会从库里重试，最多 3 次。
+
+## 定时运行
+
+想让它持续积累，起一个常驻的定时服务（默认不启动，用 `cron` profile 打开）：
+
+```bash
+docker compose --profile cron up -d scheduler     # 启动先跑一次，之后每天 03:00（UTC）跑 run，每周一再出周报
+docker compose logs -f scheduler                   # 看进度
+DR_RUN_AT=18:00 DR_DIGEST_WEEKDAY=5 docker compose --profile cron up -d scheduler   # 改成每天 18:00、周五出周报
+```
+
+它和 `app` 用同一份配置和挂载，结果照样在 `./out/`。环境变量：`DR_RUN_AT`（每天几点，HH:MM，按容器时钟即 UTC）、`DR_DIGEST_WEEKDAY`（ISO 周几出周报，1 周一 … 7 周日，0 不出）、`DR_RUN_ON_START`（启动时先跑一次，默认 1）。单次运行失败只记日志，不会让服务退出。
+
+不用 Docker 时直接 `python -m demand_radar schedule --run-at 03:00 --digest-weekday 1`，或者用系统 cron 分别调 `run` 和 `digest`。
+
+## 历史回填
+
+日常 `run` 只抓新内容；想把一个源的历史积累进来，用 `backfill` 按页往回拉：
+
+```bash
+python -m demand_radar backfill --source softwarerecs --pages 20        # 每页 100 条，最多 20 页
+python -m demand_radar backfill --source hn_algolia --pages 50 --limit 500
+python -m demand_radar backfill --source github --pages 10
+```
+
+- 一次一个源，源下的每个查询**轮流**拉，`--pages` 是本次的总页数预算
+- 按发布时间往回切而不是翻页码，新帖进来也不会漏或重；拉到空页即视为该查询到头
+- **每拉完一页就记进度**（`cursors` 集合），Ctrl-C 或配额用完后再运行同一命令就从上次位置继续；全部到头后再运行会直接退出
+- 遵守各源限额：StackExchange 不带 key 每天 300 次，剩 10 次时自动停下留给日常抓取（设 `SE_API_KEY` 提到 1 万）；GitHub 不带 token 每分钟 10 次，翻页间隔 6.5 秒；HN 很宽松
+- RSS 订阅没有翻页，不支持回填
 
 ## 输出语言
 
@@ -125,12 +165,15 @@ python -m demand_radar run --provider "openai/gpt-4o-mini"
 | `--provider` | `ollama/qwen2.5:3b` | 模型，本地和云模型都用这一个参数切换 |
 | `--lang` | `zh` | 输出语言：`zh` / `en` |
 | `--min-confidence` | 0.5 | 低于此可信度的需求不进清单 |
+| `--workers` | 2 | 同时发给模型的请求数。Ollama 默认一次只处理一个请求，要在 ollama 服务上设 `OLLAMA_NUM_PARALLEL` 才真正并行；云模型直接生效 |
 | `--days` | 7 | `digest`：汇总最近多少天 |
+| `--pages` | 10 | `backfill`：本次最多往回拉多少页；`--limit` 在这里是每页条数，默认 100 |
+| `--run-at` / `--digest-weekday` | `03:00` / 1 | `schedule`：每天几点跑、ISO 周几出周报（0 不出）；`--no-run-on-start` 启动时不先跑 |
 | `--sources-file` | `sources.toml` | 数据源、过滤规则、排序权重的配置文件 |
 | `--mongo-uri` / `--db-name` | `mongodb://localhost:27017` / `demand_radar` | 数据库 |
 | `--ollama-base-url` | `http://localhost:11434/v1` | 本地模型服务地址 |
 
-这些参数也都能用环境变量设置（Docker 部署时用）：`DR_SOURCE`、`DR_LIMIT`、`DR_PROVIDER`、`DR_OUTPUT_LANGUAGE`、`DR_MIN_CONFIDENCE`、`DR_SOURCES_FILE`、`MONGO_URI`、`DR_DB_NAME`、`OLLAMA_BASE_URL`、`DR_OUTPUT`。
+这些参数也都能用环境变量设置（Docker 部署时用）：`DR_SOURCE`、`DR_LIMIT`、`DR_PROVIDER`、`DR_OUTPUT_LANGUAGE`、`DR_MIN_CONFIDENCE`、`DR_WORKERS`、`DR_SOURCES_FILE`、`MONGO_URI`、`DR_DB_NAME`、`OLLAMA_BASE_URL`、`DR_OUTPUT`。
 
 ## 和同类项目的区别
 
@@ -178,20 +221,21 @@ GitHub 上已有一些同类项目，比如 [Reddit_Scrapper](https://github.com
 
 ```
 demand_radar/
-  cli.py            # 入口：run / eval / digest 三个命令
+  cli.py            # 入口：run / eval / digest / backfill / schedule 五个命令
+  schedule.py       # 定时运行：每天 run、每周 digest
   config.py         # 运行配置（命令行 > 环境变量 > 默认值）
-  sources/          # 数据源：softwarerecs、hn_algolia、github、rss
+  sources/          # 数据源：softwarerecs、hn_algolia、github、rss；cursor.py 增量游标
   filters.py        # 规则预过滤
   extract.py        # 模型抽取、原文摘录校验
   models.py         # 数据结构
-  store.py          # MongoDB 存储与处理状态
+  store.py          # MongoDB 存储：条目状态、游标与回填进度、运行记录
   rank.py           # 综合排序
   report.py         # 清单与周报（中英文）
   evaluate.py       # 评测
 eval/eval_set.json  # 评测标注集
 tests/              # 离线单元测试
 sources.toml        # 数据源、过滤规则、排序权重
-docker-compose.yml  # app + mongo + ollama
+docker-compose.yml  # app + mongo + ollama，可选的 scheduler（定时）
 ```
 
 ## 协议

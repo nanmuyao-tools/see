@@ -4,6 +4,7 @@
 #
 # 说明：app 跑完一轮即退出（批处理任务）；mongo 与 ollama 常驻。
 # 想再跑一次：docker compose run --rm app  （可追加 --limit 50 等参数）
+# 想定时跑：docker compose --profile cron up -d scheduler  （见文件末尾的 scheduler 服务）
 
 services:
   mongo:
@@ -40,6 +41,7 @@ services:
       DR_OUTPUT_LANGUAGE: "${DR_OUTPUT_LANGUAGE:-zh}"  # 输出语言：zh 中文 / en 英文
       DR_LIMIT: "10"                                 # 每个源/查询最多抓多少条
       DR_MIN_CONFIDENCE: "0.5"
+      DR_WORKERS: "2"                                # 同时发给模型的请求数；ollama 默认串行，需配 OLLAMA_NUM_PARALLEL 才并行
       DR_OUTPUT: "out/demands.md"
       # 可选：提高限额。不设也能用
       GITHUB_TOKEN: "${GITHUB_TOKEN:-}"            # GitHub 搜索：10 → 30 次/分钟
@@ -47,6 +49,23 @@ services:
     volumes:
       - ./out:/app/out          # 需求清单输出到宿主机 ./out
       - ./sources.toml:/app/sources.toml:ro   # 改数据源无需重建镜像
+
+  # 可选的定时服务：常驻，启动先跑一次，之后每天 DR_RUN_AT 跑 run，每周 DR_DIGEST_WEEKDAY 那天再出周报。
+  # 默认不启动（profile 为 cron）：docker compose --profile cron up -d scheduler
+  # 配置、挂载都继承 app，只改启动命令；时刻按容器时钟（UTC）算
+  scheduler:
+    extends:
+      service: app
+    profiles: ["cron"]
+    restart: unless-stopped
+    depends_on:
+      - mongo
+      - ollama
+    command: ["schedule"]
+    environment:
+      DR_RUN_AT: "${DR_RUN_AT:-03:00}"              # 每天几点（UTC）
+      DR_DIGEST_WEEKDAY: "${DR_DIGEST_WEEKDAY:-1}"  # ISO 周几出周报：1 周一 … 7 周日，0 不出
+      DR_RUN_ON_START: "${DR_RUN_ON_START:-1}"      # 启动时先跑一次
 
 volumes:
   mongo-data:

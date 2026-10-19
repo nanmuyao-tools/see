@@ -207,8 +207,8 @@ class FetchAllTest(unittest.TestCase):
     def test_one_source_failure_does_not_stop_others(self):
         ok = [SourceItem("s", "1", "t", "", "u"), SourceItem("s", "1", "t", "", "u")]  # 重复
         with mock.patch.dict(sources.REGISTRY, {
-            "softwarerecs": lambda limit, conf: ok,
-            "github": lambda limit, conf: (_ for _ in ()).throw(OSError("rate limited")),
+            "softwarerecs": lambda limit, conf, cursors: ok,
+            "github": lambda limit, conf, cursors: (_ for _ in ()).throw(OSError("rate limited")),
         }):
             items, errors = sources.fetch_all(["softwarerecs", "github"], 5, {})
         self.assertEqual(len(items), 1)         # 去重

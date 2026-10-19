@@ -10,6 +10,9 @@ provider 字符串决定跑本地还是云（Instructor 统一接口）：
 
 from __future__ import annotations
 
+from collections.abc import Iterator
+from concurrent.futures import ThreadPoolExecutor, as_completed
+
 from . import excerpt
 from .models import Demand, SourceItem
 
@@ -98,3 +101,25 @@ def extract(client, item: SourceItem, language: str = "zh") -> Demand:
     d = extract_raw(client, item, language)
     d.excerpt = excerpt.pick(item)
     return d
+
+
+def extract_many(client, items: list[SourceItem], language: str = "zh",
+                 workers: int = 2) -> Iterator[tuple[SourceItem, Demand | None, Exception | None]]:
+    """线程池同时发多个模型请求，按完成顺序产出 (item, demand, error)，后两者必有一个为 None。
+
+    只并发模型调用；写库由调用方在主线程做，避免多线程写同一条。
+    提升多少取决于模型服务：Ollama 默认一次只跑一个请求（OLLAMA_NUM_PARALLEL），
+    纯 CPU 上可能看不出差别，云模型则接近线性。
+    """
+    pool = ThreadPoolExecutor(max_workers=max(1, workers))
+    try:
+        futures = {pool.submit(extract, client, it, language): it for it in items}
+        for fut in as_completed(futures):
+            it = futures[fut]
+            try:
+                yield it, fut.result(), None
+            except Exception as e:
+                yield it, None, e
+    finally:
+        # 中断（Ctrl-C）时取消还没开始的，只等正在跑的那几条结束
+        pool.shutdown(wait=True, cancel_futures=True)

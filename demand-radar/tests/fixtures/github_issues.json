@@ -8,6 +8,7 @@
    "body": "It would be great to have <b>dark mode</b> in settings.\n\nMany users asked for this.",
    "html_url": "https://github.com/example/app/issues/1234",
    "repository_url": "https://api.github.com/repos/example/app",
+   "created_at": "2024-05-01T12:34:56Z",
    "reactions": {"+1": 321, "-1": 0, "heart": 12}
   },
   {
@@ -16,6 +17,7 @@
    "body": null,
    "html_url": "https://github.com/other/tool/issues/7",
    "repository_url": "https://api.github.com/repos/other/tool",
+   "created_at": "2023-01-15T08:00:00Z",
    "reactions": {"+1": 88}
   }
  ]

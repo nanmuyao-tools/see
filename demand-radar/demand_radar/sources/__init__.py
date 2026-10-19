@@ -7,13 +7,26 @@ import tomllib
 from ..models import SourceItem
 from . import github, hn_algolia, rss, softwarerecs
 
-# 源名 → 抓取函数(limit, 该源的配置) -> list[SourceItem]
+# 源名 → 抓取函数(limit, 该源的配置, 游标) -> list[SourceItem]
 REGISTRY = {
     "softwarerecs": softwarerecs.fetch,
     "hn_algolia": hn_algolia.fetch,
     "github": github.fetch,
     "rss": rss.fetch,
 }
+
+# 支持历史回填的源：模块要提供 units(conf)、page_before(conf, unit, before, pagesize)、interval()
+BACKFILL = {
+    "softwarerecs": softwarerecs,
+    "hn_algolia": hn_algolia,
+    "github": github,
+}
+
+
+def backfill_module(name: str):
+    if name not in BACKFILL:
+        raise ValueError(f"{name} 不支持回填（RSS 订阅没有翻页）；可回填的源: {', '.join(BACKFILL)}")
+    return BACKFILL[name]
 
 
 def load_config(path: str) -> dict:
@@ -34,16 +47,22 @@ def enabled(conf: dict) -> list[str]:
     return names
 
 
-def fetch_all(names: list[str], limit: int, conf: dict) -> tuple[list[SourceItem], dict[str, str]]:
-    """逐个源抓取。单个源失败只记录错误、不影响其他源；同一条内容去重。"""
+def fetch_all(names: list[str], limit: int, conf: dict,
+              cursors: dict[str, dict[str, int]] | None = None) -> tuple[list[SourceItem], dict[str, str]]:
+    """逐个源抓取。单个源失败只记录错误、不影响其他源；同一条内容去重。
+
+    cursors：源名 → {查询: 游标}。抓取时读，抓完原地推进；只有成功抓到的查询会动。
+    传 None 表示不用游标，行为和首次运行一样。
+    """
     unknown = [n for n in names if n not in REGISTRY]
     if unknown:
         raise ValueError(f"未知数据源: {', '.join(unknown)}；可用: {', '.join(REGISTRY)}")
     items: dict[tuple[str, str], SourceItem] = {}
     errors: dict[str, str] = {}
     for name in names:
+        cur = None if cursors is None else cursors.setdefault(name, {})
         try:
-            for it in REGISTRY[name](limit, conf.get(name) or {}):
+            for it in REGISTRY[name](limit, conf.get(name) or {}, cur):
                 items.setdefault((it.source, it.external_id), it)
         except Exception as e:  # 网络、限流、格式变化等
             errors[name] = str(e).splitlines()[0][:200]

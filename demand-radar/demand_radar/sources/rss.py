@@ -7,6 +7,7 @@ import time
 import xml.etree.ElementTree as ET
 
 from ..models import SourceItem
+from . import cursor
 from .http import clean, get
 
 _ATOM = "{http://www.w3.org/2005/Atom}"
@@ -33,6 +34,8 @@ def parse(feed_name: str, data: bytes, limit: int) -> list[SourceItem]:
             title=clean(_text(e.find(f"{_ATOM}title")), 300),
             text=clean(_text(body)),
             url=url,
+            created_at=cursor.epoch(_text(e.find(f"{_ATOM}published"))
+                                    or _text(e.find(f"{_ATOM}updated"))),
         ))
 
     for e in root.findall("./channel/item")[:limit]:  # RSS 2.0
@@ -43,6 +46,7 @@ def parse(feed_name: str, data: bytes, limit: int) -> list[SourceItem]:
             title=clean(_text(e.find("title")), 300),
             text=clean(_text(e.find("description"))),
             url=url,
+            created_at=cursor.epoch(_text(e.find("pubDate"))),
         ))
     return items
 
@@ -50,8 +54,12 @@ def parse(feed_name: str, data: bytes, limit: int) -> list[SourceItem]:
 FEED_INTERVAL = 2.0  # 订阅之间的间隔秒数，对网站友好，也降低被限流的概率
 
 
-def fetch(limit: int, conf: list[dict]) -> list[SourceItem]:
-    """逐个订阅抓取。单个订阅失败只跳过它；全部失败才报错。"""
+def fetch(limit: int, conf: list[dict], cursors: dict[str, int] | None = None) -> list[SourceItem]:
+    """逐个订阅抓取。单个订阅失败只跳过它；全部失败才报错。
+
+    cursors 不用：RSS 没有按时间过滤的参数，订阅本身只给最新几十条，新旧靠入库去重。
+    参数保留是为了和其他源的 fetch 签名一致。
+    """
     items: list[SourceItem] = []
     errors: list[str] = []
     for i, feed in enumerate(conf):
