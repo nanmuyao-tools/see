@@ -38,6 +38,14 @@ class Config:
     run_at: str = "03:00"  # schedule 命令：每天几点跑 run，按本机 / 容器时钟（容器默认 UTC）
     digest_weekday: int = 1  # schedule 命令：ISO 周几出周报，1 = 周一 … 7 = 周日，0 = 不出
     run_on_start: bool = True  # schedule 命令：启动时先跑一次，不等到点
+    # 相似需求合并（v0.3，见 cluster.py）
+    cluster: bool = False  # run / schedule：抽取完顺手向量化并合并相似需求
+    embed_model: str = "nomic-embed-text"  # 嵌入模型名，走 /v1/embeddings；Ollama 可直接 pull
+    embed_base_url: str = ""  # 嵌入服务地址；空 = 同 ollama_base_url。Mac GPU 路线 mlx-lm 不提供嵌入接口，可单独指向 Ollama
+    cluster_threshold: float = 0.85  # 余弦相似度 ≥ 此值视为同一需求
+    rebuild: bool = False  # cluster 命令：丢掉已有簇重新归（调阈值后用）
+    cluster_eval: bool = False  # cluster 命令：不动库，在标注对上评测合并判断
+    eval_pairs: str = "eval/cluster_pairs.json"  # cluster --eval 用的标注对
 
     @staticmethod
     def from_args(argv: list[str] | None = None) -> "Config":
@@ -58,6 +66,11 @@ class Config:
             run_at=_env("DR_RUN_AT", Config.run_at),
             digest_weekday=int(_env("DR_DIGEST_WEEKDAY", str(Config.digest_weekday))),
             run_on_start=_env("DR_RUN_ON_START", "1").lower() in ("1", "true", "yes"),
+            cluster=_env("DR_CLUSTER", "0").lower() in ("1", "true", "yes"),
+            embed_model=_env("DR_EMBED_MODEL", Config.embed_model),
+            embed_base_url=_env("DR_EMBED_BASE_URL", Config.embed_base_url),
+            cluster_threshold=float(_env("DR_CLUSTER_THRESHOLD", str(Config.cluster_threshold))),
+            eval_pairs=_env("DR_EVAL_PAIRS", Config.eval_pairs),
         )
 
         p = argparse.ArgumentParser(prog="demand_radar")
@@ -68,6 +81,7 @@ class Config:
         dg = sub.add_parser("digest", help="汇总最近 N 天新增的需求，按领域分组输出周报")
         bf = sub.add_parser("backfill", help="按页往回拉一个源的历史内容，可中断后继续")
         sc = sub.add_parser("schedule", help="常驻：每天定时 run，每周定时 digest")
+        cl = sub.add_parser("cluster", help="向量化并合并相似需求，重写清单；不调抽取模型")
 
         for sp in (run, sc):
             sp.add_argument("--source", default=d.source)
@@ -75,8 +89,26 @@ class Config:
             sp.add_argument("--output", dest="output_path", default=d.output_path)
         for sp in (run, bf, sc):
             sp.add_argument("--workers", type=int, default=d.workers, help="并发调用模型的线程数")
-        for sp in (run, ev, dg, sc):
+        for sp in (run, ev, dg, sc, cl):
             sp.add_argument("--min-confidence", type=float, default=d.min_confidence)
+
+        # 相似需求合并：run / schedule 用 --cluster 开启，cluster 命令单独跑
+        for sp in (run, sc):
+            sp.add_argument("--cluster", action="store_true", default=d.cluster,
+                            help="抽取完顺手向量化并合并相似需求（需要嵌入模型）")
+        for sp in (run, sc, cl):
+            sp.add_argument("--embed-model", dest="embed_model", default=d.embed_model,
+                            help="嵌入模型名，走 /v1/embeddings")
+            sp.add_argument("--embed-base-url", dest="embed_base_url", default=d.embed_base_url,
+                            help="嵌入服务地址，默认同 --base-url")
+            sp.add_argument("--threshold", dest="cluster_threshold", type=float, default=d.cluster_threshold,
+                            help="余弦相似度 ≥ 此值视为同一需求")
+        cl.add_argument("--output", dest="output_path", default=d.output_path)
+        cl.add_argument("--rebuild", action="store_true", default=False, help="丢掉已有簇重新归")
+        cl.add_argument("--eval", dest="cluster_eval", action="store_true", default=False,
+                        help="不动库，在标注对上评测「是否同一需求」的判断")
+        cl.add_argument("--pairs", dest="eval_pairs", default=d.eval_pairs, help="--eval 用的标注对")
+        cl.add_argument("--verbose", "-v", action="store_true", default=d.verbose)
 
         ev.add_argument("--eval-set", dest="eval_set", default=d.eval_set)
         ev.add_argument("--verbose", "-v", action="store_true", default=d.verbose)
@@ -99,14 +131,15 @@ class Config:
         # 调模型的命令共用
         for sp in (run, ev, bf, sc):
             sp.add_argument("--provider", default=d.provider)
+        for sp in (run, ev, bf, sc, cl):
             sp.add_argument("--base-url", "--ollama-base-url", dest="ollama_base_url",
                             default=d.ollama_base_url,
                             help="本地模型服务地址（ollama/ 与 local/ 两种 provider 用）")
         # 读写数据库的命令共用
-        for sp in (run, dg, bf, sc):
+        for sp in (run, dg, bf, sc, cl):
             sp.add_argument("--mongo-uri", dest="mongo_uri", default=d.mongo_uri)
             sp.add_argument("--db-name", dest="db_name", default=d.db_name)
-        for sp in (run, ev, dg, bf, sc):
+        for sp in (run, ev, dg, bf, sc, cl):
             sp.add_argument("--sources-file", dest="sources_file", default=d.sources_file)
             sp.add_argument("--lang", dest="output_language", choices=("zh", "en"),
                             default=d.output_language, help="输出语言")
@@ -133,4 +166,11 @@ class Config:
             run_at=getattr(ns, "run_at", d.run_at),
             digest_weekday=getattr(ns, "digest_weekday", d.digest_weekday),
             run_on_start=getattr(ns, "run_on_start", d.run_on_start),
+            cluster=getattr(ns, "cluster", d.cluster),
+            embed_model=getattr(ns, "embed_model", d.embed_model),
+            embed_base_url=getattr(ns, "embed_base_url", d.embed_base_url),
+            cluster_threshold=getattr(ns, "cluster_threshold", d.cluster_threshold),
+            rebuild=getattr(ns, "rebuild", False),
+            cluster_eval=getattr(ns, "cluster_eval", False),
+            eval_pairs=getattr(ns, "eval_pairs", d.eval_pairs),
         )

@@ -6,7 +6,7 @@ import sys
 import time
 from datetime import datetime, timedelta, timezone
 
-from . import filters, rank, report, sources, store
+from . import cluster, filters, rank, report, sources, store
 from .config import Config
 from .extract import build_client, extract_many
 from .models import SourceItem
@@ -58,6 +58,33 @@ def _process(coll, client, todo: list[SourceItem], cfg: Config, fconf: dict) -> 
     return {"filtered": filtered, "extracted": extracted, "failed": failed}
 
 
+def _embedder(cfg: Config):
+    return cluster.embedder(cfg.embed_base_url or cfg.ollama_base_url, cfg.embed_model)
+
+
+def _cluster_step(coll, cfg: Config, w: dict[str, float]) -> dict:
+    """run --cluster：抽取完顺手向量化 + 合并。嵌入服务挂了只告警不中断——清单照出，簇下次再补。
+    返回写进运行记录的计数（加 cluster_ 前缀，和抽取的计数区分开）。"""
+    print(f"      向量化并合并相似需求（{cfg.embed_model}，阈值 {cfg.cluster_threshold}）…")
+    try:
+        stats = cluster.sync(coll, _embedder(cfg), cfg.embed_model, cfg.cluster_threshold, w, cfg.min_confidence)
+    except Exception as e:
+        print(f"      ✗ 合并失败，清单按未合并输出：{_reason(e)}", file=sys.stderr)
+        return {"cluster_error": _reason(e)}
+    print(f"      向量化 {stats['embedded']} 条，归簇 {stats['assigned']} 条，新簇 {stats['new_clusters']} 个")
+    return {f"cluster_{k}": v for k, v in stats.items()}
+
+
+def _grouped(coll, rows: list[dict], w: dict[str, float]) -> list[dict]:
+    """有簇信息就按簇折叠（每簇一条 + 其余成员的链接）；没跑过 cluster 的库一行都没有 cluster_id，原样返回。"""
+    cids = {r.get("cluster_id") for r in rows} - {None}
+    if not cids:
+        return rows
+    clusters = [c for c in store.load_clusters(coll) if c["_id"] in cids]
+    ids = {i for c in clusters for i in c["members"]}
+    return cluster.group(rows, clusters, store.member_docs(coll, ids), w)
+
+
 def run(cfg: Config) -> None:
     conf = sources.load_config(cfg.sources_file)
     names = sources.enabled(conf) if cfg.source == "all" else cfg.source.split(",")
@@ -84,15 +111,17 @@ def run(cfg: Config) -> None:
     stats = _process(coll, client, todo, cfg, conf.get("filters") or {})
     store.save_cursors(coll, cursors)  # 这批全处理完才记游标；中途崩溃就不记，下次重抓
 
-    print(f"[3/4] 筛选（可信度 ≥ {cfg.min_confidence}）并排序 …")
     w = rank.weights(conf.get("ranking"))
-    rows = rank.sort(store.top_demands(coll, cfg.min_confidence), w)
+    cstats = _cluster_step(coll, cfg, w) if cfg.cluster else {}
+    print(f"[3/4] 筛选（可信度 ≥ {cfg.min_confidence}）并排序 …")
+    rows = _grouped(coll, rank.sort(store.top_demands(coll, cfg.min_confidence), w), w)
     held = rank.sort(store.held_demands(coll, cfg.min_confidence), w)
 
     print(f"[4/4] 写出 {cfg.output_path}（{len(rows)} 条，另有 {len(held)} 条待人工确认）")
     report.write_markdown(rows, cfg.output_path, cfg.output_language, held)
     took = store.finish_run(coll, run_id, fetched=store.source_counts(items), fetched_total=len(items),
-                            fetch_errors=errors, todo=len(todo), listed=len(rows), held=len(held), **stats)
+                            fetch_errors=errors, todo=len(todo), listed=len(rows), held=len(held),
+                            **stats, **cstats)
     coll.database.client.close()
     print(f"完成，耗时 {took:.0f} 秒。运行记录在 MongoDB 的 runs 集合。")
 
@@ -175,12 +204,48 @@ def digest(cfg: Config) -> None:
     coll = store.connect(cfg.mongo_uri, cfg.db_name)
     since = datetime.now(timezone.utc) - timedelta(days=cfg.days)
     w = rank.weights(conf.get("ranking"))
-    rows = rank.sort(store.recent_demands(coll, cfg.min_confidence, since), w)
+    rows = _grouped(coll, rank.sort(store.recent_demands(coll, cfg.min_confidence, since), w), w)
     held = rank.sort(store.held_demands(coll, cfg.min_confidence, since), w)
     path = cfg.digest_output or f"out/digest-{datetime.now():%Y-%m-%d}.md"
     report.write_digest(rows, path, cfg.days, cfg.output_language, held)
     coll.database.client.close()
     print(f"最近 {cfg.days} 天新增 {len(rows)} 条需求，另有 {len(held)} 条待人工确认，已写出 {path}")
+
+
+def cluster_demands(cfg: Config) -> None:
+    """向量化 + 合并相似需求，不调抽取模型；合并完重写清单，效果立刻能看。
+    --eval 时不动库，只在标注对上评测「是否同一需求」的判断（需要真实嵌入服务）。"""
+    embed = _embedder(cfg)
+    if cfg.cluster_eval:
+        try:
+            code = cluster.evaluate(cfg.eval_pairs, embed, cfg.cluster_threshold, cfg.verbose)
+        except OSError as e:
+            sys.exit(f"读取标注对失败：{e}")
+        raise SystemExit(code)
+
+    conf = sources.load_config(cfg.sources_file)
+    coll = store.connect(cfg.mongo_uri, cfg.db_name)
+    w = rank.weights(conf.get("ranking"))
+    run_id = store.start_run(coll, "cluster", embed_model=cfg.embed_model, threshold=cfg.cluster_threshold,
+                             rebuild=cfg.rebuild)
+    print(f"[1/2] 向量化并合并相似需求（{cfg.embed_model}，阈值 {cfg.cluster_threshold}"
+          + ("，重建全部簇" if cfg.rebuild else "") + "）…")
+    try:
+        stats = cluster.sync(coll, embed, cfg.embed_model, cfg.cluster_threshold, w, cfg.min_confidence,
+                             cfg.rebuild)
+    except Exception as e:
+        store.finish_run(coll, run_id, status="failed", error=_reason(e))
+        sys.exit(f"合并失败：{_reason(e)}\n嵌入服务 {cfg.embed_base_url or cfg.ollama_base_url} 可达吗？"
+                 f"模型 {cfg.embed_model} 拉了吗（ollama pull {cfg.embed_model}）？")
+    rows = _grouped(coll, rank.sort(store.top_demands(coll, cfg.min_confidence), w), w)
+    held = rank.sort(store.held_demands(coll, cfg.min_confidence), w)
+    print(f"[2/2] 写出 {cfg.output_path}（{len(rows)} 条，另有 {len(held)} 条待人工确认）")
+    report.write_markdown(rows, cfg.output_path, cfg.output_language, held)
+    total = len(store.load_clusters(coll))
+    took = store.finish_run(coll, run_id, listed=len(rows), clusters=total, **stats)
+    coll.database.client.close()
+    print(f"向量化 {stats['embedded']} 条，归簇 {stats['assigned']} 条，新簇 {stats['new_clusters']} 个"
+          + ("（已重建）" if stats["rebuilt"] else "") + f"，库里共 {total} 个簇，耗时 {took:.0f} 秒。")
 
 
 def main(argv: list[str] | None = None) -> None:
@@ -197,6 +262,9 @@ def main(argv: list[str] | None = None) -> None:
     if cfg.command == "schedule":
         from . import schedule
         schedule.main_loop(cfg, run, digest)
+        return
+    if cfg.command == "cluster":
+        cluster_demands(cfg)
         return
     run(cfg)
 

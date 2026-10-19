@@ -185,7 +185,8 @@ def group(rows: list[dict], clusters: list[dict], members: list[dict],
         c = by_c[cid]
         for r in items:
             mem.setdefault(r["_id"], r)
-        rep = max(items, key=lambda r: r.get("rank_score", rank.score(r, w)))
+        # 分数相同时让库里记的代表赢：成员是按完成顺序入库的，不然同分的代表每次运行可能不一样
+        rep = max(items, key=lambda r: (r.get("rank_score", rank.score(r, w)), r["_id"] == c.get("rep_id")))
         others = [mem[i] for i in c["members"] if i != rep["_id"] and i in mem]
         others.sort(key=lambda d: d.get("rank_score", rank.score(d, w)), reverse=True)
         out.append({**rep, "cluster_size": c["size"], "cluster_sources": c["sources"],
