@@ -68,9 +68,11 @@ _SAFETY = (
     "harmful = false for ordinary tools, including ones that handle personal data with consent: managing "
     "your own data, accounts, devices or deliveries; protecting your own privacy or security; sharing "
     "information with people who agreed to it; scientific, medical or educational software.\n"
-    "Most tool requests are not harmful. Answer true only when the request itself says or clearly implies "
-    "that the tool is meant to be used against a specific other person, or to deceive people.\n"
-    "First say in one short sentence who would use the tool and what for, then decide."
+    "Judge only by what the poster says they want to do with the tool. Do not imagine how it could be "
+    "misused: almost any software could be misused, and that alone does not make it harmful. Most tool "
+    "requests are not harmful. Answer true only when the post itself says or clearly implies that the tool "
+    "is meant to be used against a specific other person, or to deceive people.\n"
+    "First say in one short sentence what the poster wants to do with it, then decide."
 )
 
 

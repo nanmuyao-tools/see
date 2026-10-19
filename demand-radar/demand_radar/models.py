@@ -62,7 +62,7 @@ class Demand(BaseModel):
 class SafetyCheck(BaseModel):
     """有害判断的输出。先写理由再下结论，小模型判得更稳。"""
 
-    reason: str = Field(description="One short sentence: who would use the tool and what for.")
+    reason: str = Field(description="One short sentence: what the poster says they want to do with the tool.")
     harmful: bool = Field(description="Whether the tool would mainly be used to harm other people.")
 
     @field_validator("reason", mode="before")
