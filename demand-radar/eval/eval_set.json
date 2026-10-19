@@ -1,0 +1,587 @@
+[
+ {
+  "source": "stackexchange/softwarerecs",
+  "external_id": "95691",
+  "title": "Does anything similar to a live DNA editor exist?",
+  "text": "I do remember to have read full human DNA has been trascribed. I have no idea at which point people paid to work on that, if there were people paid to work on that, are or were at translating it into human readable language nor I know at which point they are at editing human beings DNA live with something akin to a text editor, so I was wondering if please the person or the group who first are gonna come out with any of that may inform everybody here in this Q&A. I'm not sure I should tell why specifically I may want to have a live DNA text editor. I can imagine lots of applications, from fixing a root canal to live longer, to fix problems of an human being instance's body irregularities, make employees work harder for a longer time, have soldiers not be scared by unspeakable horrors, stuff like that.",
+  "url": "https://softwarerecs.stackexchange.com/questions/95691/does-anything-similar-to-a-live-dna-editor-exist",
+  "score": -1,
+  "label": {
+   "is_request": true,
+   "buildable": false,
+   "note": "需要科学突破（编辑人类DNA）"
+  }
+ },
+ {
+  "source": "stackexchange/softwarerecs",
+  "external_id": "95689",
+  "title": "Is there a program which destroys cancer?",
+  "text": "I was wondering if somebody had invented some software I can install on my computer which paired with some cheap hardware it can destroy cancer cells with a great accuracy (>98% precision per unit of volume at the appropriately lengths). As for the hardware device I'm thinking about some cheap USB ray beamer of sort. I'd like to spend like less than $100 because I don't think a person's life is worth so much. I think nobody should try to edit the above statement including my opinion on human's life worth, as I personally see it necessary to assume as a point of view for the resolution of the problem I'm posing to you today. This question is not a joke and it's obvious both its very useful to answer and can indeed be answered because all the money in the world wouldn't have bought let's say a laser in 1920 but now you can get one quite cheap. Note: the question has been moved to the hardware recommendations Stack Exchange .",
+  "url": "https://softwarerecs.stackexchange.com/questions/95689/is-there-a-program-which-destroys-cancer",
+  "score": -6,
+  "label": {
+   "is_request": true,
+   "buildable": false,
+   "note": "需要医疗突破"
+  }
+ },
+ {
+  "source": "stackexchange/softwarerecs",
+  "external_id": "95688",
+  "title": "Is there a program to retrieve information about the currently focused window on Android?",
+  "text": "I'm writing the Android Window Manager android-wm command-line program. I've written many of its functions already but, in order to write window-select , the actual window switcher program, I need to retrieve information about the currently focused window and I need a program which outputs detailed information in JSON format about it..",
+  "url": "https://softwarerecs.stackexchange.com/questions/95688/is-there-a-program-to-retrieve-information-about-the-currently-focused-window-on",
+  "score": 0,
+  "label": {
+   "is_request": true,
+   "buildable": true,
+   "note": "命令行程序，个人可做"
+  }
+ },
+ {
+  "source": "stackexchange/softwarerecs",
+  "external_id": "95686",
+  "title": "Open-source tool to auto-generate API regression tests from real traffic (Linux, CI-friendly)",
+  "text": "I maintain a set of REST microservices (Go and Node.js, running in Docker on Linux) and our API regression suite is mostly hand-written Postman collections. Keeping them updated as endpoints takes too much time, and our mocks for downstream services (Postgres, Redis, a couple of third-party APIs) drift from real behaviour. I’m looking for a tool that can: Generate API test cases automatically, ideally by recording real requests/responses rather than me writing each assertion Create mocks/stubs for dependencies (DB calls, external HTTP) from that same recorded traffic Run headless in CI (GitHub Actions) and fail the build on regressions Run on Linux, either open-source or with a usable free tier Ideally not require code changes or SDK instrumentation in every service What I’ve looked at so far: Postman/Newman and REST Assured work, but tests are still written by hand. What would you recommend, and how well does it handle noisy fields like timestamps and random IDs in responses?",
+  "url": "https://softwarerecs.stackexchange.com/questions/95686/open-source-tool-to-auto-generate-api-regression-tests-from-real-traffic-linux",
+  "score": 0,
+  "label": {
+   "is_request": true,
+   "buildable": true,
+   "note": "从流量生成回归测试，个人可做"
+  }
+ },
+ {
+  "source": "stackexchange/softwarerecs",
+  "external_id": "95681",
+  "title": "Is there a program to run a command with a single flag and multiple arguments coming from a file?",
+  "text": "The program should be something like run-single-flag-args-file \\ \"a-command\" \\ \"the-single-letter-option\" \\ \"the-file-with-the-arguments-to-give-to-the-option The arguments in the file are set each on a line and the whole line is the argument. Something similar has been asked onto this question on Unix Stack Exchange but it's not specifically for a program, everybody has answered with code rather than with a program and they are gonna delete the answer in which I reply with a program. Since I would like to find the program which fulfills the request of this question when I look for it, I'm opening it here, where it's appropriate to specifically request a program and people can't complain about the fact they don't like an answer without writing the requested program themselves.",
+  "url": "https://softwarerecs.stackexchange.com/questions/95681/is-there-a-program-to-run-a-command-with-a-single-flag-and-multiple-arguments-co",
+  "score": 0,
+  "label": {
+   "is_request": true,
+   "buildable": true,
+   "note": "简单命令行工具"
+  }
+ },
+ {
+  "source": "stackexchange/softwarerecs",
+  "external_id": "95677",
+  "title": "Web push notifications server",
+  "text": "Most modern browsers support web push notifications as well as the two big mobile OSes. I've a few services that currently use a chat service and a cli client to generically send notifications from various apps. I'd like something similar without being tied to a chat client or something specific, just the native web browsers. So here's what I need Something self hosted I need to be able to run this behind ngnix as a proxy ideally language isn't important but I need instructions to run it. I can do docker if need be, but ideally something I can set up myself on whatever linux distribution I choose (I'll likely run this in a incus container with ubuntu) I need to be able to create accounts for one or more user I need to be able to create notifications that I can opt in per machine/notifications, and trigger them individually. A webUI to manage, and subscribe would be ideal I'd want to be able to trigger those notifications from another machine, with some kind of authentication, either via something like curl or a CLI I can run on the triggering machine I don't have the skills to write it myself, so something pre-existing and maintained ideally",
+  "url": "https://softwarerecs.stackexchange.com/questions/95677/web-push-notifications-server",
+  "score": 0,
+  "label": {
+   "is_request": true,
+   "buildable": true,
+   "note": "web push 服务端，常规开发"
+  }
+ },
+ {
+  "source": "stackexchange/softwarerecs",
+  "external_id": "95671",
+  "title": "Software that converts pen hovering mode to pen contact/down down mode",
+  "text": "I am looking for a Windows utility or tool capable of remapping or converting stylus hover (proximity) events into an active contact/press event system-wide. Requirement On a Windows 10 touchscreen laptop (Lenovo Yoga with active stylus), I want the system to treat the pen's hover state (when the nib is close to the screen without touching) as if it were a physical pen press or click. Key Criteria Platform: Windows 10 64-bit. Core Feature: Automatically trigger a pen down / touch event as soon as the stylus enters hover range, or allow toggling this behavior. Type of Software: Background utility, input remapper, custom driver filter, or tablet configuration tool. I tried to code it with autohotkey v2 but it can't suppress the native pen and stylus inputs hover mode. So, the stylus pen switched between hover mode and contact mode and it caused instabilities. Is there any other existing software or input remapper or a better code autohotkey v2 that can perform this hover-to-touch transformation for active styluses ?",
+  "url": "https://softwarerecs.stackexchange.com/questions/95671/software-that-converts-pen-hovering-mode-to-pen-contact-down-down-mode",
+  "score": 0,
+  "label": {
+   "is_request": true,
+   "buildable": true,
+   "note": "Windows 输入重映射工具"
+  }
+ },
+ {
+  "source": "stackexchange/softwarerecs",
+  "external_id": "95670",
+  "title": "Is there an Android shell program to switch to any open application according to some criteria?",
+  "text": "I'd like to get recommended an Android program to switch to any open application window according to a set of criteria. For example I'd like to be able to type window-select \\ \"throw google out of the window\" or more like wm \\ focus \\ \"throw google out of the window\" to bring to focus the last focused browser window opened on any webpage whose browser window title contains the text throw google out of the window . I am aware Google puts its wm window manager command, which of course has no focus sub-command, in /system/bin/wm , so I suppose a proper wm program to be placed in /data/data/why-on-hell/bin/wm or GASP in /usr/bin/wm could very much be appropriate as an answer to this question.",
+  "url": "https://softwarerecs.stackexchange.com/questions/95670/is-there-an-android-shell-program-to-switch-to-any-open-application-according-to",
+  "score": -2,
+  "label": {
+   "is_request": true,
+   "buildable": true,
+   "note": "Android 切换前台应用的脚本工具"
+  }
+ },
+ {
+  "source": "stackexchange/softwarerecs",
+  "external_id": "95656",
+  "title": "Tool or service that tracks deprecations and breaking changes per library version, with an API or feed",
+  "text": "I need a tool or service that tells me, for a given library and version, whether it has been deprecated or whether newer releases contain breaking changes, before I upgrade. Requirements: Ecosystems: npm and Maven/Gradle (Android) at least; CocoaPods and Swift Package Manager would be a big plus Reports deprecations (with dates when available) and breaking changes, not only new versions Machine-readable access: REST API, RSS/Atom feed or downloadable data Free or open source preferred; a self-hostable tool is fine Works from a list of dependencies (e.g. an SBOM or package.json), without uploading source code What I already tried: Dependabot / Renovate: they open update PRs, but don't say what breaks before upgrading OSV and deps.dev: great for vulnerabilities and the npm \"deprecated\" flag, but no breaking changes GitHub releases.atom: works, but it's free text per repository, not structured ChangeRadar: covers developer platforms and AI tools, not libraries Is there anything that covers this, even partially?",
+  "url": "https://softwarerecs.stackexchange.com/questions/95656/tool-or-service-that-tracks-deprecations-and-breaking-changes-per-library-versio",
+  "score": 1,
+  "label": {
+   "is_request": true,
+   "buildable": true,
+   "note": "追踪库弃用/破坏性变更的工具"
+  }
+ },
+ {
+  "source": "hackernews",
+  "external_id": "49937618",
+  "title": "What tools do you wish existed?",
+  "text": "In 2026, it almost feels like there's a tool for absolutely every conceivable problem or pain point. Is there a tool out there for anyone, that doesn't already exist, that you would pay for?",
+  "url": "https://news.ycombinator.com/item?id=49937618",
+  "score": 1,
+  "label": {
+   "is_request": false,
+   "buildable": null,
+   "note": "向大家征集点子，不是具体需求"
+  }
+ },
+ {
+  "source": "hackernews",
+  "external_id": "49751471",
+  "title": "Qwen 3.8 Omni Flash",
+  "text": "I'm wondering, is there a tool or something out there that helps me pick a model, in the vast sea of models out there these days? Every time I need a model for something I see the list on openrouter and I'm completely overwhelmed. I'd love to be able to explain my use case, my cost preferences and have a tool select a few good models to try. E.g. I wrote a tool that cleans out my email spam box. It classifies emails that are already flagged as spam, and if it's very obviously spam it removes it permanently (keeps a copy on disk though). And after x emails, it goes through the list of deleted spam mails and suggests email rules. What model would be best suited? I'd love to be able to explain this use case and get this info served to me. The list of models and the information about what they're good at is just too splintered and spread out. I landed on google/gemma-4-31b for now, because it's cheap and good enough and also supports Dutch and French a bit. But I can't realistically try them all.",
+  "url": "https://news.ycombinator.com/item?id=49751471",
+  "score": 0,
+  "label": {
+   "is_request": true,
+   "buildable": true,
+   "note": "帮选模型的工具"
+  }
+ },
+ {
+  "source": "hackernews",
+  "external_id": "49494799",
+  "title": "A glacier collapse triggered a deadly landslide and flooding",
+  "text": "Is there a tool or resource to map and track other glaciers at risk of potential failure that could lead to a similar catastrophic humanitarian disaster?",
+  "url": "https://news.ycombinator.com/item?id=49494799",
+  "score": 0,
+  "label": {
+   "is_request": true,
+   "buildable": null,
+   "note": "依赖专业地质数据，能否做成不确定"
+  }
+ },
+ {
+  "source": "hackernews",
+  "external_id": "49219501",
+  "title": "The Nixpkgs core team has disbanded",
+  "text": "What is the stagex story for managing a \"normal\" laptop? Is there a tool that converts an OCI image to a ... rootfs partition? Or such?",
+  "url": "https://news.ycombinator.com/item?id=49219501",
+  "score": 0,
+  "label": {
+   "is_request": true,
+   "buildable": true,
+   "note": "OCI 镜像转 rootfs 工具"
+  }
+ },
+ {
+  "source": "hackernews",
+  "external_id": "49176789",
+  "title": "Show HN: Find what users want by analyzing app reviews",
+  "text": "Hi HN, I’ve had a goal on my mind for a while: to automate the process of figuring out what people actually want. I’m building a set of tools to find app concepts worth building and niches that are overlooked or badly served. The first piece is Seam. It connects to Google Play and can read thousands of recent reviews for any app, then pull out the main complaints and pain points. The idea is to help you figure out exactly what to build if you want to compete with an existing app or address the same niche. You can ask it to aggregate the complaints and strengths across a bunch of similar apps too. This makes it useful for analyzing competitors, or even your own published app, although, to be honest, that wasn’t my original goal. It’s completely free for now. You get 3 messages without an account and 30 free messages if you create one. I’ve started exploring a few related ideas as well. One is analyzing social media posts, basically looking for people asking things like “How can I do X?” or “Is there a tool for X?” and finding recurring pain points. Another is automating demo video creation to see which concepts get the most engagement on social media, also trying to look at past Product Hunt and Indie Hackers submissions to help predict which concepts are likely to succeed too. Adding support for Trustpilot and the App Store is on my list as well. I think combining all of these data sources could be really useful for systematically finding concepts to build that people already",
+  "url": "https://news.ycombinator.com/item?id=49176789",
+  "score": 2,
+  "label": {
+   "is_request": false,
+   "buildable": null,
+   "note": "Show HN，作品发布（供给，非需求）"
+  }
+ },
+ {
+  "source": "hackernews",
+  "external_id": "49049006",
+  "title": "My Images Are Dithered",
+  "text": "> Yeah, if you're using lossless compression like PNG or GIF, adding a lossy step to reduce the number of colors in the palette can help. Depending on the image context it can also backfire, though not so much for photos, but rather screenshots. E.g. sometimes a 2 color dithered image results in a much bigger PNG than, say 16 colors without dithering, because bigger areas of uniform color compress much more efficiently. So I usually just try \"everything\", to find some sweet spot between file size and quality. Is there a tool that allows you to select which area of the image to use what dithering parameters and color count for, with a live preview? I know I'll vibecode one myself just to see what it looks like, but maybe this already exists in a \"real\" application? Then you could e.g. use dithering on the faces, but for the background just a few colors without dithering.",
+  "url": "https://news.ycombinator.com/item?id=49049006",
+  "score": 0,
+  "label": {
+   "is_request": false,
+   "buildable": null,
+   "note": "关于图片抖动的技术讨论"
+  }
+ },
+ {
+  "source": "hackernews",
+  "external_id": "48267796",
+  "title": "Show HN: Audiomass – a free, open-source multitrack audio editor for the web",
+  "text": "I need an Audio tool to remaster old songs. Basically to bring old songs to modern crystal clear quality. I would be happy pay subscription fees. Is there a tool for that?",
+  "url": "https://news.ycombinator.com/item?id=48267796",
+  "score": 0,
+  "label": {
+   "is_request": false,
+   "buildable": null,
+   "note": "Show HN，作品发布"
+  }
+ },
+ {
+  "source": "hackernews",
+  "external_id": "47818409",
+  "title": "Amazon is discontinuing Kindle for PC on June 30th",
+  "text": "Is there a tool for jailbroken Kindles to prevent this bricking from happening?",
+  "url": "https://news.ycombinator.com/item?id=47818409",
+  "score": 0,
+  "label": {
+   "is_request": true,
+   "buildable": true,
+   "note": "防止越狱 Kindle 变砖的工具"
+  }
+ },
+ {
+  "source": "reddit/SomebodyMakeThis",
+  "external_id": "t3_1x93867",
+  "title": "Help for my prodject",
+  "text": "submitted by /u/manasievska [link] [comments]",
+  "url": "https://www.reddit.com/r/SomebodyMakeThis/comments/1x93867/help_for_my_prodject/",
+  "score": 0,
+  "label": {
+   "is_request": false,
+   "buildable": null,
+   "note": "求助帖，无具体需求"
+  }
+ },
+ {
+  "source": "reddit/SomebodyMakeThis",
+  "external_id": "t3_1x8kc0k",
+  "title": "Web app to see your close friends curations",
+  "text": "No algorithm, no AI recommendation, just close friend's curations. Friends can maintain a profile and they upload their favourite collections. Collections could be - Places I love (Restaurants, cafés, hidden gems, travel destinations) - Things I recommend (Books, movies, products, recipes, podcasts) - Things to experience (Experiences, activities, events, adventures) You can follow people whose taste you trust. Find out what your most adventurous friend eats, what your bookworm friend reads, or what your stylish friend buys. Looking for feedback, would you use a web app like this? submitted by /u/Interesting-Let-409 [link] [comments]",
+  "url": "https://www.reddit.com/r/SomebodyMakeThis/comments/1x8kc0k/web_app_to_see_your_close_friends_curations/",
+  "score": 0,
+  "label": {
+   "is_request": true,
+   "buildable": true,
+   "note": "看好友精选的 web app"
+  }
+ },
+ {
+  "source": "reddit/SomebodyMakeThis",
+  "external_id": "t3_1x8grf1",
+  "title": "Somebody make an app that saves my thoughts while I’m reading",
+  "text": "The good thoughts come like mid-paragraph for me. Sometimes it’s smth like an objection to the author, or sometimes a link to something I read last month. By the time I’ve opened a notes app and typed it out, the thought is gone and I’ve lost my place in the book :( I’d want to tap or say a few words and have the thought saved next to the exact passage that set it off. NO switching apps, and later I could see the passage and my reaction together. Highlighting doesn’t cover this. It shows what I marked, but not why.... Do you lose thoughts this way too? submitted by /u/Infinite-Job-5616 [link] [comments]",
+  "url": "https://www.reddit.com/r/SomebodyMakeThis/comments/1x8grf1/somebody_make_an_app_that_saves_my_thoughts_while/",
+  "score": 0,
+  "label": {
+   "is_request": true,
+   "buildable": true,
+   "note": "阅读时记录想法的 app"
+  }
+ },
+ {
+  "source": "reddit/SomebodyMakeThis",
+  "external_id": "t3_1x8gm4r",
+  "title": "Does a website/app that summarizes reviews exist?",
+  "text": "I was searching for a drying rack in Amazon but was overwhelmed by the amount of options. Is there something to summarize Amazon/Steam/Letterboxd/etc or really any kind of review? submitted by /u/armeliens [link] [comments]",
+  "url": "https://www.reddit.com/r/SomebodyMakeThis/comments/1x8gm4r/does_a_websiteapp_that_summarizes_reviews_exist/",
+  "score": 0,
+  "label": {
+   "is_request": true,
+   "buildable": true,
+   "note": "汇总商品评论的 app"
+  }
+ },
+ {
+  "source": "reddit/SomebodyMakeThis",
+  "external_id": "t3_1x87czw",
+  "title": "I think I’ve created the next cards against humanity",
+  "text": "here’s the pitch I think that this could be very successful… like the new cards against humanity type game. The variables in the game can be changed to suit different situations that the players can all agree upon or it be a suggested (by the game czar) mode. This could be like the opposite of among us. Honestly I think this would make an excellent game show. It could really make or break relationships and it could be a good outlet for manipulative behaviour that someone always indulges in. This gives an abuser a very good space to get it out of their system. Like I said, you’ll find out who your real friends are. A secret aspect of the game is that theres a possibility 2 winners can come from one game. The way thats decided is via (being the most manipulative and evil abuser) OR (see if you can win the game without manipulation and vanilla methods which tests your moral compass). I don’t know what else to add, I’m very excited though to pitch this to anyone who’ll listen. I think it can be successful. submitted by /u/NoComputer8548 [link] [comments]",
+  "url": "https://www.reddit.com/r/SomebodyMakeThis/comments/1x87czw/i_think_ive_created_the_next_cards_against/",
+  "score": 0,
+  "label": {
+   "is_request": false,
+   "buildable": null,
+   "note": "自我推销一个点子，非工具需求"
+  }
+ },
+ {
+  "source": "reddit/SomebodyMakeThis",
+  "external_id": "t3_1x7ko5t",
+  "title": "EPDM Roof Install on my garden room step by step",
+  "text": "submitted by /u/ImmediateMagazine886 [link] [comments]",
+  "url": "https://www.reddit.com/r/SomebodyMakeThis/comments/1x7ko5t/epdm_roof_install_on_my_garden_room_step_by_step/",
+  "score": 0,
+  "label": {
+   "is_request": false,
+   "buildable": null,
+   "note": "屋顶施工帖，噪音"
+  }
+ },
+ {
+  "source": "reddit/SomebodyMakeThis",
+  "external_id": "t3_1x6g29l",
+  "title": "A PC case that's also an air purifier: your PC already pulls air in, filters it, and blows it out",
+  "text": "Your PC already does half of an air purifier's job: fans pull air in, dust filters catch some of it, and it blows the air back out. So why not go all the way? I searched before posting. There seem to have been a few similar attempts, but I couldn't find anything like this that you can actually buy today. The idea: a PC case built around a real air purifier. - Intake goes through a HEPA + carbon filter first - CPU, GPU and PSU only breathe filtered air, so the inside stays dust-free - The exhaust leaves your room cleaner, not dustier - One box instead of two devices taking up floor space and making noise The honest problem: HEPA filters are very restrictive. Pushing enough air through them needs high-static-pressure fans, and those are loud, the opposite of what a quiet PC wants. A realistic version might keep two separate airflow paths in one case (one for cleaning, one for cooling). I don't have the skills to build this, so I'm leaving it here. Would you buy one? What am I missing? (Images are AI-generated concept renders.) submitted by /u/somebodybuildit [link] [comments]",
+  "url": "https://www.reddit.com/r/SomebodyMakeThis/comments/1x6g29l/a_pc_case_thats_also_an_air_purifier_your_pc/",
+  "score": 0,
+  "label": {
+   "is_request": true,
+   "buildable": false,
+   "note": "硬件产品（机箱+空气净化器）"
+  }
+ },
+ {
+  "source": "reddit/SomebodyMakeThis",
+  "external_id": "t3_1x5l7u8",
+  "title": "Would you buy modular glasses ?",
+  "text": "Would you buy modular glasses (sunglasses or prescription glasses)? You could swap the arms between different pairs and put the parts together like LEGO. All components would be fully compatible across pairs, so you could mix and match them to customize your glasses and create different looks. submitted by /u/Vachik24 [link] [comments]",
+  "url": "https://www.reddit.com/r/SomebodyMakeThis/comments/1x5l7u8/would_you_buy_modular_glasses/",
+  "score": 0,
+  "label": {
+   "is_request": false,
+   "buildable": null,
+   "note": "「你会买吗」投票帖"
+  }
+ },
+ {
+  "source": "reddit/SomebodyMakeThis",
+  "external_id": "t3_1x5h70c",
+  "title": "Welcome to r/BrisbaneAppIdeas! What apps do you wish existed?",
+  "text": "submitted by /u/Brispark_Studios [link] [comments]",
+  "url": "https://www.reddit.com/r/SomebodyMakeThis/comments/1x5h70c/welcome_to_rbrisbaneappideas_what_apps_do_you/",
+  "score": 0,
+  "label": {
+   "is_request": false,
+   "buildable": null,
+   "note": "版块欢迎语/征集，噪音"
+  }
+ },
+ {
+  "source": "reddit/SomebodyMakeThis",
+  "external_id": "t3_1x5cigf",
+  "title": "Open-source RMS for police, safety officers, and security guards",
+  "text": "I’m looking for a free, open-source Records Management System (RMS) for police, safety officers, and security guards . I can’t find any open-source options that actually work, and commercial RMS platforms are VERY expensive . submitted by /u/DJB-204 [link] [comments]",
+  "url": "https://www.reddit.com/r/SomebodyMakeThis/comments/1x5cigf/opensource_rms_for_police_safety_officers_and/",
+  "score": 0,
+  "label": {
+   "is_request": true,
+   "buildable": true,
+   "note": "开源警务记录管理系统，大但可做"
+  }
+ },
+ {
+  "source": "reddit/SomebodyMakeThis",
+  "external_id": "t3_1x59hqf",
+  "title": "Would you use fingerprint payments at stores?",
+  "text": "submitted by /u/Letterhead-9 [link] [comments]",
+  "url": "https://www.reddit.com/r/SomebodyMakeThis/comments/1x59hqf/would_you_use_fingerprint_payments_at_stores/",
+  "score": 0,
+  "label": {
+   "is_request": false,
+   "buildable": null,
+   "note": "投票帖"
+  }
+ },
+ {
+  "source": "reddit/SomebodyMakeThis",
+  "external_id": "t3_1x4t55l",
+  "title": "[SMT] Turn meeting minutes into a printable history of one local issue",
+  "text": "After discussing a public notebook idea, someone pointed out that existing meeting minutes could provide the starting material. I’d like a small tool that helps someone follow one issue—say, a promised sidewalk repair—across several meetings. You would select relevant passages from the minutes, keep their dates and source references, and arrange them under that issue. Later updates could show a revised deadline, evidence of completion, or something still awaiting confirmation. Corrections would stay visible alongside the original entry. The result should be readable on screen and printable for a library or community binder. Readers should be able to trace each entry back to its source. A first version could use manually selected passages. If an existing tool already handles this simply, I’d welcome its name. Otherwise, feel free to borrow or improve the idea. submitted by /u/carl-bond [link] [comments]",
+  "url": "https://www.reddit.com/r/SomebodyMakeThis/comments/1x4t55l/smt_turn_meeting_minutes_into_a_printable_history/",
+  "score": 0,
+  "label": {
+   "is_request": true,
+   "buildable": true,
+   "note": "会议纪要转可打印历史"
+  }
+ },
+ {
+  "source": "reddit/SomebodyMakeThis",
+  "external_id": "t3_1x4nky7",
+  "title": "Household blinds for windows that act as solar panels",
+  "text": "Ive seen solar blinds with small solar panels to open and close them. I wondered if there was a way to have larger panels that generate electricity for use in a household generally not just to open the blinds. They could be solid blinds or i wondered if theres a way to have solar on roller blinds aswell? The electricity could be stored in cells or power electric heating. The cost could be recouped with lowering energy bills. submitted by /u/Funny_Guava_8071 [link] [comments]",
+  "url": "https://www.reddit.com/r/SomebodyMakeThis/comments/1x4nky7/household_blinds_for_windows_that_act_as_solar/",
+  "score": 0,
+  "label": {
+   "is_request": true,
+   "buildable": false,
+   "note": "硬件（太阳能百叶窗）"
+  }
+ },
+ {
+  "source": "reddit/search",
+  "external_id": "t5_2r71o",
+  "title": "r/windowsphone",
+  "text": "This little reddit hub is dedicated to Windows Phone 7, 8, Windows 10 Mobile + everything else related to them. [link]",
+  "url": "https://www.reddit.com/r/windowsphone/",
+  "score": 0,
+  "label": {
+   "is_request": false,
+   "buildable": null,
+   "note": "版块简介，噪音"
+  }
+ },
+ {
+  "source": "reddit/search",
+  "external_id": "t5_2reen",
+  "title": "androidapps",
+  "text": "Subreddit to talk about Android apps, ask questions, or get app help or recommendations. 🔥 Please read our rules 🔥 [link]",
+  "url": "https://www.reddit.com/r/androidapps/",
+  "score": 0,
+  "label": {
+   "is_request": false,
+   "buildable": null,
+   "note": "版块简介，噪音"
+  }
+ },
+ {
+  "source": "reddit/search",
+  "external_id": "t3_1x96s59",
+  "title": "Is there an app for creating lyrical videos from images and music.",
+  "text": "I have ai gen images and music. I want the app to convert the image to video and lyrics to be animated. It should not be just a collage. It should have some dynamism like depth camera moves for example. I don't want Astra or claude to control the system and do random things to churn out a video. The style should be easily applied to another. Free or open source preferable. submitted by /u/kathi7 to r/generativeAI [link] [comments]",
+  "url": "https://www.reddit.com/r/generativeAI/comments/1x96s59/is_there_an_app_for_creating_lyrical_videos_from/",
+  "score": 0,
+  "label": {
+   "is_request": true,
+   "buildable": true,
+   "note": "图片+音乐生成歌词视频的 app"
+  }
+ },
+ {
+  "source": "reddit/search",
+  "external_id": "t3_1x93dcw",
+  "title": "Vancouver Transit App",
+  "text": "Hello, We'll be visiting Vancouver around the holidays this December/26. Though we've a rental car but I prefer to explore city center and its surroundings using public transportation which is much more convenient and cheaper. I have been studying the Translink/Skytrain (only 3 lines) and bus lines. I downloaded the TransLink app which is very helpful. However this app is only for Skytrain. Is there a phone app that allows me to 'Plan a Trip' that will show trains and buses? If not, is there an app just for buses only? I already have the Translink app. Also where I can purchase Daily Pass? Thank you submitted by /u/sidney_tt to r/Translink [link] [comments]",
+  "url": "https://www.reddit.com/r/Translink/comments/1x93dcw/vancouver_transit_app/",
+  "score": 0,
+  "label": {
+   "is_request": true,
+   "buildable": true,
+   "note": "城市公交 app"
+  }
+ },
+ {
+  "source": "reddit/search",
+  "external_id": "t3_1x93594",
+  "title": "Calendar widget",
+  "text": "Is there an app that offers a calendar widget like the IOS Google calendar one but with a transparent background? The stock samsung one only shows today's events instead of also showing ones that are coming up like the google one does https://imgur.com/a/qsUxveB submitted by /u/AnarchyJesse to r/androidapps [link] [comments]",
+  "url": "https://www.reddit.com/r/androidapps/comments/1x93594/calendar_widget/",
+  "score": 0,
+  "label": {
+   "is_request": true,
+   "buildable": true,
+   "note": "日历小组件"
+  }
+ },
+ {
+  "source": "reddit/search",
+  "external_id": "t3_1x92ofg",
+  "title": "Google Lens Alternative",
+  "text": "Hi. New to iPhone. Is there an app or a feature similar to google lens? I wanted to search items from the photo and translate while browsing socmed. submitted by /u/mikrokosmos1987 to r/iphone [link] [comments]",
+  "url": "https://www.reddit.com/r/iphone/comments/1x92ofg/google_lens_alternative/",
+  "score": 0,
+  "label": {
+   "is_request": true,
+   "buildable": true,
+   "note": "类 Google Lens，可封装视觉 API"
+  }
+ },
+ {
+  "source": "reddit/search",
+  "external_id": "t3_1x92l24",
+  "title": "App to track a loan.",
+  "text": "I loaned my daughter 30k to pay off the house she is buying. I’d like to charge a modest interest that I lose taking the money out of savings. She will not make regular monthly payments. She will pay me a few thousand when she has extra cash or tax returns. Is there an app that I can use to track those irregular payments. submitted by /u/Expensive-Meat-7637 to r/Mortgages [link] [comments]",
+  "url": "https://www.reddit.com/r/Mortgages/comments/1x92l24/app_to_track_a_loan/",
+  "score": 0,
+  "label": {
+   "is_request": true,
+   "buildable": true,
+   "note": "记账/追踪借款的 app"
+  }
+ },
+ {
+  "source": "reddit/search",
+  "external_id": "t3_1x90yhu",
+  "title": "Rep Radar digest 2026-10-18 (part 2/5)",
+  "text": "{\"part\":2,\"totalParts\":5,\"generatedAt\":\"2026-10-18T11:30:47.300Z\",\"windowHours\":26,\"failedSubs\":[],\"matchedCount\":100,\"truncatedSubs\":[],\"candidates\":[{\"id\":\"1x8tkml\",\"title\":\"Lost 2.5 kg already — how should I train for the next 2 months?\",\"body\":\"I’m currently around 64 kg and want to get to 58 kg by January. I’ve already lost about 2.5 kg in the last month, mostly through strength training. \\nI’m planning to push a little harder over the next 2 months.\\n\\nMy current routine is: \\n● Monday: Legs \\n● Tuesday: Chest + triceps \\n● Wednesday: Back + biceps \\n● Thursday: Shoulders + abs \\n● Friday: Mostly off because of work \\n● Saturday: Cardio\\n\\nI can definitely see changes in my body measurements/inches, but my face still looks pretty much the same, which is frustrating\\n\\nWhat gym routine worked for you for fat loss while still keeping muscle? Should I increase cardio, or stick mostly to strength training?Would love practical advice rather than “just eat less and move more”.\\n\\nPS I am getting married in the last week of January 2027 \\nAbout me : I am 36F\",\"author\":\"legal_curls\",\"url\":\"https://www.reddit.com/r/gymadvice/comments/1x8tkml/lost_25_kg_already_how_should_i_train_for_the/\",\"createdUtc\":1792296144,\"score\":1,\"numComments\":3,\"stickied\":false,\"type\":\"program\",\"subreddit\":\"gymadvice\",\"linkPolicy\":\"soft-mention\",\"subNote\":\"General advice; Jacob active. Comment image proven 2026-09-04 (posted a volume screenshot here).\",\"ageHours\":7.5,\"hasBody\":true},{\"id\":\"1x8t74y\",\"ti",
+  "url": "https://www.reddit.com/r/TRYRepRadar/comments/1x90yhu/rep_radar_digest_20261018_part_25/",
+  "score": 0,
+  "label": {
+   "is_request": false,
+   "buildable": null,
+   "note": "机器人生成的 JSON，噪音"
+  }
+ },
+ {
+  "source": "reddit/search",
+  "external_id": "t3_1x8z46j",
+  "title": "Anywhere to listen to the game (in the UK?)",
+  "text": "Would be watching the game at home today ordinarily but have to travel to visit family later on so will be in the car - is there an app I can use / does anyone know the best way I can listen to the game whilst I'm driving? submitted by /u/HR_Specter to r/ArsenalFC [link] [comments]",
+  "url": "https://www.reddit.com/r/ArsenalFC/comments/1x8z46j/anywhere_to_listen_to_the_game_in_the_uk/",
+  "score": 0,
+  "label": {
+   "is_request": true,
+   "buildable": null,
+   "note": "收听比赛，涉及版权，能否做成不确定"
+  }
+ },
+ {
+  "source": "reddit/search",
+  "external_id": "t3_1x8yugn",
+  "title": "Is there a way to view only the text?",
+  "text": "I have a lot of interesting podcast I follow but have been thinking for a while I would actually enjoy some of the topics more in written form. I saw one of the podcast has a substack so I logged in to check out their essays. However I found myself much less engaged than I thought I would and I think one major reason is the format. There were a lot of pictures throughout the text. And there many words had hyperlinks. I've heard hyperlinks lower reading retention, cause they distract the brain with potential of moving to another page. I think pure text would be much better for me. Is there an app or some site I could use to strip down the essays to only the text? submitted by /u/Holmbone to r/Substack [link] [comments]",
+  "url": "https://www.reddit.com/r/Substack/comments/1x8yugn/is_there_a_way_to_view_only_the_text/",
+  "score": 0,
+  "label": {
+   "is_request": true,
+   "buildable": true,
+   "note": "把播客转成纯文字"
+  }
+ },
+ {
+  "source": "reddit/search",
+  "external_id": "t3_1x8ypwv",
+  "title": "Is there an app for voting that can also change flairs and/or take other mod actions?",
+  "text": "Use case: People vote whether the posted piece of content depicts a thing with a property (X or Y) and after a certain amount of time the app changes the post flair to reflect the property to \"The post is X.\" or \"The post is Y.\" or \"The post may be X or Y.\" or remove/lock the post if people vote for \"This is spam.\" so a mod action capable bot whose behaviour depends on user behaviour. We have a sub that focuses on informing a user whether their collectible item is a fake or authentic. We'd like to have automation that will, say, after a day change the flair to \"Real\" or \"Fake\" or \"Inconclusive\" based on voting and comments and thresholds. Does this exist? submitted by /u/MustaKotka to r/ModSupport [link] [comments]",
+  "url": "https://www.reddit.com/r/ModSupport/comments/1x8ypwv/is_there_an_app_for_voting_that_can_also_change/",
+  "score": 0,
+  "label": {
+   "is_request": true,
+   "buildable": true,
+   "note": "投票并改 flair 的工具"
+  }
+ },
+ {
+  "source": "reddit/search",
+  "external_id": "t3_1x8sivw",
+  "title": "is there an iphone app that lets me access my files on my tv over wifi?",
+  "text": "so, i used to access my android files on our tv using “file manager +,” which has an “access from” feature that lets me access my files on the tv over wifi. is there an app on iphone that has the same feature? submitted by /u/clxssiest to r/iphone [link] [comments]",
+  "url": "https://www.reddit.com/r/iphone/comments/1x8sivw/is_there_an_iphone_app_that_lets_me_access_my/",
+  "score": 0,
+  "label": {
+   "is_request": true,
+   "buildable": true,
+   "note": "iPhone 访问电视上文件的 app"
+  }
+ },
+ {
+  "source": "producthunt",
+  "external_id": "tag:www.producthunt.com,2005:Post/1281580",
+  "title": "Bee Frontier and Bee Eclipse",
+  "text": "Amazon's personal AI memory, now on your wrist or phone Discussion | Link",
+  "url": "https://www.producthunt.com/products/bee-frontier-and-bee-eclipse",
+  "score": 0,
+  "label": {
+   "is_request": false,
+   "buildable": null,
+   "note": "ProductHunt，产品发布（供给）"
+  }
+ },
+ {
+  "source": "producthunt",
+  "external_id": "tag:www.producthunt.com,2005:Post/1277759",
+  "title": "shim-cli",
+  "text": "See what your coding agent sends. Mask what you can. Discussion | Link",
+  "url": "https://www.producthunt.com/products/shim-cli",
+  "score": 0,
+  "label": {
+   "is_request": false,
+   "buildable": null,
+   "note": "ProductHunt，产品发布（供给）"
+  }
+ },
+ {
+  "source": "producthunt",
+  "external_id": "tag:www.producthunt.com,2005:Post/1276034",
+  "title": "Inbox Zero",
+  "text": "Open-source Superhuman alternative Discussion | Link",
+  "url": "https://www.producthunt.com/products/inbox-zero-2",
+  "score": 0,
+  "label": {
+   "is_request": false,
+   "buildable": null,
+   "note": "ProductHunt，产品发布（供给）"
+  }
+ }
+]

@@ -60,6 +60,9 @@ def run(cfg: Config) -> None:
 
 def main(argv: list[str] | None = None) -> None:
     cfg = Config.from_args(argv)
+    if cfg.command == "eval":
+        from . import evaluate
+        raise SystemExit(evaluate.run(cfg))
     run(cfg)
 
 

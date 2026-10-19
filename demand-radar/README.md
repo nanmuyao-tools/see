@@ -77,6 +77,20 @@ python -m demand_radar run --limit 10   # 结果写到 out/demands.md
 python -m unittest discover -s tests
 ```
 
+## 评测抽取质量
+
+改 prompt 或换模型后，用标注集量化效果，而不是凭感觉。标注集在
+[`eval/eval_set.json`](eval/eval_set.json)（45 条真实样本，人工标注了
+「是否需求」和「个人能否做成」）。
+
+```bash
+python -m demand_radar eval                       # 用默认模型评测
+python -m demand_radar eval --provider ollama/qwen2.5:3b -v   # 指定模型、逐条打印
+```
+
+输出 is_request 准确率、buildable 准确率，以及端到端「应入选」的精确率 /
+召回率 / F1。阶段目标：F1 ≥ 85%。
+
 ## 切换到云模型（低配机器先验证效果时）
 
 ```bash
@@ -105,10 +119,11 @@ python -m demand_radar run --provider "openai/gpt-4o-mini" --limit 30
 
 ```
 demand_radar/
-  cli.py            # 入口与编排
+  cli.py            # 入口与编排（run / eval 两个命令）
   config.py         # 运行配置
   models.py         # Demand 数据结构（Pydantic）
   extract.py        # Instructor + 本地/云模型抽取
+  evaluate.py       # eval 命令：在标注集上算准确率/精确率/召回率
   store.py          # MongoDB 存储
   report.py         # Markdown 清单输出
   sources/
@@ -119,6 +134,7 @@ demand_radar/
     github.py       # GitHub issues
     rss.py          # 通用 RSS / Atom
 tests/              # 离线单元测试，fixture 取自各源真实返回
+eval/eval_set.json  # 评测标注集（45 条真实样本）
 sources.toml        # 数据源配置
 Dockerfile
 docker-compose.yml  # app + mongo + ollama 一键编排
