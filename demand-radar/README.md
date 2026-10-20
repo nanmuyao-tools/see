@@ -233,6 +233,28 @@ ruff check demand_radar tests docker
 python -m unittest discover -s tests
 ```
 
+## 按本机配置选模型
+
+不知道该用哪个模型时，让程序看一下本机配置再推荐：
+
+```bash
+docker compose run --rm app recommend --apple --ram-gb 32   # Mac：容器里看不到 Mac 的 GPU 和真实内存，要自己告诉它
+docker compose run --rm app recommend --vram-gb 12          # 有 NVIDIA 显卡的 Linux
+demand-radar recommend --write-env                          # 不用 Docker 时能直接检测，并把结果写进 .env
+```
+
+它会给出抽取模型、嵌入模型、每条预计耗时、质量数字和具体运行步骤，以及要写进 `.env` 的几行（`DR_MODEL`、`DR_EMBED_MODEL`、`COMPOSE_FILE` 等）。`docker compose` 会自动读同目录的 `.env`，写好之后直接 `docker compose up` 就用上推荐的模型。
+
+档位表在 [`models.toml`](models.toml)，从上往下取第一个满足条件的档位，想换模型或加档位直接改这个文件。默认推荐的都是实测过的 Qwen 模型：
+
+| 档位 | 抽取模型 | 每条 | 质量 |
+|---|---|---|---|
+| Apple 芯片，16GB 以上 | Qwen3-4B-Instruct-2507（mlx-lm，Mac GPU） | 约 2.6 秒 | 帖子 F1 中文 92.4% / 英文 90.9% |
+| NVIDIA 显存 6GB 以上 | qwen3:4b-instruct-2507（Ollama，GPU） | 约 1.5 秒（估算） | 同一个模型 |
+| 只用 CPU，8GB 以上 | qwen3:4b-instruct-2507（Ollama） | 约 7 秒 | 同一个模型 |
+
+**不用某地出品的模型**：每个档位都标了抽取模型和嵌入模型的出品地（按出品方所在地算）。加 `--exclude-origin cn` 会跳过用了中国模型的档位，改推 Mistral 的 Ministral 3（法国）、Google 的 Gemma 4 和 EmbeddingGemma（美国）等；全被跳过时直接报错，不会悄悄退回。这些非中国档位**还没在本项目实测**，中文质量预计比 Qwen 低 0–8 个百分点，选型依据和建议的实测清单见[调研报告](docs/research/2026-10-20-non-chinese-models.md)。`recommend --list` 列出全部档位。
+
 ## Mac 上用 GPU 跑模型（可选）
 
 Docker Desktop 在 Mac 上不能把 GPU 交给容器，容器里的模型只能用 CPU。想用 Apple GPU，让模型服务在 macOS 上原生运行（mlx-lm），容器只跑 MongoDB 和 app。实测 M5 上 Qwen3-4B 每条约 3 秒；容器 CPU 里跑同一个 4B 模型约 7 秒、qwen2.5:3b 4–6 秒但 F1 低一档（见 [`docs/model-selection.md`](docs/model-selection.md)）。

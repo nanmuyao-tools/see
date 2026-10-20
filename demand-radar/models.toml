@@ -6,11 +6,16 @@
 #   min_vram_gb = 8        NVIDIA 显卡显存至少多少 GB
 #   min_ram_gb = 16        内存至少多少 GB
 # runtime：
-#   ollama  容器里的 Ollama（默认部署方式；有 NVIDIA 显卡时叠加 docker-compose.nvidia.yml 用 GPU）
+#   ollama  容器里的 Ollama（默认部署方式；档位要求 NVIDIA 显存时叠加 docker-compose.nvidia.yml 用 GPU）
 #   mlx     Mac 宿主机上原生跑 mlx-lm 走 GPU（叠加 docker-compose.mac-gpu.yml）；mlx-lm 没有嵌入接口，
 #           嵌入走 Mac 上原生的 Ollama
 # extract 是抽取模型（ollama 填 tag，mlx 填 HuggingFace 仓库名），embed 是嵌入模型（Ollama tag）。
-# measured = true 表示数字是在本项目评测集上实测的，false 表示参考公开资料估算。
+# extract_origin / embed_origin：模型出品方所在地（ISO 国家码，按出品方算，不看底座和训练数据来源）。
+#   recommend --exclude-origin cn 会跳过命中的档位，往下找；全被跳过时报错，不会悄悄退回。
+# measured = true 表示质量数字是在本项目评测集上实测的，false 表示参考公开资料估算。
+# 选型依据：docs/model-selection.md、docs/research/2026-10-20-non-chinese-models.md
+
+# ---- 默认推荐（Qwen，实测过）----
 
 [[tier]]
 id = "apple-16g"
@@ -18,11 +23,29 @@ name = "Apple Silicon，16GB 内存以上"
 when = { apple_silicon = true, min_ram_gb = 16 }
 runtime = "mlx"
 extract = "mlx-community/Qwen3-4B-Instruct-2507-4bit"
+extract_origin = "cn"
 embed = "qwen3-embedding:0.6b"
+embed_origin = "cn"
+license = "Apache-2.0"
 sec_per_item = 2.6
 quality = "帖子 F1 中文 92.4% / 英文 90.9%；评论 F1 中文 80.6% / 英文 83.2%"
 measured = true
-note = "M5 实测。模型约 2.3GB"
+note = "M5 实测。模型约 2.3GB。Qwen3.5-9B 实测帖子 F1 中文 93.9%，没有明显更好，慢一倍多"
+
+[[tier]]
+id = "nvidia-6g"
+name = "NVIDIA 显存 6GB 以上"
+when = { min_vram_gb = 6 }
+runtime = "ollama"
+extract = "qwen3:4b-instruct-2507-q4_K_M"
+extract_origin = "cn"
+embed = "qwen3-embedding:0.6b"
+embed_origin = "cn"
+license = "Apache-2.0"
+sec_per_item = 1.5
+quality = "和 cpu-8g 同一个模型（质量实测过）；GPU 上的速度是估算"
+measured = false
+note = "需要 NVIDIA Container Toolkit"
 
 [[tier]]
 id = "cpu-8g"
@@ -30,7 +53,10 @@ name = "只用 CPU，8GB 内存以上"
 when = { min_ram_gb = 8 }
 runtime = "ollama"
 extract = "qwen3:4b-instruct-2507-q4_K_M"
+extract_origin = "cn"
 embed = "qwen3-embedding:0.6b"
+embed_origin = "cn"
+license = "Apache-2.0"
 sec_per_item = 7.0
 quality = "帖子 F1 中文 95.2% / 英文 96.8%（61 条）"
 measured = true
@@ -42,8 +68,89 @@ name = "内存不到 8GB"
 when = {}
 runtime = "ollama"
 extract = "qwen3:4b-instruct-2507-q4_K_M"
+extract_origin = "cn"
 embed = "qwen3-embedding:0.6b"
+embed_origin = "cn"
+license = "Apache-2.0"
 sec_per_item = 10.0
 quality = "同上，但内存紧张时可能被系统换页拖慢"
 measured = false
-note = "建议关掉其他占内存的程序；或在 docker-compose.yml 里给 Docker 分配更多内存"
+note = "建议关掉其他占内存的程序，或给 Docker 分配更多内存"
+
+# ---- 非中国模型（只在 --exclude-origin cn 时才会选到；都还没在本项目实测）----
+# 中文质量预计比 Qwen 低 0–8 个百分点。实测清单见调研报告第五节。
+
+[[tier]]
+id = "apple-32g-intl"
+name = "Apple Silicon，32GB 以上（非中国模型）"
+when = { apple_silicon = true, min_ram_gb = 32 }
+runtime = "mlx"
+extract = "mlx-community/gemma-4-26b-a4b-it-4bit"
+extract_origin = "us"
+embed = "embeddinggemma-2:270m"
+embed_origin = "us"
+license = "Apache-2.0（HF 标注；mlx-community 版标 Gemma 协议，见调研报告）"
+sec_per_item = 3.5
+quality = "未实测；MoE，每次只激活约 3.8B 参数"
+measured = false
+note = "约 15GB。关掉思考后仍可能输出空的 thought 块，先确认 JSON 解析不受影响"
+
+[[tier]]
+id = "apple-16g-intl"
+name = "Apple Silicon，16GB 以上（非中国模型）"
+when = { apple_silicon = true, min_ram_gb = 16 }
+runtime = "mlx"
+extract = "mlx-community/Ministral-3-3B-Instruct-2512-4bit"
+extract_origin = "fr"
+embed = "embeddinggemma-2:270m"
+embed_origin = "us"
+license = "Apache-2.0"
+sec_per_item = 2.5
+quality = "未实测；Multilingual MMLU 0.652（Qwen3-4B 0.677）"
+measured = false
+note = "约 2.75GB"
+
+[[tier]]
+id = "nvidia-8g-intl"
+name = "NVIDIA 显存 8GB 以上（非中国模型）"
+when = { min_vram_gb = 8 }
+runtime = "ollama"
+extract = "ministral-3:8b"
+extract_origin = "fr"
+embed = "embeddinggemma-2:270m"
+embed_origin = "us"
+license = "Apache-2.0"
+sec_per_item = 3.0
+quality = "未实测；Multilingual MMLU 0.706（Qwen3-8B 0.700）"
+measured = false
+note = "约 6GB"
+
+[[tier]]
+id = "cpu-8g-intl"
+name = "只用 CPU，8GB 以上（非中国模型）"
+when = { min_ram_gb = 8 }
+runtime = "ollama"
+extract = "ministral-3:3b"
+extract_origin = "fr"
+embed = "embeddinggemma-2:270m"
+embed_origin = "us"
+license = "Apache-2.0"
+sec_per_item = 6.0
+quality = "未实测"
+measured = false
+note = "约 3GB。embeddinggemma-2 在镜像固定的 Ollama 0.40.6 上能不能跑还没确认"
+
+[[tier]]
+id = "minimal-intl"
+name = "内存不到 8GB（非中国模型）"
+when = {}
+runtime = "ollama"
+extract = "granite4.1:3b"
+extract_origin = "us"
+embed = "embeddinggemma-2:270m"
+embed_origin = "us"
+license = "Apache-2.0"
+sec_per_item = 6.0
+quality = "未实测；中文偏弱"
+measured = false
+note = "约 2.1GB"

@@ -2,6 +2,13 @@
 
 ## 未发布
 
+### 按本机配置推荐模型
+
+- **`recommend` 命令**：检测内存、CPU、Apple 芯片、NVIDIA 显存，按档位表 `models.toml` 推荐抽取模型和嵌入模型，给出运行步骤和要写进 `.env` 的配置；`--write-env` 直接写入。在 Docker 里看不到 Mac 的 GPU，用 `--apple --ram-gb` / `--vram-gb` 指定。
+- **模型可配置**：`docker-compose.yml` 的抽取模型改由 `.env` 里的 `DR_MODEL` 覆盖（默认不变），新增 `DR_EMBED_BASE_URL` 透传；新增 `docker-compose.nvidia.yml`，让容器里的 Ollama 用 NVIDIA GPU。
+- **按出品地过滤**：档位表标出每个模型的出品地，`--exclude-origin cn` 改推非中国模型（Ministral 3、Gemma 4、EmbeddingGemma 等）。这些档位还没实测，见 `docs/research/2026-10-20-non-chinese-models.md`。
+- **补测**：Qwen3.5-9B（Mac GPU）帖子 F1 中文 93.9% / 英文 91.1%、评论中文 78.4%，和 Qwen3-4B 差不多但慢一倍多，没有换；嵌入模型 qwen3-embedding 4b / 8b 合并 F1 84.2%，0.6b 是 77.8%，默认仍用 0.6b（体积小 4–8 倍）。
+
 ### 新数据源：应用商店低分评论（默认关闭）
 
 - **`appstore`**：App Store 上指定 app 的 1–3 星评论，走苹果的评论 RSS，不加任何依赖。接口经常返回空结果，这时换格式只再试一次，还是空就跳过、不推进游标。

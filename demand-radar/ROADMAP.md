@@ -135,6 +135,7 @@ v0.1 功能已全部完成：四类公开数据源 → 规则预过滤 → 本�
 
 - **应用商店低分评论**（2026-10-20）：`appstore`、`googleplay` 两个源已接入，默认关闭，带限速和评论专用的提示词与评测集。调研见 [`docs/research/2026-10-20-app-store-reviews.md`](docs/research/2026-10-20-app-store-reviews.md)，评测数字见 CHANGELOG「未发布」。
 - **Reddit 加进每日任务**：等一周验收（2026-10-27）结束再加。
+- **按设备推荐模型**（2026-10-20）：`recommend` 命令和 `models.toml` 档位表已完成。非中国模型档位只调研、没实测，下一步按[调研报告](docs/research/2026-10-20-non-chinese-models.md)第五节实测（先测嵌入模型，约 15 分钟），由你决定什么时候测。
 
 ## 需要你决定
 

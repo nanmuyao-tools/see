@@ -140,6 +140,22 @@ ruff check demand_radar tests docker
 python -m unittest discover -s tests
 ```
 
+## Choosing a model for your machine
+
+Let the tool look at your hardware and recommend a model:
+
+```bash
+docker compose run --rm app recommend --apple --ram-gb 32   # Mac: the container cannot see the Mac's GPU or real memory, so tell it
+docker compose run --rm app recommend --vram-gb 12          # Linux with an NVIDIA GPU
+demand-radar recommend --write-env                          # without Docker it detects directly and writes .env
+```
+
+It prints the extraction and embedding models, expected seconds per item, quality numbers, the steps to run them, and the `.env` lines to use (`DR_MODEL`, `DR_EMBED_MODEL`, `COMPOSE_FILE`, ...). `docker compose` reads `.env` from the same directory, so after that a plain `docker compose up` uses the recommended models.
+
+The tiers live in [`models.toml`](models.toml); the first tier whose conditions match wins. Edit the file to change models or add tiers. The default recommendations are measured Qwen models (Apple Silicon 16 GB+: Qwen3-4B-Instruct-2507 on mlx-lm, ~2.6 s per item; NVIDIA 6 GB+: the same model on Ollama GPU; CPU only, 8 GB+: the same model on Ollama, ~7 s).
+
+**Excluding models by origin**: every tier records where its extraction and embedding models come from (the publisher's country). `--exclude-origin cn` skips tiers that use Chinese models and recommends Mistral's Ministral 3 (France), Google's Gemma 4 and EmbeddingGemma (US) instead; if nothing is left it stops with an error rather than silently falling back. These non-Chinese tiers **have not been measured on this project yet**; Chinese quality is expected to be 0–8 points lower than Qwen. See the [research report](docs/research/2026-10-20-non-chinese-models.md) (in Chinese). `recommend --list` shows all tiers.
+
 ## Using the GPU on a Mac (optional)
 
 Docker Desktop on macOS cannot pass the GPU to containers, so a model inside a container runs on the CPU. To use the Apple GPU, run the model server natively with mlx-lm and let the containers handle only MongoDB and the app. Measured on an M5: Qwen3-4B takes about 3 s per post, versus about 7 s for the same 4B model on the CPU inside Docker (qwen2.5:3b takes 4–6 s there but scores clearly lower) (see [`docs/model-selection.md`](docs/model-selection.md), in Chinese).

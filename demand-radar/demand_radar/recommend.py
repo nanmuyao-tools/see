@@ -48,13 +48,25 @@ def matches(tier: dict, hw: Hardware) -> bool:
     return not hw.nvidia_vram_gb < float(w.get("min_vram_gb", 0))
 
 
-def choose(tiers: list[dict], hw: Hardware, tier_id: str | None = None) -> dict | None:
+def excluded(tier: dict, origins: set[str]) -> bool:
+    """抽取模型或嵌入模型的出品地在排除名单里。没标出品地的档位不排除。"""
+    return bool(origins & {str(tier.get("extract_origin", "")).lower(), str(tier.get("embed_origin", "")).lower()})
+
+
+def choose(tiers: list[dict], hw: Hardware, tier_id: str | None = None,
+           exclude: set[str] | None = None) -> dict | None:
     if tier_id:
         for t in tiers:
             if t["id"] == tier_id:
                 return t
         raise SystemExit(f"档位表里没有 {tier_id}；可选：{', '.join(t['id'] for t in tiers)}")
-    return next((t for t in tiers if matches(t, hw)), None)
+    exclude = exclude or set()
+    found = next((t for t in tiers if matches(t, hw) and not excluded(t, exclude)), None)
+    if found is None and exclude and any(matches(t, hw) for t in tiers):
+        # 不悄悄退回被排除的模型：用户明确不要，就明说没有
+        raise SystemExit(f"排除出品地 {', '.join(sorted(exclude))} 之后，档位表里没有适合这台机器的档位。"
+                         "用 --list 查看，或在 models.toml 里加档位")
+    return found
 
 
 def _compose_key(tier: dict) -> str:
@@ -143,26 +155,32 @@ def report(hw: Hardware, tier: dict | None, tiers: list[dict], forced: bool) -> 
         f"  抽取模型：{tier['extract']}（{'mlx-lm，Mac GPU' if tier['runtime'] == 'mlx' else 'Ollama'}）",
         f"  嵌入模型：{tier['embed']}",
     ]
+    origins = f"{tier.get('extract_origin', '?')} / {tier.get('embed_origin', '?')}"
+    out.append(f"  出品地：{origins}（抽取 / 嵌入）" + (f"；协议：{tier['license']}" if tier.get("license") else ""))
     if tier.get("sec_per_item"):
         out.append(f"  预计每条：约 {tier['sec_per_item']:g} 秒")
     if tier.get("quality"):
-        out.append(f"  质量：{tier['quality']}" + ("" if tier.get("measured") else "（估算，未在本项目实测）"))
+        estimated = not tier.get("measured") and "未实测" not in tier["quality"]
+        out.append(f"  质量：{tier['quality']}" + ("（估算，未在本项目实测）" if estimated else ""))
     if tier.get("note"):
         out.append(f"  说明：{tier['note']}")
     out += ["", "怎么用：", *[f"  {s}" for s in how_to(tier)]]
     out += ["", "写进 .env（docker compose 自动读取）：",
             *[f"  {k}={v}" for k, v in env_for(tier).items()],
-            "  加 --write-env 由本命令写入；想换档位用 --tier <id>，看全部档位用 --list。"]
+            "  加 --write-env 由本命令写入；想换档位用 --tier <id>，看全部档位用 --list；",
+            "  不用某地出品的模型加 --exclude-origin，例如 --exclude-origin cn。"]
     return "\n".join(out)
 
 
-def list_tiers(tiers: list[dict], hw: Hardware) -> str:
+def list_tiers(tiers: list[dict], hw: Hardware, exclude: set[str] | None = None) -> str:
     rows = []
     for t in tiers:
-        ok = "✓" if matches(t, hw) else " "
-        rows.append(f"  {ok} {t['id']:<14} {t.get('name', ''):<24} {t['runtime']:<6} {t['extract']}"
+        mark = "×" if excluded(t, exclude or set()) else "✓" if matches(t, hw) else " "
+        origin = f"{t.get('extract_origin', '?')}/{t.get('embed_origin', '?')}"
+        rows.append(f"  {mark} {t['id']:<15} {t['runtime']:<6} {origin:<6} {t['extract']}"
                     + ("" if t.get("measured") else "  （估算）"))
-    return "档位（✓ 表示本机满足条件，从上往下取第一个）：\n" + "\n".join(rows)
+    return ("档位（✓ 本机满足条件，× 被 --exclude-origin 排除；从上往下取第一个 ✓）：\n"
+            "    id              运行   出品地  抽取模型\n" + "\n".join(rows))
 
 
 def override(hw: Hardware, apple: bool | None, ram_gb: float, vram_gb: float | None) -> Hardware:
@@ -181,10 +199,11 @@ def override(hw: Hardware, apple: bool | None, ram_gb: float, vram_gb: float | N
 def run(cfg) -> int:
     hw = override(detect(), cfg.hw_apple, cfg.hw_ram_gb, cfg.hw_vram_gb)
     tiers = load_tiers(cfg.models_file)
+    exclude = {o.strip().lower() for o in cfg.exclude_origin.split(",") if o.strip()}
     if cfg.list_tiers:
-        print(list_tiers(tiers, hw))
+        print(list_tiers(tiers, hw, exclude))
         return 0
-    tier = choose(tiers, hw, cfg.tier)
+    tier = choose(tiers, hw, cfg.tier, exclude)
     if cfg.as_json:
         print(json.dumps({"hardware": hw.to_dict(), "tier": tier, "env": env_for(tier) if tier else {}},
                          ensure_ascii=False, indent=2))

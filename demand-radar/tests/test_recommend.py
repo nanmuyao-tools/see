@@ -47,6 +47,41 @@ class MatchTest(unittest.TestCase):
             recommend.choose(TIERS, hw(), "nope")
 
 
+class ExcludeOriginTest(unittest.TestCase):
+    TIERS = [
+        {"id": "q", "when": {}, "runtime": "ollama", "extract": "a", "embed": "e",
+         "extract_origin": "cn", "embed_origin": "cn"},
+        {"id": "mix", "when": {}, "runtime": "ollama", "extract": "b", "embed": "e",
+         "extract_origin": "fr", "embed_origin": "CN"},
+        {"id": "intl", "when": {}, "runtime": "ollama", "extract": "c", "embed": "e",
+         "extract_origin": "fr", "embed_origin": "us"},
+    ]
+
+    def test_default_unchanged(self):
+        self.assertEqual(recommend.choose(self.TIERS, hw())["id"], "q")
+
+    def test_skips_if_either_model_excluded(self):
+        self.assertEqual(recommend.choose(self.TIERS, hw(), exclude={"cn"})["id"], "intl")
+
+    def test_errors_instead_of_falling_back(self):
+        with self.assertRaises(SystemExit):
+            recommend.choose(self.TIERS[:2], hw(), exclude={"cn"})
+
+    def test_default_catalog_has_non_cn_for_every_machine(self):
+        tiers = recommend.load_tiers(DEFAULT)
+        for h in (hw(ram=4), hw(ram=16), hw(apple=True, ram=16), hw(apple=True, ram=64), hw(vram=12, ram=32)):
+            t = recommend.choose(tiers, h, exclude={"cn"})
+            self.assertNotIn("cn", (t["extract_origin"], t["embed_origin"]))
+
+    def test_default_catalog_marks_origin_everywhere(self):
+        for t in recommend.load_tiers(DEFAULT):
+            self.assertTrue(t.get("extract_origin") and t.get("embed_origin"), t["id"])
+
+    def test_nvidia_gets_gpu_tier(self):
+        t = recommend.choose(recommend.load_tiers(DEFAULT), hw(vram=8, ram=16))
+        self.assertIn("docker-compose.nvidia.yml", recommend.env_for(t)["COMPOSE_FILE"])
+
+
 class EnvTest(unittest.TestCase):
     def test_env_per_runtime(self):
         self.assertEqual(recommend.env_for(TIERS[2]),
@@ -146,6 +181,12 @@ class CliTest(unittest.TestCase):
 
     def test_list(self):
         self.assertIn("✓", self._run("--list"))
+        self.assertIn("×", self._run("--list", "--exclude-origin", "cn"))
+
+    def test_exclude_origin(self):
+        out = self._run("--exclude-origin", "cn")
+        self.assertIn("intl", out)
+        self.assertNotIn("qwen", out.lower())
 
     def test_write_env_refused_in_docker(self):
         with tempfile.TemporaryDirectory() as d:

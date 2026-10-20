@@ -63,6 +63,7 @@ class Config:
     # recommend 命令：按本机配置从档位表推荐模型
     models_file: str = "models.toml"
     tier: str = ""  # 手动指定档位 id
+    exclude_origin: str = ""  # 逗号分隔的出品地国家码，如 cn
     list_tiers: bool = False
     as_json: bool = False
     write_env: bool = False
@@ -190,6 +191,8 @@ class Config:
         rc.add_argument("--models-file", dest="models_file", default=d.models_file, help="模型档位表")
         rc.add_argument("--tier", default="", help="不按检测结果，直接用这个档位")
         rc.add_argument("--list", dest="list_tiers", action="store_true", help="列出全部档位，标出本机满足哪些")
+        rc.add_argument("--exclude-origin", dest="exclude_origin", default="",
+                        help="不推荐这些地区出品的模型，逗号分隔的国家码，如 cn")
         rc.add_argument("--json", dest="as_json", action="store_true", help="输出 JSON")
         rc.add_argument("--write-env", dest="write_env", action="store_true",
                         help="把推荐的模型写进 .env，之后 docker compose up 自动使用")
@@ -234,6 +237,7 @@ class Config:
 
             models_file=_bundled(getattr(ns, "models_file", d.models_file), Config.models_file),
             tier=getattr(ns, "tier", ""),
+            exclude_origin=getattr(ns, "exclude_origin", ""),
             list_tiers=getattr(ns, "list_tiers", False),
             as_json=getattr(ns, "as_json", False),
             write_env=getattr(ns, "write_env", False),
