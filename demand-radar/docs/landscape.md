@@ -8,7 +8,7 @@
 |---|---|---|---|---|---|
 | [Reddit_Scrapper](https://github.com/Mohamedsaleh14/Reddit_Scrapper) | Reddit（PRAW，要 key） | OpenAI / Anthropic 批量 API | **多维打分**：相关度、痛点清晰度、情绪强度、可实现性、技术深度，加权；**便宜模型先筛、强模型再细看**；Streamlit 看板 | 本地 Python，定时任务未完成 | 214★，**仅限非商业使用** |
 | [pain-miner](https://github.com/AdvancingTitans/pain-miner) | Reddit（[Arctic Shift](https://github.com/ArthurHeitmann/arctic_shift) API）、HN、**V2EX** | 作为 AI agent 的技能，核心分析用规则 | **不用单一黑盒分数**，分项给证据和反证；跨社区对比 | Python CLI / agent skill | 11★，MIT |
-| [sift](https://github.com/Gitter09/sift) | G2、App Store、Google Play、HN、GitHub issues、Product Hunt 等；Reddit 暂停 | OpenAI 兼容接口，可接 Ollama | **embedding + UMAP + HDBSCAN 聚类**；入库时匿名化；多产品对比 | pip 安装的 CLI，无看板 | 1★，MIT |
+| [sift](https://github.com/Gitter09/sift) | G2、App Store（iTunes 评论 RSS）、Google Play（抓详情页 HTML，只拿到少量评论）、HN、GitHub issues、Product Hunt 等；Reddit 暂停（2026-10-20 看源码确认，见 [research/2026-10-20-app-store-reviews.md](research/2026-10-20-app-store-reviews.md)） | OpenAI 兼容接口，可接 Ollama | **embedding + UMAP + HDBSCAN 聚类**；入库时匿名化；多产品对比 | pip 安装的 CLI，无看板 | 1★，MIT |
 | [reddit-pain-points](https://github.com/lefttree/reddit-pain-points) | Reddit | Claude / Gemini | FastAPI + React 看板、综合机会分 | 本地，无 Docker | 6★，MIT |
 | [idea-pain-point-finder](https://github.com/stevenzhang070302/idea-pain-point-finder) | Reddit | GPT-4o，LangGraph 多智能体 | 痛点强度打分、相似抱怨聚类 | — | 小 |
 | [redditlens](https://github.com/0xMassi/redditlens) | Reddit（Serper + .json） | Claude Code 技能 | 找痛点并起草回复（偏获客） | CLI | 11★，MIT |
@@ -19,6 +19,7 @@
 
 - **GummySearch**：曾经是这个领域最知名的产品，**2025 年底因拿不到 Reddit 商业 API 授权而关停**，留下了空缺。
 - 付费替代品：Reddinbox（$39–99/月）、PainOnSocial、Xpoz 等；Apify 上有多个托管的"痛点挖掘"actor；NeedSonar、PainHunt、BigIdeasDB 等网站。
+- App 评论方向（2026-10-20 补充）：Appbot（约 $49/月起）、AppFollow（有免费档，$29–299/月）主要卖给开发者监控**自己的** app；Apify 上有「Google Play Review Pain Miner」按低星评论归类机会。详见 [research/2026-10-20-app-store-reviews.md](research/2026-10-20-app-store-reviews.md)。
 
 ## 三、我们和它们的区别
 
