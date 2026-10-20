@@ -13,7 +13,7 @@
 | [idea-pain-point-finder](https://github.com/stevenzhang070302/idea-pain-point-finder) | Reddit | GPT-4o，LangGraph 多智能体 | 痛点强度打分、相似抱怨聚类 | — | 小 |
 | [redditlens](https://github.com/0xMassi/redditlens) | Reddit（Serper + .json） | Claude Code 技能 | 找痛点并起草回复（偏获客） | CLI | 11★，MIT |
 
-**相邻方向**：[mnemox-ai/idea-reality-mcp](https://github.com/mnemox-ai/idea-reality-mcp)（MIT，827★，截至 2026-10-20；原文写的「290+★」来自它仓库描述里没更新的文字）做的是"动手之前查一下这个点子是不是已经有人做了"（扫 GitHub、HN、npm、PyPI、Stack Overflow）。这正是我们路线图里"已有方案提示"那一步。2026-10-20 实测补充：2026-08 起维护模式；默认调作者托管的 Claude Haiku 扩写需求；Product Hunt 源已在代码里永久停用；中文需求提取不出关键词。结论是不集成、只借鉴思路，见 [research/2026-10-20-existing-solutions.md](research/2026-10-20-existing-solutions.md)。同标签下的 [MaxKmet/idea-validation-agents](https://github.com/MaxKmet/idea-validation-agents)（MIT，487★）只是给 Claude Code 等用的提示词，没有可集成的代码。
+**相邻方向**：[mnemox-ai/idea-reality-mcp](https://github.com/mnemox-ai/idea-reality-mcp)（MIT，827★，截至 2026-10-20；原文写的「290+★」来自它仓库描述里没更新的文字）做的是"动手之前查一下这个点子是不是已经有人做了"（扫 GitHub、HN、npm、PyPI、Stack Overflow）。这正是我们路线图里"已有方案提示"那一步。2026-10-20 实测补充：2026-08 起维护模式；默认调作者托管的 Claude Haiku 扩写需求；Product Hunt 源已在代码里永久停用；中文需求的关键词提取很弱（试的 6 条里 2 条整句原样返回，4 条只拿到泛词）。结论是不集成、只借鉴思路，见 [research/2026-10-20-existing-solutions.md](research/2026-10-20-existing-solutions.md)。同标签下的 [MaxKmet/idea-validation-agents](https://github.com/MaxKmet/idea-validation-agents)（MIT，487★）只是给 Claude Code 等用的提示词，没有可集成的代码。
 
 ## 二、商业产品
 
