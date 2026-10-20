@@ -306,6 +306,7 @@ GitHub 上已有一些同类项目，比如 [Reddit_Scrapper](https://github.com
 |---|---|
 | [`ROADMAP.md`](ROADMAP.md) | 路线图和最新评测结果 |
 | [`docs/tech-plan.md`](docs/tech-plan.md) | 技术路线规划 |
+| [`docs/architecture.md`](docs/architecture.md) | **系统架构图**：部署、处理流水线、代码模块、数据存储 |
 | [`docs/landscape.md`](docs/landscape.md) | 同类项目调研 |
 | [`docs/market.md`](docs/market.md) | 市场调研与潜力分析 |
 | [`docs/model-selection.md`](docs/model-selection.md) | 模型选型（含 Mac GPU） |

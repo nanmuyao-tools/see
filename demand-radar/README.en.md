@@ -48,6 +48,8 @@ docker compose --profile web up -d web                 # web dashboard → http:
 
 ## How it works
 
+Architecture diagrams (deployment, pipeline, modules, storage) are in [`docs/architecture.md`](docs/architecture.md) (labels in Chinese, rendered by GitHub).
+
 ```
 Public sources (configured in sources.toml)
   → Rule-based pre-filter: empty posts, launch posts (Show HN, "I built…"), bot output never reach the model
