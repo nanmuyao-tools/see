@@ -1,0 +1,191 @@
+{
+ "feed": {
+  "entry": [
+   {
+    "im:name": {
+     "label": "鲨鱼记账"
+    },
+    "id": {
+     "label": "https://apps.apple.com/cn/app/id1079718756"
+    }
+   },
+   {
+    "updated": {
+     "label": "2026-10-08T01:27:00-07:00"
+    },
+    "im:rating": {
+     "label": "1"
+    },
+    "im:version": {
+     "label": "5.83"
+    },
+    "id": {
+     "label": "14641174261"
+    },
+    "title": {
+     "label": "小鲨你没觉得你广告最近多得过分了吗？"
+    },
+    "content": {
+     "label": "有点过分了 迅速整改",
+     "attributes": {
+      "type": "text"
+     }
+    },
+    "link": {
+     "attributes": {
+      "rel": "related",
+      "href": "https://itunes.apple.com/cn/review?id=1079718756&type=Purple%20Software"
+     }
+    },
+    "im:voteSum": {
+     "label": "0"
+    },
+    "im:contentType": {
+     "attributes": {
+      "term": "Application",
+      "label": "程序"
+     }
+    },
+    "im:voteCount": {
+     "label": "0"
+    }
+   },
+   {
+    "updated": {
+     "label": "2026-10-07T00:06:09-07:00"
+    },
+    "im:rating": {
+     "label": "3"
+    },
+    "im:version": {
+     "label": "5.82"
+    },
+    "id": {
+     "label": "14637192726"
+    },
+    "title": {
+     "label": "为什么不可以多人共享旧帐本"
+    },
+    "content": {
+     "label": "为什么不可以多人共享旧帐本",
+     "attributes": {
+      "type": "text"
+     }
+    },
+    "link": {
+     "attributes": {
+      "rel": "related",
+      "href": "https://itunes.apple.com/cn/review?id=1079718756&type=Purple%20Software"
+     }
+    },
+    "im:voteSum": {
+     "label": "0"
+    },
+    "im:contentType": {
+     "attributes": {
+      "term": "Application",
+      "label": "程序"
+     }
+    },
+    "im:voteCount": {
+     "label": "0"
+    }
+   },
+   {
+    "updated": {
+     "label": "2026-10-08T03:19:56-07:00"
+    },
+    "im:rating": {
+     "label": "5"
+    },
+    "im:version": {
+     "label": "5.82"
+    },
+    "id": {
+     "label": "14641442616"
+    },
+    "title": {
+     "label": "好评"
+    },
+    "content": {
+     "label": "简洁美观，好用",
+     "attributes": {
+      "type": "text"
+     }
+    },
+    "link": {
+     "attributes": {
+      "rel": "related",
+      "href": "https://itunes.apple.com/cn/review?id=1079718756&type=Purple%20Software"
+     }
+    },
+    "im:voteSum": {
+     "label": "0"
+    },
+    "im:contentType": {
+     "attributes": {
+      "term": "Application",
+      "label": "程序"
+     }
+    },
+    "im:voteCount": {
+     "label": "0"
+    }
+   }
+  ],
+  "updated": {
+   "label": "2026-10-20T02:19:03-07:00"
+  },
+  "rights": {
+   "label": "Copyright 2008 Apple Inc."
+  },
+  "title": {
+   "label": "iTunes Store：用户评论"
+  },
+  "icon": {
+   "label": "http://itunes.apple.com/favicon.ico"
+  },
+  "link": [
+   {
+    "attributes": {
+     "rel": "alternate",
+     "type": "text/html",
+     "href": "https://apps.apple.com/WebObjects/MZStore.woa/wa/viewGrouping?cc=cn&id=29099"
+    }
+   },
+   {
+    "attributes": {
+     "rel": "self",
+     "href": "https://itunes.apple.com/cn/rss/customerreviews/page=2/id=1079718756/sortby=mostrecent/json"
+    }
+   },
+   {
+    "attributes": {
+     "rel": "first",
+     "href": "https://itunes.apple.com/cn/rss/customerreviews/page=1/id=1079718756/sortby=mostrecent/xml?urlDesc=/customerreviews/page=2/id=1079718756/sortby=mostrecent/json"
+    }
+   },
+   {
+    "attributes": {
+     "rel": "last",
+     "href": "https://itunes.apple.com/cn/rss/customerreviews/page=10/id=1079718756/sortby=mostrecent/xml?urlDesc=/customerreviews/page=2/id=1079718756/sortby=mostrecent/json"
+    }
+   },
+   {
+    "attributes": {
+     "rel": "previous",
+     "href": "https://itunes.apple.com/cn/rss/customerreviews/page=1/id=1079718756/sortby=mostrecent/xml?urlDesc=/customerreviews/page=2/id=1079718756/sortby=mostrecent/json"
+    }
+   },
+   {
+    "attributes": {
+     "rel": "next",
+     "href": "https://itunes.apple.com/cn/rss/customerreviews/page=3/id=1079718756/sortby=mostrecent/xml?urlDesc=/customerreviews/page=2/id=1079718756/sortby=mostrecent/json"
+    }
+   }
+  ],
+  "id": {
+   "label": "https://itunes.apple.com/cn/rss/customerreviews/page=2/id=1079718756/sortby=mostrecent/json"
+  }
+ }
+}

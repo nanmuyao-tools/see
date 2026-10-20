@@ -82,10 +82,20 @@ docker compose exec mongo mongosh demand_radar --eval 'db.runs.find().sort({star
 | `github` | 点赞多的功能请求 issue | 👍 数 | 10 次/分钟；设 `GITHUB_TOKEN` 提到 30 |
 | `arctic_shift` | Reddit 帖子，走 [Arctic Shift](docs/arctic-shift.md) 第三方归档 API：按版块拉最新帖、关键词本地筛、能回填历史 | 点赞数（发帖 36 小时后才准） | 动态，每秒几次以内；免费服务无可用性承诺 |
 | `rss` | 任意 RSS / Atom 订阅，默认配了 Reddit 的 r/SomebodyMakeThis 和几个板块内搜索（和 `arctic_shift` 覆盖同样的版块，作它的兜底） | — | 视站点 |
+| `appstore` | App Store 上指定 app 的 1–3 星评论，走苹果的评论 RSS。**默认关闭** | 有用票数 | 同域名 5 秒一次；每个 app 每轮最多 `max_pages` 页 |
+| `googleplay` | Google Play 上指定 app 的 1–3 星评论，走 Play 网页用的内部接口。**默认关闭** | 点赞数 | 同上 |
 
 某个源失败（网络、限流）只跳过它，其他源照常跑。
 
-**抓取限速**：所有源的请求都经过同一个限速器，同一个域名的两次请求之间至少隔一段时间（GitHub 6.5 秒、设了 `GITHUB_TOKEN` 是 2.5 秒，Reddit 3 秒，其他默认 1 秒）。被限流时按服务器的 `Retry-After` 让整个域名冷却，后面的请求一起推后，不会接着撞上去。请求头里带项目地址，站长能找到我们。间隔可在 `sources.toml` 的 `[http]` 里按域名调大。
+**应用商店评论**：从别人 app 的差评里找「换个 app 就能解决」的痛点，例如广告太多、基础功能锁进会员、缺某个功能。两个商店都不是公开 API，苹果和 Google 的条款、robots.txt 都不鼓励自动抓取，所以默认关闭，开启前请先读[调研报告](docs/research/2026-10-20-app-store-reviews.md)第五节自己判断。开启方法：在 `sources.toml` 里把 `[appstore]` / `[googleplay]` 的 `enabled` 改成 `true`，在 `[[appstore.apps]]` / `[[googleplay.apps]]` 里列出要看的 app（App Store 填 app id 和国家，Google Play 填包名和语言地区）。只单独跑它们：
+
+```bash
+docker compose run --rm app run --source appstore,googleplay --limit 20
+```
+
+评论用单独的提示词抽取：单条评论多半是「这个 app 该改」，提示词问的是「做个替代品、插件或配套工具能不能解决」；崩溃、同步失败这类具体 bug 和纯情绪不算。评论人昵称不入库。App Store 的评论接口经常返回空结果，这时换个格式只再试一次，还是空就跳过、下一轮再来。
+
+**抓取限速**：所有源的请求都经过同一个限速器，同一个域名的两次请求之间至少隔一段时间（GitHub 6.5 秒、设了 `GITHUB_TOKEN` 是 2.5 秒，App Store 和 Google Play 5 秒，Reddit 3 秒，其他默认 1 秒）。被限流时按服务器的 `Retry-After` 让整个域名冷却，后面的请求一起推后，不会接着撞上去。请求头里带项目地址，站长能找到我们。间隔可在 `sources.toml` 的 `[http]` 里按域名调大。
 
 **增量抓取**：每个源的每个查询都记住上次抓到的最新一条（存在 MongoDB 的 `cursors` 集合），下次只抓更新的内容；RSS 没有按时间过滤的参数，靠入库去重。首次运行没有游标，行为和以前一样抓最新 N 条。游标在整批处理完才写入，中途崩溃下次会重抓这一批（已处理过的不会重复抽取）。抽取失败的条目存了原文，即使之后不再被抓到也会从库里重试，最多 3 次。
 
@@ -183,6 +193,8 @@ python -m demand_radar eval --lang en          # 英文输出模式下评测
 ```
 
 输出：是否需求的准确率、能否做成的准确率、端到端「应入选」的精确率 / 召回率 / F1、规则过滤了多少条（以及有没有误杀）、有害需求有没有混进正文清单（必须为 0）、有多少正常需求被转去人工确认。加 `-v` 会打印每条入选需求的原文摘录，方便人工核对。最新结果见 [`ROADMAP.md`](ROADMAP.md)。
+
+**评论的评测**：应用商店评论另有一份标注集 [`eval/review_set.json`](eval/review_set.json)，150 条 1–3 星评论，覆盖笔记、记账两类 app、两个商店、中英文，用 `eval --eval-set eval/review_set.json` 单独跑，不混进帖子的数字。当前中文 F1 80.6%、英文 83.2%，详见 CHANGELOG。
 
 **合并的评测**：[`eval/cluster_pairs.json`](eval/cluster_pairs.json) 有 23 对需求描述（中文 16 对、英文 7 对；11 对标「同一需求」、12 对标「不同」，其中不少是「都是提醒类」「都是自托管」这种难例；正例多由 `eval/eval_set.json` 里真实样本的需求改写而来），用真实嵌入服务跑：
 
@@ -308,7 +320,7 @@ GitHub 上已有一些同类项目，比如 [Reddit_Scrapper](https://github.com
 
 ## 合规
 
-只使用各平台的公开接口和 RSS，遵守各自的调用限额；Reddit 另有一路走 Arctic Shift 第三方归档，它的条款分析和需要你自己判断的点见 [`docs/arctic-shift.md`](docs/arctic-shift.md)。工具由你自己运行，请同时遵守各数据源平台的服务条款。生成的清单只包含归纳后的需求、一句原文摘录和原帖链接。
+默认只使用各平台的公开接口和 RSS，遵守各自的调用限额；Reddit 另有一路走 Arctic Shift 第三方归档，它的条款分析和需要你自己判断的点见 [`docs/arctic-shift.md`](docs/arctic-shift.md)。应用商店评论源默认关闭：苹果和 Google 的条款与 robots.txt 都不鼓励自动抓取，原文和需要你判断的点见[调研报告](docs/research/2026-10-20-app-store-reviews.md)第五节。工具由你自己运行，请同时遵守各数据源平台的服务条款。生成的清单只包含归纳后的需求、一句原文摘录和原帖链接。
 
 ## 文档
 

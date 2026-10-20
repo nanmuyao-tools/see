@@ -60,6 +60,61 @@ url = "https://www.reddit.com/r/androidapps/search.rss?q=%22is+there+an+app%22&r
 name = "reddit/software"
 url = "https://www.reddit.com/r/software/search.rss?q=%22looking+for%22&restrict_sr=1&sort=new"
 
+# 应用商店低分评论：从别人 app 的 1–3 星评论里找「换个 app 就能解决」的痛点。
+# 默认关闭：两个商店都不是公开 API，苹果和 Google 的条款、robots.txt 都不鼓励自动抓取，
+# 开启前请先读 docs/research/2026-10-20-app-store-reviews.md 第五节，自己判断。
+# 评论用单独的提示词抽取（见 demand_radar/extract.py 的 _REVIEW_SYSTEM），评测：
+#   demand-radar eval --eval-set eval/review_set.json
+# 限速：两个商店都是同域名至少隔 5 秒；每个 app 每轮最多翻 max_pages 页，
+# 翻到上次看过的评论就停；凑够 --limit 条低分评论也不再往后翻（已取回的这一页都保留，
+# App Store 一页 50 条、Google Play 一页 100 条，所以首轮实际条数会多于 --limit）。
+# name 会成为来源名的一部分（如 appstore/cn/鲨鱼记账），定了就别改。
+
+# App Store：苹果的评论 RSS。一页 50 条，最多 10 页。
+# app id 在 App Store 网页地址里：apps.apple.com/cn/app/xxx/id1079718756 → 1079718756
+[appstore]
+enabled = false
+max_rating = 3      # 只要 1–3 星
+max_pages = 2       # 每个 app 每个国家每轮最多几页（上限 10）
+
+[[appstore.apps]]
+name = "鲨鱼记账"
+id = 1079718756
+countries = ["cn"]
+
+[[appstore.apps]]
+name = "随手记"
+id = 372353614
+countries = ["cn"]
+
+[[appstore.apps]]
+name = "Notion"
+id = 1232780281
+countries = ["us"]
+
+[[appstore.apps]]
+name = "YNAB"
+id = 1010865877
+countries = ["us"]
+
+# Google Play：Play 网页用的内部接口。一页 100 条，按最新排序。
+# 包名在 Play 网页地址里：play.google.com/store/apps/details?id=notion.id → notion.id
+# locales 写「语言-地区」，如 en-US、zh-TW。Google Play 在大陆没有服务，没有简体中文区。
+[googleplay]
+enabled = false
+max_rating = 3
+max_pages = 2       # 每个 app 每个地区每轮最多几页（上限 5）
+
+[[googleplay.apps]]
+name = "Notion"
+package = "notion.id"
+locales = ["en-US", "zh-TW"]
+
+[[googleplay.apps]]
+name = "YNAB"
+package = "com.youneedabudget.evergreen.app"
+locales = ["en-US"]
+
 # 抓取限速：同一个域名的两次请求之间至少隔多少秒，对所有源生效（实现见 demand_radar/sources/http.py）。
 # 被限流（429）后会按服务器的 Retry-After 让整个域名冷却，不只是重试那一次。
 # 已内置的默认值：GitHub 6.5 秒（设了 GITHUB_TOKEN 是 2.5）、Reddit 3 秒、其他已知站点 1 秒。

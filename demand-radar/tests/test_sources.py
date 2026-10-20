@@ -235,9 +235,10 @@ class FetchAllTest(unittest.TestCase):
         with self.assertRaises(ValueError):
             sources.fetch_all(["weibo"], 5, {})
 
-    def test_default_config_enables_all(self):
+    def test_default_config_enables_all_but_app_stores(self):
         conf = sources.load_config(os.path.join(HERE, "..", "sources.toml"))
-        self.assertEqual(set(sources.enabled(conf)), set(sources.REGISTRY))
+        # 应用商店评论默认关闭（条款原因，见 sources.toml 注释）
+        self.assertEqual(set(sources.enabled(conf)), set(sources.REGISTRY) - {"appstore", "googleplay"})
         self.assertTrue(all(f["name"] and f["url"].startswith("https://") for f in conf["rss"]))
 
     def test_disabled_source(self):

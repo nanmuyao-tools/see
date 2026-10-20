@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+	<feed xmlns:im="http://itunes.apple.com/rss" xmlns="http://www.w3.org/2005/Atom" xml:lang="en">
+		<id>https://itunes.apple.com/us/rss/customerreviews/page=1/id=1232780281/sortby=mostrecent/xml</id><title>iTunes Store: Customer Reviews</title><updated>2026-10-20T02:16:29-07:00</updated><link rel="alternate" type="text/html" href="https://music.apple.com/WebObjects/MZStore.woa/wa/viewGrouping?cc=us&amp;id=1"/><link rel="self" href="https://itunes.apple.com/us/rss/customerreviews/page=1/id=1232780281/sortby=mostrecent/xml"/><link rel="first" href="https://itunes.apple.com/us/rss/customerreviews/page=1/id=1232780281/sortby=mostrecent/xml?urlDesc=/customerreviews/page=1/id=1232780281/sortby=mostrecent/xml"/><link rel="last" href="https://itunes.apple.com/us/rss/customerreviews/page=10/id=1232780281/sortby=mostrecent/xml?urlDesc=/customerreviews/page=1/id=1232780281/sortby=mostrecent/xml"/><link rel="previous" href="https://itunes.apple.com/us/rss/customerreviews/page=1/id=1232780281/sortby=mostrecent/xml?urlDesc=/customerreviews/page=1/id=1232780281/sortby=mostrecent/xml"/><link rel="next" href="https://itunes.apple.com/us/rss/customerreviews/page=2/id=1232780281/sortby=mostrecent/xml?urlDesc=/customerreviews/page=1/id=1232780281/sortby=mostrecent/xml"/><icon>http://itunes.apple.com/favicon.ico</icon><author><name>iTunes Store</name><uri>http://www.apple.com/itunes/</uri></author><rights>Copyright 2008 Apple Inc.</rights>
+		
+			<entry>
+					<id>14671531500</id>
+					<title>It’s alright</title>
+					<content type="text">Notion web is much better, albeit you of course need your computer. Notion is feature rich but it can get frustrating really quick on mobile devices, as it is fairly buggy.</content>
+					<im:contentType term="Application" label="Application"/>
+					<im:voteSum>0</im:voteSum>
+					<im:voteCount>0</im:voteCount>
+					<im:rating>3</im:rating>
+					<updated>2026-10-15T17:37:32-07:00</updated>
+					<im:version>1.7.346</im:version>
+					<link rel="related" href="https://itunes.apple.com/us/review?id=1232780281&amp;type=Purple%20Software"/>
+			</entry>
+<entry>
+					<id>14675987099</id>
+					<title>Great with Ai agents</title>
+					<content type="text">it’s a great tool for organizing lot of imputs</content>
+					<im:contentType term="Application" label="Application"/>
+					<im:voteSum>0</im:voteSum>
+					<im:voteCount>0</im:voteCount>
+					<im:rating>5</im:rating>
+					<updated>2026-10-16T20:59:35-07:00</updated>
+					<im:version>1.7.346</im:version>
+					<link rel="related" href="https://itunes.apple.com/us/review?id=1232780281&amp;type=Purple%20Software"/>
+			</entry>
+</feed>

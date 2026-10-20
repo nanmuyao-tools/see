@@ -19,6 +19,9 @@ from .models import SourceItem
 # Reddit RSS 正文里的模板内容
 _BOILERPLATE = re.compile(r"submitted by\s*/u/\S+|\[link\]|\[comments\]", re.I)
 _MIN_BODY = 20  # 去掉模板后少于这么多字符，视为没有正文
+# 应用商店评论单独放宽：中文短评十来个字就能说清缺什么（「为什么不可以多人共享旧帐本」13 字），
+# 按帖子的 20 字门槛会挡掉 18% 的评论（见 docs/research/2026-10-20-app-store-reviews.md 4.2）
+_MIN_REVIEW_BODY = 6
 # 标题里出现这些词，说明可能是在求某个东西，即使没有正文也保留
 _REQUEST_CUE = re.compile(
     r"\b(app|apps|tool|tools|software|program|extension|plugin|widget|service|website|site|"
@@ -37,6 +40,11 @@ def _body(item: SourceItem) -> str:
 
 
 def empty_body(item: SourceItem, conf: dict) -> bool:
+    if item.kind == "review":
+        # 标题是程序拼的「app 名（N 星）：评论标题」，只把评论人自己写的标题算进来：
+        # App Store 的短评常常标题「开屏广告」、正文「广告多」，两边合起来才说清楚
+        own_title = item.title.partition("：")[2]
+        return len(own_title + _body(item)) < _MIN_REVIEW_BODY
     return len(_body(item)) < _MIN_BODY and not _REQUEST_CUE.search(item.title)
 
 

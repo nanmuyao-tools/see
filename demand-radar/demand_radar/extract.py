@@ -55,6 +55,47 @@ _SYSTEM = {
     ),
 }
 
+# 应用商店的低分评论单独一份提示词。帖子的提示词问「这是不是一个能独立做的工具需求」，
+# 评论几乎都是「这个 app 该改」，原样套用时 150 条只放过 7 条，而且全判错了可做性
+# （见 docs/research/2026-10-20-app-store-reviews.md 4.2）。评论要问的是：这条抱怨说明
+# 同类产品有什么机会——做一个替代品、插件或配套工具能不能解决它。
+# 例子特意选了评测集（eval/review_set.json）里没有的说法，免得评测数字虚高。
+_REVIEW_SYSTEM = {
+    "zh": (
+        "你是帮独立开发者发现产品机会的分析助手。给你一条应用商店里的低分评论（标题里有 app 名和星级），"
+        "判断它是否暴露了一个『别人可以做个替代品、插件或配套工具来解决』的痛点，并归纳成结构化需求。\n"
+        "算痛点（is_request=true）：\n"
+        "1. 说清了缺什么功能或想要什么工作流，例如『希望有深色模式』『想在 Apple Watch 上快速记一笔』；\n"
+        "2. 对产品方向的不满，同类用户换一个 app 就能解决，例如开屏广告太多、核心功能被锁进会员、"
+        "强推 AI、涨价、改版后变难用、数据被锁在 app 里导不出来。\n"
+        "不算痛点（false）：崩溃、闪退、同步失败、登录不上这类具体 bug；纯情绪、没有信息量；"
+        "退款、客服、账号问题。\n"
+        "need 写成一个独立开发者可以去做的东西，不要写成『让某 app 改』，例如『一款没有广告、"
+        "基础功能免费的天气 app』『能把笔记离线备份成 Markdown 的工具』。\n"
+        "buildable 只看这个替代品或配套工具一个人能不能做出可用版本，大多数为 true。\n"
+        "domain 写 app 所属的品类，如记账、笔记。need、domain、pain_point 用简体中文写。"
+    ),
+    "en": (
+        "You help indie developers find product opportunities. Given a low-rated app store review (the "
+        "title has the app name and star rating), decide whether it reveals a pain point that someone else "
+        "could solve with an alternative app, a plugin or a companion tool, and summarize it as a structured need.\n"
+        "Counts as a pain point (is_request=true):\n"
+        "1. it names a missing feature or wanted workflow, e.g. 'please add a dark mode', "
+        "'I want to log an expense from my Apple Watch';\n"
+        "2. it dislikes the product's direction in a way users could escape by switching apps, e.g. "
+        "too many ads, core features moved behind a paywall, forced AI, price hikes, a redesign that made "
+        "it harder to use, data locked in with no export.\n"
+        "Not a pain point (false): specific bugs such as crashes, sync failures or login problems; pure "
+        "venting with no information; refunds, support or account issues.\n"
+        "Write need as something an indie developer could build, not 'make this app change', e.g. "
+        "'a weather app with no ads and a free core', 'a tool that backs up notes to Markdown offline'.\n"
+        "buildable only asks whether one person could ship a usable version of that alternative or companion "
+        "tool; most are true.\n"
+        "domain is the app's category, e.g. budgeting, note-taking. Write need, domain and pain_point in English."
+    ),
+}
+
+
 def build_client(provider: str, ollama_base_url: str | None = None):
     """按 provider 构造 Instructor 客户端。延迟导入，缺依赖时报错更清晰。
 
@@ -88,7 +129,7 @@ def extract_raw(client, item: SourceItem, language: str = "zh") -> Demand:
     return client.chat.completions.create(
         response_model=Demand,
         messages=[
-            {"role": "system", "content": _SYSTEM[language]},
+            {"role": "system", "content": (_REVIEW_SYSTEM if item.kind == "review" else _SYSTEM)[language]},
             {"role": "user", "content": content},
         ],
         max_retries=2,  # schema 校验失败自动重试

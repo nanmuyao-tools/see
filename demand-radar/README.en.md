@@ -73,10 +73,20 @@ All public endpoints, no sign-up needed. Configure them in [`sources.toml`](sour
 | `github` | Feature-request issues with many 👍 | 👍 | 10 req/min; 30 with `GITHUB_TOKEN` |
 | `arctic_shift` | Reddit posts via the third-party [Arctic Shift](docs/arctic-shift.md) archive API (doc in Chinese): newest posts per subreddit, keywords filtered locally, can backfill history | score (accurate ~36 h after posting) | dynamic, a few req/s; free service with no uptime guarantee |
 | `rss` | Any RSS / Atom feed; defaults include r/SomebodyMakeThis and a few subreddit searches (same subreddits as `arctic_shift`, kept as its fallback) | — | per site |
+| `appstore` | 1–3 star reviews of chosen apps on the App Store, via Apple's customer-review RSS. **Off by default** | helpful votes | 5 s between requests; at most `max_pages` pages per app per run |
+| `googleplay` | 1–3 star reviews of chosen apps on Google Play, via the internal endpoint the Play web page uses. **Off by default** | thumbs up | same |
 
 If one source fails (network, rate limit), it is skipped and the rest keep going.
 
-**Polite fetching**: every request from every source goes through one rate limiter that keeps a minimum gap between requests to the same host (GitHub 6.5 s, or 2.5 s with `GITHUB_TOKEN`; Reddit 3 s; 1 s otherwise). On 429 the whole host cools down for the server's `Retry-After`, so later requests wait too. The User-Agent carries the project URL. Raise the gaps per host under `[http]` in `sources.toml`.
+**App store reviews**: find pain points in other apps' bad reviews that switching apps would fix, such as too many ads, basics moved behind a paywall, or a missing feature. Neither store offers a public API for this, and both Apple's and Google's terms and robots.txt discourage automated access, so these sources are off by default. Read section 5 of the [research report](docs/research/2026-10-20-app-store-reviews.md) (in Chinese) and decide for yourself before turning them on. To enable, set `enabled = true` under `[appstore]` / `[googleplay]` in `sources.toml` and list apps under `[[appstore.apps]]` (app id and countries) / `[[googleplay.apps]]` (package and locales). To run only these:
+
+```bash
+docker compose run --rm app run --source appstore,googleplay --limit 20
+```
+
+Reviews use their own extraction prompt: a single review usually asks the vendor to change something, so the prompt asks whether an alternative app, plugin or companion tool could solve it. Specific bugs (crashes, sync failures) and pure venting do not count. Reviewer names are not stored. Apple's review feed often returns an empty result; the source then tries the other format once and otherwise skips that app until the next run.
+
+**Polite fetching**: every request from every source goes through one rate limiter that keeps a minimum gap between requests to the same host (GitHub 6.5 s, or 2.5 s with `GITHUB_TOKEN`; App Store and Google Play 5 s; Reddit 3 s; 1 s otherwise). On 429 the whole host cools down for the server's `Retry-After`, so later requests wait too. The User-Agent carries the project URL. Raise the gaps per host under `[http]` in `sources.toml`.
 
 ## Merging similar needs
 
@@ -101,6 +111,8 @@ python -m demand_radar eval -v --lang en
 ```
 
 It reports accuracy on "is this a need" and "can one person build it", end-to-end precision / recall / F1 for "should this be listed", how many posts the rules filtered (and whether any good ones were wrongly dropped), and whether any harmful request made it into the list (must be 0) and how many normal needs were held for review. `-v` prints the quote for every listed need so you can check it by hand. Latest results are in [`ROADMAP.md`](ROADMAP.md) (in Chinese).
+
+**Review evaluation**: app store reviews have their own labeled set, [`eval/review_set.json`](eval/review_set.json): 150 reviews of 1–3 stars covering note-taking and budgeting apps, both stores, Chinese and English. Run it with `eval --eval-set eval/review_set.json`; it is kept separate from the post numbers. Currently F1 is 80.6% (Chinese output) and 83.2% (English); see the CHANGELOG.
 
 ## Running without Docker
 
@@ -207,7 +219,7 @@ This happens when a Clash / mihomo style proxy runs in fake-ip (TUN) mode: insid
 
 ## Compliance
 
-Demand Radar only uses each platform's public API or RSS and respects their rate limits. You run it yourself, so please also follow each source's terms of service. Reports contain only the summarized need, one short quote and a link to the original post.
+By default Demand Radar only uses each platform's public API or RSS and respects their rate limits. The app store review sources are off by default because Apple's and Google's terms and robots.txt discourage automated access; see section 5 of the [research report](docs/research/2026-10-20-app-store-reviews.md). You run it yourself, so please also follow each source's terms of service. Reports contain only the summarized need, one short quote and a link to the original post.
 
 ## Contributing
 

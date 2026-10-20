@@ -5,7 +5,7 @@ from __future__ import annotations
 import tomllib
 
 from ..models import SourceItem
-from . import arctic_shift, github, hn_algolia, http, rss, softwarerecs
+from . import appstore, arctic_shift, github, googleplay, hn_algolia, http, rss, softwarerecs
 
 # 源名 → 抓取函数(limit, 该源的配置, 游标) -> list[SourceItem]
 # arctic_shift 排在 rss 前面：同一条 Reddit 帖子两边都抓到时，fetch_all 保留先到的那条，
@@ -16,6 +16,8 @@ REGISTRY = {
     "github": github.fetch,
     "arctic_shift": arctic_shift.fetch,
     "rss": rss.fetch,
+    "appstore": appstore.fetch,
+    "googleplay": googleplay.fetch,
 }
 
 # 支持历史回填的源：模块要提供 units(conf)、page_before(conf, unit, before, pagesize)、interval()
@@ -29,7 +31,8 @@ BACKFILL = {
 
 def backfill_module(name: str):
     if name not in BACKFILL:
-        raise ValueError(f"{name} 不支持回填（RSS 订阅没有翻页）；可回填的源: {', '.join(BACKFILL)}")
+        raise ValueError(f"{name} 不支持回填（RSS 订阅和应用商店评论没有按时间翻页）；"
+                         f"可回填的源: {', '.join(BACKFILL)}")
     return BACKFILL[name]
 
 

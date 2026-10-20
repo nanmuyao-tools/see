@@ -59,4 +59,7 @@ def pick(item: SourceItem) -> str:
             return _trim(s)
     if item.kind == "post" and title:
         return _trim(title)
-    return _trim(sentences[0]) if sentences else ""
+    if sentences:
+        return _trim(sentences[0])
+    # 应用商店的短评常常不到一句话（「ipad冇中文」），整条就是原话
+    return _trim(item.text.strip()) if item.kind == "review" else ""

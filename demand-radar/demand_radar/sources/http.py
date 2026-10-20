@@ -36,6 +36,10 @@ HOST_INTERVALS = {
     "hn.algolia.com": 1.0,                   # 每小时 1 万次
     "arctic-shift.photon-reddit.com": 1.0,   # 免费服务，限额随负载浮动
     "www.reddit.com": 3.0,                   # 不带 key 访问很容易 429
+    # 两个应用商店都不是公开 API（条款见 docs/research/2026-10-20-app-store-reviews.md），
+    # 调研时 3.5–10 秒一次没被限流过，这里取 5 秒；每个 app 每轮还有页数上限（见各自的源）
+    "itunes.apple.com": 5.0,
+    "play.google.com": 5.0,
 }
 
 
@@ -106,8 +110,17 @@ def _wait_seconds(e: urllib.error.HTTPError, attempt: int) -> float:
 
 def get(url: str, headers: dict[str, str] | None = None) -> bytes:
     """GET 请求。每次发出前先过限速；遇到 429 限流或 5xx 时，按 Retry-After 让整个域名冷却后重试。"""
-    req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT, **(headers or {})})
-    host = _host(url)
+    return _send(urllib.request.Request(url, headers={"User-Agent": USER_AGENT, **(headers or {})}))
+
+
+def post(url: str, data: bytes, headers: dict[str, str] | None = None) -> bytes:
+    """POST 请求，限速、冷却、重试和 get 完全相同（Google Play 的评论接口只接受 POST）。"""
+    return _send(urllib.request.Request(url, data=data, method="POST",
+                                        headers={"User-Agent": USER_AGENT, **(headers or {})}))
+
+
+def _send(req: urllib.request.Request) -> bytes:
+    host = _host(req.full_url)
     for attempt in range(RETRIES + 1):
         limiter.wait(host)
         try:
