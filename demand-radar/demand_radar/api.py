@@ -129,15 +129,25 @@ def create_app(coll, weights: dict[str, float] | None = None, default_min_confid
         """命中有害规则、待人工确认的需求（review_cue 非空），筛选和排序参数同上。"""
         return listing(True, f, p)
 
+    def facets(field: str, held: bool, f: dict) -> list[dict]:
+        """各取值的条数。入选区按合并后的需求数：每个取值单独折叠一次，和选中它之后列表的「共 N 条」一致。"""
+        if held:
+            return store.facet_counts(coll, field, held=True, **f)
+        groups: dict[str, list[dict]] = {}
+        for d in store.query_demands(coll, held=False, **f):
+            groups.setdefault((d.get(field) or "").strip(), []).append(d)
+        counts = {k: len(fold(rank.sort(v, w), "rank")) for k, v in groups.items()}
+        return [{field: k, "count": n} for k, n in sorted(counts.items(), key=lambda kv: (-kv[1], kv[0]))]
+
     @app.get("/api/domains")
     def domains(f: dict = Depends(filters), held: bool = False) -> list[dict]:
         """各领域条数（held=true 数待确认的）。前端不传 domain，这样选中一个领域时其他领域的数字还在。"""
-        return store.facet_counts(coll, "domain", held=held, **f)
+        return facets("domain", held, f)
 
     @app.get("/api/sources")
     def sources(f: dict = Depends(filters), held: bool = False) -> list[dict]:
         """各来源条数，给来源下拉框用。"""
-        return store.facet_counts(coll, "source", held=held, **f)
+        return facets("source", held, f)
 
     @app.get("/api/runs")
     def runs(limit: int = Query(20, ge=1, le=200)) -> list[dict]:
@@ -148,8 +158,11 @@ def create_app(coll, weights: dict[str, float] | None = None, default_min_confid
     def stats(min_confidence: float = Query(default_min_confidence, ge=0.0, le=1.0)) -> dict:
         """总条数、入选数、待确认数、最近一次运行。"""
         last = store.recent_runs(coll, 1)
-        return {**store.overview(coll, min_confidence), "min_confidence": min_confidence,
-                "last_run": _run(last[0]) if last else None}
+        ov = store.overview(coll, min_confidence)
+        # 入选数按合并后的需求算，和列表的「共 N 条」一致；按帖子算的另给一个
+        docs = rank.sort(store.query_demands(coll, min_confidence=min_confidence, held=False), w)
+        ov["listed_posts"], ov["listed"] = ov["listed"], len(fold(docs, "rank"))
+        return {**ov, "min_confidence": min_confidence, "last_run": _run(last[0]) if last else None}
 
     @app.get("/", response_class=HTMLResponse, include_in_schema=False)
     def index() -> str:

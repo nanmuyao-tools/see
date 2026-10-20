@@ -88,6 +88,15 @@ class ApiTest(unittest.TestCase):
         self.assertEqual([(i["id"], i["rank_score"]) for i in got],
                          [(e["_id"], e["rank_score"]) for e in expected])
 
+    def test_counts_match_folded_list(self):
+        # 顶部「入选」和领域、来源计数都要和列表的条数对得上，不能一个数帖子一个数需求
+        self._seed_cluster()
+        s = self.get("/api/stats")
+        self.assertEqual((s["listed"], s["listed_posts"]), (2, 4))
+        self.assertEqual(self.get("/api/domains"), [{"domain": "效率", "count": 2}])
+        for row in self.get("/api/sources"):
+            self.assertEqual(row["count"], self.get("/api/demands", source=row["source"])["total"], row)
+
     def test_cluster_folded_under_other_sorts(self):
         self._seed_cluster()
         self.assertEqual(len(self.ids("/api/demands", sort="heat")), 2)

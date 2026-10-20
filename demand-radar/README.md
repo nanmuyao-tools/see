@@ -127,9 +127,9 @@ docker compose --profile web up -d --build web            # 更新代码后：we
 |---|---|---|
 | `GET /api/demands` | `domain`、`days`（最近 N 天，按抽取时间）、`min_confidence`（默认取配置，0.5）、`source`、`q`（关键词）、`sort`（`rank` / `heat` / `time`，默认 `rank`）、`limit`（默认 50，最大 500）、`offset` | `{total, offset, limit, items}`，每条含 need、domain、pain_point、excerpt、clarity / intensity / feasibility、rank_score、score（热度）、source、url、title、extracted_at，以及 cluster_size、cluster_sources、cluster_members（相似需求合并后的簇规模和其余原帖）；`total` 按合并后的条数算 |
 | `GET /api/held` | 同上 | 待人工确认的需求，每条多一个 `review_cue` |
-| `GET /api/domains`、`GET /api/sources` | 同上的筛选参数；`held=true` 时数待确认的 | 各领域 / 各来源的条数，降序 |
+| `GET /api/domains`、`GET /api/sources` | 同上的筛选参数；`held=true` 时数待确认的 | 各领域 / 各来源的条数，降序；入选区按合并后的需求数，和选中后列表的条数一致 |
 | `GET /api/runs` | `limit`（默认 20） | 最近的运行记录，新的在前 |
-| `GET /api/stats` | `min_confidence` | 总条数、各状态条数、入选数、待确认数、最近一次运行 |
+| `GET /api/stats` | `min_confidence` | 总条数、各状态条数、入选数（合并后的需求数；按帖子算的在 `listed_posts`）、待确认数、最近一次运行 |
 
 ## 历史回填
 
