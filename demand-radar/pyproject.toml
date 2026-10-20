@@ -51,6 +51,7 @@ packages = ["demand_radar"]
 "sources.toml" = "demand_radar/defaults/sources.toml"
 "eval/eval_set.json" = "demand_radar/defaults/eval_set.json"
 "eval/cluster_pairs.json" = "demand_radar/defaults/cluster_pairs.json"
+"models.toml" = "demand_radar/defaults/models.toml"
 
 [tool.hatch.build.targets.sdist]
 include = ["demand_radar", "sources.toml", "eval", "tests", "README.md", "README.en.md", "CHANGELOG.md", "LICENSE"]

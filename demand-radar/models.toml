@@ -1,0 +1,49 @@
+# 模型档位表：recommend 命令按本机配置，从上往下取第一个条件全部满足的档位。
+# 想换模型、加档位，直接改这个文件；用 --models-file 指定别的文件。
+#
+# when 里的条件（都不写表示任何机器都满足，放在最后兜底）：
+#   apple_silicon = true   Apple 芯片的 Mac（模型跑在宿主机的 mlx-lm 上，走 GPU）
+#   min_vram_gb = 8        NVIDIA 显卡显存至少多少 GB
+#   min_ram_gb = 16        内存至少多少 GB
+# runtime：
+#   ollama  容器里的 Ollama（默认部署方式；有 NVIDIA 显卡时叠加 docker-compose.nvidia.yml 用 GPU）
+#   mlx     Mac 宿主机上原生跑 mlx-lm 走 GPU（叠加 docker-compose.mac-gpu.yml）；mlx-lm 没有嵌入接口，
+#           嵌入走 Mac 上原生的 Ollama
+# extract 是抽取模型（ollama 填 tag，mlx 填 HuggingFace 仓库名），embed 是嵌入模型（Ollama tag）。
+# measured = true 表示数字是在本项目评测集上实测的，false 表示参考公开资料估算。
+
+[[tier]]
+id = "apple-16g"
+name = "Apple Silicon，16GB 内存以上"
+when = { apple_silicon = true, min_ram_gb = 16 }
+runtime = "mlx"
+extract = "mlx-community/Qwen3-4B-Instruct-2507-4bit"
+embed = "qwen3-embedding:0.6b"
+sec_per_item = 2.6
+quality = "帖子 F1 中文 92.4% / 英文 90.9%；评论 F1 中文 80.6% / 英文 83.2%"
+measured = true
+note = "M5 实测。模型约 2.3GB"
+
+[[tier]]
+id = "cpu-8g"
+name = "只用 CPU，8GB 内存以上"
+when = { min_ram_gb = 8 }
+runtime = "ollama"
+extract = "qwen3:4b-instruct-2507-q4_K_M"
+embed = "qwen3-embedding:0.6b"
+sec_per_item = 7.0
+quality = "帖子 F1 中文 95.2% / 英文 96.8%（61 条）"
+measured = true
+note = "默认部署用的就是这一档。模型约 2.5GB"
+
+[[tier]]
+id = "minimal"
+name = "内存不到 8GB"
+when = {}
+runtime = "ollama"
+extract = "qwen3:4b-instruct-2507-q4_K_M"
+embed = "qwen3-embedding:0.6b"
+sec_per_item = 10.0
+quality = "同上，但内存紧张时可能被系统换页拖慢"
+measured = false
+note = "建议关掉其他占内存的程序；或在 docker-compose.yml 里给 Docker 分配更多内存"

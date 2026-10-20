@@ -11,7 +11,7 @@ RUN pip install --no-cache-dir -r requirements.lock
 
 COPY pyproject.toml README.md LICENSE ./
 COPY demand_radar ./demand_radar
-COPY sources.toml .
+COPY sources.toml models.toml ./
 COPY eval ./eval
 # 装本项目本身（依赖已就位，--no-deps 保证不会偷偷升级），得到 demand-radar 命令
 RUN pip install --no-cache-dir --no-deps .

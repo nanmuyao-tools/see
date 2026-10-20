@@ -292,6 +292,9 @@ def main(argv: list[str] | None = None) -> None:
     if cfg.command == "cluster":
         cluster_demands(cfg)
         return
+    if cfg.command == "recommend":
+        from . import recommend
+        raise SystemExit(recommend.run(cfg))
     if cfg.command == "serve":
         serve(cfg)
         return

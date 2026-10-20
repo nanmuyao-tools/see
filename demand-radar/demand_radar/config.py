@@ -60,6 +60,17 @@ class Config:
     cluster_eval: bool = False  # cluster 命令：不动库，在标注对上评测合并判断
     eval_pairs: str = "eval/cluster_pairs.json"  # cluster --eval 用的标注对
 
+    # recommend 命令：按本机配置从档位表推荐模型
+    models_file: str = "models.toml"
+    tier: str = ""  # 手动指定档位 id
+    list_tiers: bool = False
+    as_json: bool = False
+    write_env: bool = False
+    env_file: str = ".env"
+    hw_apple: bool | None = None  # 覆盖检测结果：在 Docker 里看不到 Mac 的 GPU 时用
+    hw_ram_gb: float = 0
+    hw_vram_gb: float | None = None
+
     host: str = "0.0.0.0"  # serve 命令：监听地址；容器里要 0.0.0.0 才能从宿主机访问
     port: int = 8501  # serve 命令：看板端口
 
@@ -105,6 +116,7 @@ class Config:
         cl = sub.add_parser("cluster", help="向量化并合并相似需求，重写清单；不调抽取模型")
 
         sv = sub.add_parser("serve", help="常驻：Web 看板，直接读库，不调模型")
+        rc = sub.add_parser("recommend", help="检测本机配置，推荐抽取模型和嵌入模型，可写进 .env")
 
         for sp in (run, sc):
             sp.add_argument("--source", default=d.source)
@@ -175,6 +187,21 @@ class Config:
             sp.add_argument("--lang", dest="output_language", choices=("zh", "en"),
                             default=d.output_language, help="输出语言")
 
+        rc.add_argument("--models-file", dest="models_file", default=d.models_file, help="模型档位表")
+        rc.add_argument("--tier", default="", help="不按检测结果，直接用这个档位")
+        rc.add_argument("--list", dest="list_tiers", action="store_true", help="列出全部档位，标出本机满足哪些")
+        rc.add_argument("--json", dest="as_json", action="store_true", help="输出 JSON")
+        rc.add_argument("--write-env", dest="write_env", action="store_true",
+                        help="把推荐的模型写进 .env，之后 docker compose up 自动使用")
+        rc.add_argument("--env-file", dest="env_file", default=d.env_file)
+        apple = rc.add_mutually_exclusive_group()
+        apple.add_argument("--apple", dest="hw_apple", action="store_true", default=None,
+                           help="按 Apple 芯片的 Mac 推荐（在 Docker 里检测不到时用）")
+        apple.add_argument("--no-apple", dest="hw_apple", action="store_false")
+        rc.add_argument("--ram-gb", dest="hw_ram_gb", type=float, default=0, help="按这么多内存推荐")
+        rc.add_argument("--vram-gb", dest="hw_vram_gb", type=float, default=None,
+                        help="按这么多 NVIDIA 显存推荐，0 表示没有")
+
         ns = p.parse_args(argv)
         return Config(
             command=ns.command,
@@ -204,6 +231,16 @@ class Config:
             rebuild=getattr(ns, "rebuild", False),
             cluster_eval=getattr(ns, "cluster_eval", False),
             eval_pairs=_bundled(getattr(ns, "eval_pairs", d.eval_pairs), Config.eval_pairs),
+
+            models_file=_bundled(getattr(ns, "models_file", d.models_file), Config.models_file),
+            tier=getattr(ns, "tier", ""),
+            list_tiers=getattr(ns, "list_tiers", False),
+            as_json=getattr(ns, "as_json", False),
+            write_env=getattr(ns, "write_env", False),
+            env_file=getattr(ns, "env_file", d.env_file),
+            hw_apple=getattr(ns, "hw_apple", None),
+            hw_ram_gb=getattr(ns, "hw_ram_gb", 0),
+            hw_vram_gb=getattr(ns, "hw_vram_gb", None),
 
             host=getattr(ns, "host", d.host),
             port=getattr(ns, "port", d.port),

@@ -53,7 +53,7 @@ def pull_model(name: str = OLLAMA_MODEL) -> None:
         sys.exit(f"拉取模型失败: {status}")
 
 
-COMMANDS = ("run", "eval", "digest", "backfill", "schedule", "serve", "cluster")
+COMMANDS = ("run", "eval", "digest", "backfill", "schedule", "serve", "cluster", "recommend")
 NEEDS_MODEL = ("run", "eval", "backfill", "schedule")  # digest / serve 只读数据库，不等模型；cluster 只要嵌入模型
 
 

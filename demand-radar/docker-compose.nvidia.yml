@@ -1,0 +1,17 @@
+# 有 NVIDIA 显卡的 Linux 机器：让容器里的 Ollama 用 GPU 跑模型。
+# 前提：宿主机装好 NVIDIA 驱动和 NVIDIA Container Toolkit（nvidia-smi 能看到显卡）。
+#
+#   docker compose -f docker-compose.yml -f docker-compose.nvidia.yml up
+#
+# 或者在 .env 里写 COMPOSE_FILE=docker-compose.yml:docker-compose.nvidia.yml，之后 docker compose up 自动带上。
+# 选什么模型：docker compose run --rm app recommend --vram-gb <显存>
+
+services:
+  ollama:
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
