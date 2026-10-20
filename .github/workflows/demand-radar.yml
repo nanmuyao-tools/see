@@ -6,23 +6,58 @@ on:
   pull_request:
     paths: ["demand-radar/**", ".github/workflows/demand-radar.yml"]
 
+defaults:
+  run:
+    working-directory: demand-radar
+
 jobs:
-  test:
+  lint:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: demand-radar
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+      - run: pip install "ruff>=0.6"
+      - run: ruff check demand_radar tests docker
+
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # 3.11 是支持的最低版本（tomllib），cluster.py 在 3.11 上走 sum(map(mul)) 的回退
+        python-version: ["3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
           cache: pip
           cache-dependency-path: demand-radar/requirements.lock
       # 依赖按锁文件的精确版本装，测试工具按 pyproject 的 dev 可选依赖装
       - run: pip install -r requirements.lock -e ".[dev]"
       # 单元测试离线运行，不需要网络、MongoDB 或模型。
-      # 评测（eval）需要本地模型，不在 CI 里跑，发版前手动执行
-      - run: python -m unittest discover -s tests -v
-      - name: 检查 Docker 镜像能构建
-        run: docker build -t demand-radar .
+      # 评测（eval）需要本地模型，不在 CI 里跑，改了抽取相关代码时发版前手动执行
+      - run: python -W error::ResourceWarning -m unittest discover -s tests -v
+
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: 打包，并在仓库外的全新环境里装上试跑
+        run: |
+          pip install build
+          python -m build --wheel --outdir "$RUNNER_TEMP/dist"
+          python -m venv "$RUNNER_TEMP/venv"
+          "$RUNNER_TEMP/venv/bin/pip" install "$(ls "$RUNNER_TEMP"/dist/*.whl)[web]"
+          cd "$RUNNER_TEMP"
+          "$RUNNER_TEMP/venv/bin/demand-radar" --version
+          "$RUNNER_TEMP/venv/bin/python" -c "from demand_radar.config import Config; c = Config.from_args(['eval']); assert c.eval_set.endswith('defaults/eval_set.json'), c.eval_set; print('默认数据文件随包分发:', c.sources_file)"
+      - name: 检查 Docker 镜像能构建、能运行
+        run: |
+          docker build -t demand-radar:ci .
+          docker run --rm demand-radar:ci --version
