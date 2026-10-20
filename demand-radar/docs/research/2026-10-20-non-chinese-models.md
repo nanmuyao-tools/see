@@ -51,7 +51,7 @@ Qwen 基线（M5 实测，来自主会话）：
 
 | 模型 | 出品方 | 参数 | q4 体积（Ollama / MLX） | Ollama tag | mlx-community | 协议 | 中文 | 思考模式 | 结论 |
 |---|---|---|---|---|---|---|---|---|---|
-| **Ministral 3 3B / 8B / 14B Instruct 2512** | Mistral，法国 | 3.4B / 8.4B / 14B（含视觉） | 3.0 / 6.0 / 9.1GB；2.75 / 5.6 / 8.4GB | `ministral-3:3b/8b/14b` | `Ministral-3-{3B,8B,14B}-Instruct-2512-4bit` | Apache-2.0 | 官方列出 zh | Instruct 版没有思考模式，Reasoning 是另一个模型 | **主力候选**。卡片写「native function calling and JSON outputting」，建议温度低于 0.1，和项目的温度 0 一致 |
+| **Ministral 3 3B / 8B / 14B Instruct 2512** | Mistral，法国 | 语言模型 3.4B / 8.4B / 13.5B，另带 0.4B 视觉编码器 | 3.0 / 6.0 / 9.1GB；2.75 / 5.6 / 8.4GB | `ministral-3:3b/8b/14b` | `Ministral-3-{3B,8B,14B}-Instruct-2512-4bit` | Apache-2.0 | 官方列出 zh | Instruct 版没有思考模式，Reasoning 是另一个模型 | **主力候选**。卡片写「native function calling and JSON outputting」，建议温度低于 0.1，和项目的温度 0 一致 |
 | **Gemma 4 E2B / E4B** | Google，美国 | 有效 2.3B / 4.5B（含嵌入表 5.1B / 8B） | 4.6 / 6.6GB；3.55 / 5.15GB | `gemma4:e2b`、`gemma4:e4b` | `gemma-4-e2b-it-4bit`、`gemma-4-e4b-it-4bit` | 见下方协议表 | 35+ 种语言，140+ 种预训练，卡片没列明细；MMMLU 67.4 / 76.6（开思考） | 系统提示里加 `<\|think\|>` 才开启；关闭时 E2B/E4B 不输出 thought 块 | **主力候选**。Ollama 的包含视觉和音频编码器，CPU 8GB 档偏大 |
 | Gemma 4 12B / 26B-A4B | Google | 12B / 25.2B（激活 3.8B） | 8.0 / 18GB；11.0 / 15.3GB | `gemma4:12b`、`gemma4:26b` | `gemma-4-12B-it-qat-4bit`、`gemma-4-26b-a4b-it-4bit` | 同上 | MMMLU 83.4 / 86.3（开思考） | 关掉后**仍会输出空的 thought 块** | 大内存档候选。先确认空块会不会混进 content、打断 JSON 解析 |
 | Granite 4.1 3B / 8B | IBM，美国 | 3B / 8B | 2.1 / 5.3GB；2.13 / 5.24GB | `granite4.1:3b/8b` | `granite-4.1-3b-4bit`、`granite-4.1-8b-4bit` | Apache-2.0 | 官方列出 zh；MMMLU 57.6 / 64.8（instruct，5-shot） | 无 | 备选。协议最干净，中文偏弱 |
@@ -68,8 +68,34 @@ Qwen 基线（M5 实测，来自主会话）：
 | LFM2.5 2.6B / 8B-A1B | Liquid AI | 2.6B / 8.3B（激活 1.5B） | —；1.52 / 4.76GB | `lfm2.5:8b` | `LFM2.5-2.6B-4bit`、`LFM2.5-8B-A1B-MLX-4bit` | 同上 | 列出 zh | **一直开着**（卡片：「always thinks before it answers」） | 排除 |
 | Command R7B、Aya Expanse 8B、Tiny Aya | Cohere，加拿大 | 7–8B | 5.1GB | `command-r7b`、`aya-expanse:8b` | 有 | **CC-BY-NC-4.0** | 列出 zh | 无 | 排除。不能商用 |
 | Gemma 3 / Gemma 3n | Google | 1B–27B | — | `gemma3`、`gemma3n` | 有 | Gemma Terms of Use | 140 种语言 | 无 | 已被 Gemma 4 取代，不再推荐 |
+| Mistral Small 3.2 24B（2506） | Mistral | 24B | 15GB；13.3GB | `mistral-small3.2:24b` | `Mistral-Small-3.2-24B-Instruct-2506-4bit` | Apache-2.0 | 列出 zh | 无 | 32GB 档的备选。比 Gemma 4 26B-A4B 慢：稠密 24B，估算 M5 上每条 10 秒以上。新的 Mistral Small 4 是 119B，太大 |
+| Granite 4.0-H Tiny（MoE） | IBM | 7B，激活 1B | 4.2GB；3.91GB | `granite4:tiny-h` | `granite-4.0-h-tiny-4bit` | Apache-2.0 | 列出 zh；MMMLU 61.87 | 无 | 可作 CPU 档备选：只激活 1B，CPU 上可能比 3B 稠密模型还快。中文偏弱 |
+| Nemotron 3 Nano 30B-A3B / Nano 9B v2 | NVIDIA | 30B（激活约 3B）/ 9B | 18GB / — | `nemotron-3-nano:30b` | 有 | NVIDIA Nemotron Open Model License | 都不支持中文（30B 卡片列 6 种语言，写「Improved using Qwen」） | 推理和非推理合在一个模型里 | 排除 |
+| LFM2.5 24B-A2B | Liquid AI | 24B，激活 2.45B | 15GB；有 | `lfm2.5:24b` | `LiquidAI/LFM2.5-24B-A2B-MLX-4bit` | LFM Open License | 列出 zh | **一直开着** | 排除 |
+| Phi-mini-MoE / Phi-tiny-MoE、Llama 3.1 8B、Mistral Nemo 12B、OLMoE | 美国 / 法国 | — | — | 部分有 | 部分有 | MIT / Llama / Apache | Phi MoE 和 OLMoE 只有英文；Llama 3.1 的 8 种语言里没有中文；Nemo 是 2024 年的旧模型 | — | 排除 |
 
-关于思考模式，项目里现在的做法：
+### JSON 稳定性：取决于运行时，不全看模型
+
+| 运行时 | 机制 | 对选模型的影响 |
+|---|---|---|
+| Ollama（容器 / NVIDIA） | `/v1` 收到 `response_format: json_object` 时转成 `format: "json"`（`openai/openai.go`，`[一手 源码]`），由 Ollama 做约束解码 | 输出基本都是合法 JSON，换模型时 JSON 风险小。字段对不对还得看模型 |
+| mlx_lm.server（Mac） | `server.py` 里**没有处理 `response_format`**（grep 无结果，`[一手 源码]`），没有约束解码 | 全靠模型自己守格式，加上项目的 `max_retries=2`。Gemma 4 12B 以上的空 thought 块就落在这条路径上 |
+
+Instructor 的 `Mode.JSON` 会发 `response_format: json_object`，并把 schema 写进系统提示（`[二手]` Instructor 文档，这一轮没核对源码）。
+
+各模型公开的相关指标：
+
+| 模型 | 公开指标 |
+|---|---|
+| Gemma 4 | IFEval：E2B 94.6、E4B 96.7、12B 97.2、26B-A4B 98.5（技术报告 Table 5，**开思考**）。没有结构化输出基准 |
+| Ministral 3 | 卡片原文「native function calling and JSON outputting」，没给分数 |
+| Granite 4.1 | BFCL v3（工具调用）：3B 60.8、8B 68.3 |
+| LFM2.5 | 卡片推荐用于 structured outputs（但一直开着思考，已排除） |
+| 其他 | 未公布 |
+
+### 思考模式
+
+项目里现在的做法：
 - `extract.py` 不传 `chat_template_kwargs`，也不传 `reasoning_effort`。所以只有「默认关思考」的模型能直接用。上表的主力候选都满足。
 - **mlx_lm.server**：支持启动参数 `--chat-template-args '{"enable_thinking":false}'`，单个请求也可以带 `chat_template_kwargs`（`mlx_lm/server.py`，`[一手 源码]`）。
 - **Ollama**：`/v1` 接口认 `reasoning_effort: "none"`，会映射成 `think=false`（`openai/openai.go` 的 `ThinkingFromReasoningEffort`，`[一手 源码]`）。
@@ -199,7 +225,7 @@ measured = false
 | # | 测什么 | 命令 | 预计耗时 |
 |---|---|---|---|
 | 1 | 嵌入模型 4 个：`embeddinggemma-2:270m`、`granite-embedding:278m`、`nomic-embed-text-v2-moe`、`snowflake-arctic-embed2` | `docker compose exec ollama ollama pull <tag>`<br>`docker compose run --rm --entrypoint python app -m demand_radar cluster --eval -v --embed-model <tag>` | 下载约 3GB，每个评测 1–2 分钟，合计约 15 分钟 |
-| 2 | Ministral-3-3B（MLX） | `mlx_lm.server --model mlx-community/Ministral-3-3B-Instruct-2512-4bit --port 8765`<br>`python -m demand_radar eval --provider local/mlx-community/Ministral-3-3B-Instruct-2512-4bit --base-url http://127.0.0.1:8765/v1 --lang zh -v`（再跑一遍 `--lang en`，评论加 `--eval-set eval/review_set.json`） | 约 25 分钟 |
+| 2 | Ministral-3-3B（MLX） | `mlx_lm.server --model mlx-community/Ministral-3-3B-Instruct-2512-4bit --port 8765`<br>`python3.12 -m demand_radar eval --provider local/mlx-community/Ministral-3-3B-Instruct-2512-4bit --base-url http://127.0.0.1:8765/v1 --lang zh -v`（再跑一遍 `--lang en`，评论加 `--eval-set eval/review_set.json`） | 约 25 分钟 |
 | 3 | Gemma-4-E4B（MLX） | 同上，换成 `mlx-community/gemma-4-e4b-it-4bit` | 约 30 分钟 |
 | 4 | Gemma-4-26B-A4B（MLX，需要 32GB） | 同上，换成 `mlx-community/gemma-4-26b-a4b-it-4bit`。先用 1 条请求看 content 里有没有空 thought 块 | 下载 15GB，跑约 40 分钟 |
 | 5 | `ministral-3:3b`（容器 CPU，对应 cpu-8g 档） | `docker compose exec ollama ollama pull ministral-3:3b`<br>`docker compose run --rm --entrypoint python app -m demand_radar eval --provider ollama/ministral-3:3b --lang zh` | 只测帖子，约 30 分钟 |
