@@ -62,12 +62,30 @@ def wants_cluster(args: list[str]) -> bool:
     return args[0] == "cluster" or "--cluster" in args or os.getenv("DR_CLUSTER", "0").lower() in ("1", "true", "yes")
 
 
+TOP_LEVEL_FLAGS = ("--version", "-h", "--help")
+WRITES_OUTPUT = ("run", "digest", "backfill", "schedule", "cluster")
+OUT_DIR = "/app/out"
+
+
+def check_output_dir(command: str) -> None:
+    """容器以普通用户（uid 1000）运行。Linux 上 ./out 若属于别的用户（例如被 root 自动创建），
+    这里先说清楚怎么修，而不是跑完一轮才在写文件时报 PermissionError。"""
+    if command not in WRITES_OUTPUT or not os.path.isdir(OUT_DIR) or os.access(OUT_DIR, os.W_OK):
+        return
+    sys.exit(f"输出目录 ./out 没有写权限（容器内用户 uid {os.getuid()}）。在宿主机 demand-radar 目录执行：\n"
+             f"  sudo chown -R {os.getuid()}:{os.getgid()} out\n"
+             "或在 docker-compose.yml 的 app 服务里把 user 改成你自己的 uid:gid（id -u / id -g 查看）。")
+
+
 def main() -> None:
     args = sys.argv[1:]
-    # 第一个参数是命令名就照用；否则默认 run，其余参数原样传给它
+    # 第一个参数是命令名就照用；--version / --help 原样交给程序；否则默认 run，其余参数原样传给它
     # 例：docker compose run --rm app digest --days 14 / docker compose run --rm app --limit 20
+    if args and args[0] in TOP_LEVEL_FLAGS:
+        os.execvp(sys.executable, [sys.executable, "-m", "demand_radar", *args])
     if not args or args[0] not in COMMANDS:
         args = ["run", *args]
+    check_output_dir(args[0])
     if OLLAMA_API and (args[0] in NEEDS_MODEL or wants_cluster(args) and not EMBED_ELSEWHERE):
         wait_for_ollama()
     if args[0] in NEEDS_MODEL and OLLAMA_API:  # digest / serve 只读数据库，不用等模型

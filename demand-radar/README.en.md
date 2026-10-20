@@ -185,6 +185,10 @@ Projects such as [Reddit_Scrapper](https://github.com/Mohamedsaleh14/Reddit_Scra
 
 ## Troubleshooting
 
+**On Linux: "输出目录 ./out 没有写权限" (output directory not writable)**: the container runs as uid 1000. If `./out` belongs to another user, run `sudo chown -R 1000:1000 out` in `demand-radar`, or uncomment `user:` under the app service in `docker-compose.yml` and set your own `id -u`:`id -g`. Docker Desktop on macOS and Windows is not affected.
+
+**The dashboard is not reachable from other machines**: it has no login, so it listens on localhost only. To share it, change the web port mapping to `"${DR_WEB_PORT:-8501}:8501"` and put your own access control in front.
+
 **Model download fails with `redirect target not allowed … resolves to non-public 198.18.x.x`**
 
 This happens when a Clash / mihomo style proxy runs in fake-ip (TUN) mode: inside the container every hostname resolves to a fake 198.18.0.0/16 address. Ollama follows a redirect to Cloudflare storage when downloading a model, checks that the redirect target is a public IP, and refuses. The network itself works; only that check fails. Pick one fix:

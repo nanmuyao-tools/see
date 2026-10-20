@@ -17,7 +17,7 @@ services:
     #   - "27017:27017"
 
   ollama:
-    image: ollama/ollama:latest
+    image: ollama/ollama:0.40.6     # 固定版本，部署可复现；升级时改这里并重跑 eval
     restart: unless-stopped
     volumes:
       - ollama-models:/root/.ollama   # 模型缓存，避免每次重拉
@@ -29,6 +29,10 @@ services:
 
   app:
     build: .
+    # app / scheduler / web 共用这一个镜像：构建一次三个都更新（以前各自构建，只 build app 不会更新另两个）
+    image: demand-radar:local
+    # 容器以 uid 1000 运行。Linux 上 ./out 属于别的用户时，入口脚本会提示；也可以直接改成自己的 uid:gid
+    # user: "1000:1000"
     depends_on:
       - mongo
       - ollama
@@ -83,7 +87,13 @@ services:
       - mongo
     command: ["serve"]
     ports:
-      - "${DR_WEB_PORT:-8501}:8501"   # 宿主机端口被占时：DR_WEB_PORT=8600 docker compose --profile web up -d web
+      # 只绑本机回环地址：看板没有登录，不该对局域网开放。宿主机端口被占时：DR_WEB_PORT=8600
+      - "127.0.0.1:${DR_WEB_PORT:-8501}:8501"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8501/api/stats', timeout=3)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
 
 volumes:
   mongo-data:

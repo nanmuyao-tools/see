@@ -108,10 +108,10 @@ DR_RUN_AT=18:00 DR_DIGEST_WEEKDAY=5 docker compose --profile cron up -d schedule
 不想翻 Markdown 时，起一个常驻的看板，在浏览器里按领域、时间、来源筛选和搜索（默认不启动，用 `web` profile 打开）：
 
 ```bash
-docker compose --profile web up -d web                    # 起看板，浏览器打开 http://localhost:8501
+docker compose --profile web up -d web                    # 起看板，浏览器打开 http://localhost:8501（只对本机开放）
 docker compose logs -f web                                # 看日志
 DR_WEB_PORT=8600 docker compose --profile web up -d web   # 宿主机 8501 被占时换一个
-docker compose --profile web up -d --build web            # 更新代码后：web 是单独的镜像，只 build app 不会更新它
+docker compose build app && docker compose --profile web up -d web   # 更新代码后：app / scheduler / web 共用一个镜像，构建一次即可
 ```
 
 看板直接读 MongoDB，不需要模型，和 `app` / `scheduler` 用同一份配置和排序权重；数据来自它们跑出来的结果，看板本身不抓取。能看到：
@@ -285,6 +285,10 @@ GitHub 上已有一些同类项目，比如 [Reddit_Scrapper](https://github.com
 | 数据源 | HN、Reddit、StackExchange、GitHub issues | 大多只有 Reddit |
 
 ## 常见问题
+
+**Linux 上提示「输出目录 ./out 没有写权限」**：容器以普通用户（uid 1000）运行，`./out` 属于别的用户时写不进去。在 `demand-radar` 目录执行 `sudo chown -R 1000:1000 out`，或在 `docker-compose.yml` 的 app 服务里打开 `user:` 一行，改成自己的 `id -u`:`id -g`。macOS 和 Windows 的 Docker Desktop 不会遇到。
+
+**局域网里别的电脑打不开看板**：看板没有登录，默认只对本机开放。确实要给别人看，把 `docker-compose.yml` 里 web 的端口改成 `"${DR_WEB_PORT:-8501}:8501"`，并自行加一层访问控制。
 
 **模型下载失败，报错里有 `redirect target not allowed … resolves to non-public 198.18.x.x`**
 

@@ -17,4 +17,9 @@ COPY eval ./eval
 RUN pip install --no-cache-dir --no-deps .
 COPY docker/entrypoint.py /entrypoint.py
 
+# 以普通用户运行。uid 1000 是大多数 Linux 桌面的第一个用户，挂载的 ./out 一般直接可写；
+# 不一致时入口脚本会提示怎么修（见 docker/entrypoint.py 的 check_output_dir）
+RUN useradd --uid 1000 --create-home app && mkdir -p /app/out && chown app:app /app/out
+USER app
+
 ENTRYPOINT ["python", "/entrypoint.py"]

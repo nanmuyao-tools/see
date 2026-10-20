@@ -4,3 +4,10 @@ __pycache__/
 data/
 out/
 .git/
+tests/
+docs/
+eval/*.md
+.ruff_cache/
+*.egg-info/
+dist/
+build/
