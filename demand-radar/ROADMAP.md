@@ -76,7 +76,7 @@ v0.1 功能已全部完成：四类公开数据源 → 规则预过滤 → 本�
 - [x] 定时运行：每天抓取，每周出摘要（compose 里可选的 `scheduler` 服务，`--profile cron`）
 - [x] 实测 Arctic Shift 作为 Reddit 数据源：公开无 key、30 次实测无 429、能按时间增量和回填，已接入为 `arctic_shift` 源；但服务端关键词搜索超时（改本地筛）、新帖 score 要 36 小时后才准、第三方免费服务无可用性承诺且条款是灰色地带，所以 RSS 保留兜底、合规由你判断（见 [docs/arctic-shift.md](docs/arctic-shift.md)）
 
-验收：连续运行一周不重复处理；回填能中断续跑。
+验收：连续运行一周不重复处理；回填能中断续跑。——回填续跑已验证 ✓；一周连续运行 2026-10-20 开始（定时服务容器 `dr-weekly`，只开 softwarerecs / hn_algolia / github 三个源，Reddit 两路等条款决定），首轮 21 条抓取里只有 3 条新内容要处理。10-27 看 `runs` 集合里每天的 todo 数
 
 ### v0.3：合并与看板（约 2 周）
 
