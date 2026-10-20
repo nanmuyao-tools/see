@@ -48,7 +48,7 @@ docker compose --profile web up -d web                 # web dashboard → http:
 
 ## How it works
 
-Architecture diagrams (deployment, pipeline, modules, storage) are in [`docs/architecture.md`](docs/architecture.md) (labels in Chinese, rendered by GitHub).
+Architecture diagrams (deployment, pipeline, modules, storage) are in [`docs/architecture.md`](docs/architecture.md) (labels in Chinese).
 
 ```
 Public sources (configured in sources.toml)

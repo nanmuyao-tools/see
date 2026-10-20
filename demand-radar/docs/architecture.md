@@ -1,10 +1,20 @@
 # 需求雷达：系统架构
 
-更新：2026-10-20。图用 Mermaid 写，GitHub 上直接显示成图；改代码时顺手改这里。
+更新：2026-10-20。图片由折叠在每张图下面的 Mermaid 源码生成（GitHub 对这几张图的 Mermaid 渲染会失败，所以提交图片）。改图时先改源码，再在本目录执行：
+
+```bash
+npx -y @mermaid-js/mermaid-cli@11.4.2 -i architecture.md -o /tmp/arch.md -e png -s 2 -b white
+# 生成的 /tmp/arch-1.png … arch-4.png 依次覆盖 images/architecture-{deployment,pipeline,modules,storage}.png
+```
 
 ## 一、部署架构
 
 所有东西都在你自己的机器上跑。对外只有一种连接：读各平台的公开接口。
+
+![部署架构](images/architecture-deployment.png)
+
+<details>
+<summary>Mermaid 源码（改图时改这里，再重新生成图片）</summary>
 
 ```mermaid
 flowchart TB
@@ -36,6 +46,8 @@ flowchart TB
     WEB --> USER
 ```
 
+</details>
+
 | 组件 | 什么时候在跑 | 说明 |
 |---|---|---|
 | app | 每次 `docker compose run --rm app <命令>` | 跑完一轮就退出；入口脚本先等 ollama、按命令拉需要的模型 |
@@ -46,6 +58,11 @@ flowchart TB
 | MongoDB | 常驻 | 数据卷 `mongo-data`，删容器不丢数据 |
 
 ## 二、一轮 run 的处理流水线
+
+![处理流水线](images/architecture-pipeline.png)
+
+<details>
+<summary>Mermaid 源码（改图时改这里，再重新生成图片）</summary>
 
 ```mermaid
 flowchart TD
@@ -67,6 +84,8 @@ flowchart TD
     J --> L[("runs<br/>各源抓取数、过滤 / 抽取 / 失败数、耗时")]
 ```
 
+</details>
+
 几个设计取舍：
 
 - **游标在整批处理完才落库**：中途崩溃就不记，下次重抓同一批，已处理的被去重挡住，不丢也不重复。
@@ -75,6 +94,11 @@ flowchart TD
 - **合并只看进清单的需求**：待人工确认的不参与合并。
 
 ## 三、代码模块
+
+![代码模块](images/architecture-modules.png)
+
+<details>
+<summary>Mermaid 源码（改图时改这里，再重新生成图片）</summary>
 
 ```mermaid
 flowchart TB
@@ -113,6 +137,8 @@ flowchart TB
     L6 -.->|调用同一套抽取 / 嵌入| L3
 ```
 
+</details>
+
 | 命令 | 做什么 | 要模型吗 |
 |---|---|---|
 | `run` | 抓取 → 过滤 → 抽取 → 存库 → 出清单（`--cluster` 顺手合并） | 抽取模型 |
@@ -126,6 +152,11 @@ flowchart TB
 ## 四、数据存储
 
 MongoDB 一个库 `demand_radar`，四个集合：
+
+![数据存储](images/architecture-storage.png)
+
+<details>
+<summary>Mermaid 源码（改图时改这里，再重新生成图片）</summary>
 
 ```mermaid
 erDiagram
@@ -164,6 +195,8 @@ erDiagram
     }
     clusters ||--|{ demands : "members"
 ```
+
+</details>
 
 ## 五、相关文档
 
