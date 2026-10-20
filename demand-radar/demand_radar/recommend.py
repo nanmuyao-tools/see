@@ -78,6 +78,8 @@ def _compose_key(tier: dict) -> str:
 def env_for(tier: dict) -> dict[str, str]:
     """要写进 .env 的变量。docker compose 会自动读同目录的 .env。"""
     env = {"COMPOSE_FILE": _COMPOSE[_compose_key(tier)], "DR_EMBED_MODEL": tier["embed"]}
+    if tier.get("cluster_threshold"):  # 不同嵌入模型的相似度分布不同，合并阈值要跟着换
+        env["DR_CLUSTER_THRESHOLD"] = str(tier["cluster_threshold"])
     if tier["runtime"] == "mlx":
         env["MLX_MODEL"] = tier["extract"]
         env["DR_EMBED_BASE_URL"] = "http://host.docker.internal:11434/v1"  # mlx-lm 没有嵌入接口

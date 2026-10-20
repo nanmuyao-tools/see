@@ -93,6 +93,11 @@ class EnvTest(unittest.TestCase):
         self.assertIn("11434", mac["DR_EMBED_BASE_URL"])  # mlx-lm 没有嵌入接口
         self.assertNotIn("DR_MODEL", mac)
 
+    def test_threshold_follows_embed_model(self):
+        t = dict(TIERS[2], cluster_threshold=0.83)
+        self.assertEqual(recommend.env_for(t)["DR_CLUSTER_THRESHOLD"], "0.83")
+        self.assertNotIn("DR_CLUSTER_THRESHOLD", recommend.env_for(TIERS[2]))
+
     def test_write_env_keeps_other_lines(self):
         with tempfile.TemporaryDirectory() as d:
             path = os.path.join(d, ".env")
@@ -208,3 +213,27 @@ class CliTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class FencedJsonTest(unittest.TestCase):
+    """Gemma 4 等模型在 JSON 模式下仍会套一层 ```json 代码块，解析前要去掉。"""
+
+    BODY = ('{"is_request": true, "need": "x", "domain": "d", "pain_point": "", "buildable": true, '
+            '"clarity": 3, "intensity": 3, "feasibility": 3, "confidence": 0.8}')
+
+    def test_fenced(self):
+        from demand_radar.models import Demand
+        for text in (f"```json\n{self.BODY}\n```", f"```\n{self.BODY}\n```", f"  ```JSON\n{self.BODY}```  "):
+            self.assertEqual(Demand.model_validate_json(text).need, "x")
+
+    def test_plain_and_bytes_unchanged(self):
+        from demand_radar.models import Demand
+        self.assertEqual(Demand.model_validate_json(self.BODY).need, "x")
+        self.assertEqual(Demand.model_validate_json(self.BODY.encode()).need, "x")
+
+    def test_still_rejects_garbage(self):
+        from pydantic import ValidationError
+
+        from demand_radar.models import Demand
+        with self.assertRaises(ValidationError):
+            Demand.model_validate_json("```json\nnot json\n```")

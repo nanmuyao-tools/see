@@ -7,6 +7,8 @@
 - **`recommend` 命令**：检测内存、CPU、Apple 芯片、NVIDIA 显存，按档位表 `models.toml` 推荐抽取模型和嵌入模型，给出运行步骤和要写进 `.env` 的配置；`--write-env` 直接写入。在 Docker 里看不到 Mac 的 GPU，用 `--apple --ram-gb` / `--vram-gb` 指定。
 - **模型可配置**：`docker-compose.yml` 的抽取模型改由 `.env` 里的 `DR_MODEL` 覆盖（默认不变），新增 `DR_EMBED_BASE_URL` 透传；新增 `docker-compose.nvidia.yml`，让容器里的 Ollama 用 NVIDIA GPU。
 - **按出品地过滤**：档位表标出每个模型的出品地，`--exclude-origin cn` 改推非中国模型（Ministral 3、Gemma 4、EmbeddingGemma 等）。这些档位还没实测，见 `docs/research/2026-10-20-non-chinese-models.md`。
+- **Google 低配模型实测**：Gemma 4 E2B（Mac GPU）帖子 F1 中文 85.5% / 英文 84.8%、评论中文 54.7%，而且要求中文时仍输出英文，不推荐；EmbeddingGemma 2（303MB）阈值调到 0.83 时合并 F1 83.3%、精确率 76.9%，可作非中国档位的嵌入模型。档位新增 `cluster_threshold`，`recommend` 写进 `DR_CLUSTER_THRESHOLD`。
+- **兼容把 JSON 包进代码块的模型**：Gemma 4 在 JSON 模式下仍输出 ```json … ```，解析前去掉外壳，没有外壳的输出不受影响。
 - **补测**：Qwen3.5-9B（Mac GPU）帖子 F1 中文 93.9% / 英文 91.1%、评论中文 78.4%，和 Qwen3-4B 差不多但慢一倍多，没有换；嵌入模型 qwen3-embedding 4b / 8b 合并 F1 84.2%，0.6b 是 77.8%，默认仍用 0.6b（体积小 4–8 倍）。
 
 ### 新数据源：应用商店低分评论（默认关闭）

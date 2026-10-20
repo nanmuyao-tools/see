@@ -6,14 +6,28 @@ Demand 的字段说明用英文写：它们会作为 JSON schema 发给模型，
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 
 from pydantic import BaseModel, Field, field_validator
 from pydantic.json_schema import SkipJsonSchema
 
+# 有的模型（如 Gemma 4）在 JSON 模式下仍把结果包进 ```json … ``` 代码块，内容本身是对的
+_FENCE = re.compile(r"^\s*```(?:json)?\s*(.*?)\s*```\s*$", re.S | re.I)
+
 
 class Demand(BaseModel):
     """从一条评论/帖子里抽取出的需求。字段设计服务于「筛掉噪音」和「排序」。"""
+
+    @classmethod
+    def model_validate_json(cls, json_data, **kwargs):
+        # Instructor 的 JSON 模式直接把回复正文交给这里；去掉代码块外壳再解析，没有外壳的原样不动
+        if isinstance(json_data, str | bytes):
+            text = json_data.decode() if isinstance(json_data, bytes) else json_data
+            m = _FENCE.match(text)
+            if m:
+                json_data = m.group(1)
+        return super().model_validate_json(json_data, **kwargs)
 
     is_request: bool = Field(
         description="Whether the post expresses wanting a tool/feature, or complains that "
