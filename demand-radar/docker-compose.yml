@@ -43,7 +43,7 @@ services:
       OLLAMA_MODEL: "qwen3:4b-instruct-2507-q4_K_M"   # Apache-2.0，约 2.5GB，8GB 内存可跑；61 条评测中文 F1 95.2% / 英文 96.8%，容器 CPU 每条约 7 秒。低配可改 qwen2.5:1.5b
       DR_PROVIDER: "ollama/qwen3:4b-instruct-2507-q4_K_M"   # 和上面保持一致
       DR_OUTPUT_LANGUAGE: "${DR_OUTPUT_LANGUAGE:-zh}"  # 输出语言：zh 中文 / en 英文
-      DR_LIMIT: "10"                                 # 每个源/查询最多抓多少条
+      DR_LIMIT: "${DR_LIMIT:-10}"                    # 每个源/查询最多抓多少条；临时改：DR_LIMIT=3 docker compose up
       DR_MIN_CONFIDENCE: "0.5"
       DR_WORKERS: "2"                                # 同时发给模型的请求数；ollama 默认串行，需配 OLLAMA_NUM_PARALLEL 才并行
       DR_OUTPUT: "out/demands.md"
