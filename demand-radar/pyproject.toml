@@ -36,7 +36,8 @@ dev = ["demand-radar[web]", "mongomock>=4.1", "httpx>=0.27", "ruff>=0.6"]
 demand-radar = "demand_radar.cli:main"
 
 [project.urls]
-Homepage = "https://github.com/nanmuyao/see/tree/main/demand-radar"
+# 拆成独立仓库后改成新地址
+Homepage = "https://github.com/nanmuyao/see/tree/claude/fervent-albattani-hdq1ed/demand-radar"
 
 [tool.hatch.version]
 path = "demand_radar/__init__.py"

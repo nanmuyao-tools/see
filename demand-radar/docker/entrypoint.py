@@ -70,9 +70,16 @@ OUT_DIR = "/app/out"
 def check_output_dir(command: str) -> None:
     """容器以普通用户（uid 1000）运行。Linux 上 ./out 若属于别的用户（例如被 root 自动创建），
     这里先说清楚怎么修，而不是跑完一轮才在写文件时报 PermissionError。"""
-    if command not in WRITES_OUTPUT or not os.path.isdir(OUT_DIR) or os.access(OUT_DIR, os.W_OK):
+    if command not in WRITES_OUTPUT or not os.path.isdir(OUT_DIR):
         return
-    sys.exit(f"输出目录 ./out 没有写权限（容器内用户 uid {os.getuid()}）。在宿主机 demand-radar 目录执行：\n"
+    # 目录可写还不够：v0.3.0 及以前容器以 root 运行，Linux 上 ./out 里已有的 demands.md、digest-*.md
+    # 都属于 root，覆盖时才会报错——那时一整轮抽取已经白跑了
+    stuck = [n for n in sorted(os.listdir(OUT_DIR))
+             if os.path.isfile(os.path.join(OUT_DIR, n)) and not os.access(os.path.join(OUT_DIR, n), os.W_OK)]
+    if os.access(OUT_DIR, os.W_OK) and not stuck:
+        return
+    what = "没有写权限" if not stuck else f"里有 {len(stuck)} 个文件不能覆盖（如 {stuck[0]}，多半是旧版本以 root 写下的）"
+    sys.exit(f"输出目录 ./out {what}（容器内用户 uid {os.getuid()}）。在宿主机 demand-radar 目录执行：\n"
              f"  sudo chown -R {os.getuid()}:{os.getgid()} out\n"
              "或在 docker-compose.yml 的 app 服务里把 user 改成你自己的 uid:gid（id -u / id -g 查看）。")
 
