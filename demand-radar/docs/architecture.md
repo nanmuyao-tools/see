@@ -1,6 +1,6 @@
 # 需求雷达：系统架构
 
-更新：2026-10-20。图片由折叠在每张图下面的 Mermaid 源码生成（GitHub 对这几张图的 Mermaid 渲染会失败，所以提交图片）。改图时先改源码，再在本目录执行：
+适用版本：v1.0.0（2026-10-20）。图片由折叠在每张图下面的 Mermaid 源码生成（GitHub 对这几张图的 Mermaid 渲染会失败，所以提交图片）。改图时先改源码，再在本目录执行：
 
 ```bash
 npx -y @mermaid-js/mermaid-cli@11.4.2 -i architecture.md -o /tmp/arch.md -e png -s 2 -b white
@@ -9,7 +9,7 @@ npx -y @mermaid-js/mermaid-cli@11.4.2 -i architecture.md -o /tmp/arch.md -e png 
 
 ## 一、部署架构
 
-所有东西都在你自己的机器上跑。对外只有一种连接：读各平台的公开接口。
+所有东西都在你自己的机器上跑。对外只有一种连接：读各平台的公开接口，所有请求按域名统一限速。
 
 ![部署架构](images/architecture-deployment.png)
 
@@ -26,11 +26,11 @@ flowchart LR
         RSS["RSS / Atom<br/>Reddit 等"]
     end
 
-    subgraph DC["docker compose"]
+    subgraph DC["docker compose（app / scheduler / web 共用镜像 demand-radar:local，以 uid 1000 运行）"]
         APP["app<br/>run / eval / digest<br/>backfill / cluster<br/>（跑完即退出）"]
         SCH["scheduler（可选，--profile cron）<br/>每天 run，每周 digest"]
-        WEB["web（可选，--profile web）<br/>FastAPI 看板 :8501"]
-        OLL["ollama<br/>抽取：qwen3:4b-instruct-2507<br/>嵌入：qwen3-embedding:0.6b"]
+        WEB["web（可选，--profile web）<br/>FastAPI 看板<br/>127.0.0.1:8501，只对本机开放"]
+        OLL["ollama 0.40.6<br/>抽取：qwen3:4b-instruct-2507<br/>嵌入：qwen3-embedding:0.6b"]
         MDB[("MongoDB<br/>demands / clusters<br/>cursors / runs")]
     end
 
@@ -41,7 +41,7 @@ flowchart LR
     OUT["./out<br/>demands.md<br/>digest-日期.md"]
     USER(("你"))
 
-    EXT -->|HTTP 只读| APP
+    EXT -->|HTTP 只读，按域名限速| APP
     EXT --> SCH
     APP -->|抽取 / 向量化| OLL
     SCH --> OLL
@@ -59,12 +59,14 @@ flowchart LR
 
 | 组件 | 什么时候在跑 | 说明 |
 |---|---|---|
-| app | 每次 `docker compose run --rm app <命令>` | 跑完一轮就退出；入口脚本先等 ollama、按命令拉需要的模型 |
+| app | 每次 `docker compose run --rm app <命令>` | 跑完一轮就退出；入口脚本先检查 `./out` 可写、等 ollama、按命令拉需要的模型 |
 | scheduler | `--profile cron` 时常驻 | 和 app 同一份代码，自己 sleep 到点，不靠系统 cron |
-| web | `--profile web` 时常驻 | 只读库、不调模型；排序和合并逻辑与清单共用 |
-| ollama | 默认常驻 | 模型都在本地，不需要 API key |
+| web | `--profile web` 时常驻 | 只读库、不调模型；排序和合并逻辑与清单共用；端口只绑本机，带健康检查 |
+| ollama | 默认常驻 | 版本固定 0.40.6；模型都在本地，不需要 API key |
 | mlx-lm | Mac 上可选 | Docker 拿不到 Apple GPU，所以模型在宿主机原生跑；它没有嵌入接口，合并仍走 ollama |
-| MongoDB | 常驻 | 数据卷 `mongo-data`，删容器不丢数据 |
+| MongoDB | 常驻 | 数据卷 `mongo-data`，删容器不丢数据；端口不对外 |
+
+**不用 Docker**：`pip install -e ".[web]"` 之后有 `demand-radar` 命令，自备 MongoDB 和 Ollama（或任意 OpenAI 兼容服务）。在仓库外运行时，没有本地的 `sources.toml` 和评测集就用安装包自带的默认版本。
 
 ## 二、一轮 run 的处理流水线
 
@@ -75,7 +77,7 @@ flowchart LR
 
 ```mermaid
 flowchart TD
-    A["sources/*<br/>按游标增量抓取<br/>单个源失败只跳过它"] --> B{"store.should_process<br/>处理过的跳过<br/>失败的最多重试 3 次"}
+    A["sources/*<br/>按游标增量抓取，按域名限速<br/>单个源失败只跳过它"] --> B{"store.should_process<br/>处理过的跳过<br/>失败的最多重试 3 次"}
     B -->|新的 / 待重试| C["filters<br/>规则预过滤<br/>空帖、Show HN、自我推广、机器人内容"]
     B -->|已处理| SKIP(["跳过"])
     C -->|命中规则| F1[("status = filtered")]
@@ -111,8 +113,10 @@ flowchart TD
 
 ```mermaid
 flowchart LR
-    CLI["cli.py<br/>命令入口"] --> CFG["config.py<br/>命令行 > 环境变量 > 默认值"]
-    CLI --> SRC["sources/<br/>softwarerecs · hn_algolia · github<br/>arctic_shift · rss<br/>cursor · http"]
+    ENT["docker/entrypoint.py<br/>容器入口：检查输出目录、等模型、拉模型"] --> CLI
+    CLI["cli.py<br/>demand-radar 命令入口"] --> CFG["config.py<br/>命令行 > 环境变量 > 默认值<br/>默认配置随包分发"]
+    CLI --> SRC["sources/<br/>softwarerecs · hn_algolia · github<br/>arctic_shift · rss<br/>cursor 增量游标"]
+    SRC --> HTTP["sources/http.py<br/>按域名限速、限流冷却、重试"]
     CLI --> FIL["filters.py"]
     CLI --> EXT["extract.py<br/>Instructor + OpenAI 兼容接口"]
     EXT --> EXC["excerpt.py"]

@@ -9,4 +9,4 @@ if sys.version_info < (3, 11):  # noqa: UP036  给 3.9/3.10 用户友好提示�
         "macOS 自带的 3.9 不够，请用 brew install python@3.12 装一个，再用 python3.12 运行。"
     )
 
-__version__ = "0.3.0"
+__version__ = "1.0.0"

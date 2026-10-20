@@ -215,7 +215,7 @@ See [`CONTRIBUTING.md`](CONTRIBUTING.md) (in Chinese) for the dev setup, how to 
 
 ## Changelog
 
-Current version: v0.3.0. See [`CHANGELOG.md`](CHANGELOG.md) (in Chinese).
+Current version: v1.0.0. See [`CHANGELOG.md`](CHANGELOG.md) (in Chinese).
 
 ## License
 
