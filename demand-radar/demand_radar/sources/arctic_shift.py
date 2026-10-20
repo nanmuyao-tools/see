@@ -22,7 +22,6 @@ API = "https://arctic-shift.photon-reddit.com/api/posts/search"
 # fields= 只接受文档列出的白名单（name、permalink 等都会 400），所以 t3_ 前缀和帖子链接自己拼
 FIELDS = "id,subreddit,title,selftext,created_utc,retrieved_on,score,num_comments,url,crosspost_parent,over_18"
 MAX_PAGE = 100          # limit 上限（"auto" 可到 1000，但视服务器负载而定，不用）
-SUB_INTERVAL = 1.0      # 日常抓取时版块之间的间隔
 RATE_WAIT_MAX = 60      # 限额按 60 秒窗口计，X-RateLimit-Reset 是到下个窗口的秒数
 RATE_WAIT_DEFAULT = 10  # 429 却没给 X-RateLimit-Reset 时等多久
 # 422「Timeout. Maybe slow down a bit」是服务端查询超时，和参数无关、随机出现：2026-10-20 实测同一条查询
@@ -108,9 +107,7 @@ def fetch(limit: int, conf: dict, cursors: dict[str, int] | None = None) -> list
     items: list[SourceItem] = []
     subs = conf.get("subreddits", [])
     failed: list[tuple[str, Exception]] = []
-    for i, sub in enumerate(subs):
-        if i:
-            time.sleep(SUB_INTERVAL)
+    for sub in subs:  # 版块之间的间隔由 http 统一限速
         params = _params(sub, limit)
         if cursors and cursors.get(sub):
             params["after"] = cursors[sub]

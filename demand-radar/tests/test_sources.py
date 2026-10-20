@@ -61,15 +61,13 @@ class RssTest(unittest.TestCase):
             return fixture("reddit.atom")
 
         with mock.patch.object(rss, "get", side_effect=fake_get), \
-             mock.patch.object(rss, "FEED_INTERVAL", 0), \
-             mock.patch("sys.stderr"):
+                          mock.patch("sys.stderr"):
             items = rss.fetch(10, feeds)
         self.assertEqual({i.source for i in items}, {"good"})
 
     def test_all_feeds_failing_raises(self):
         with mock.patch.object(rss, "get", side_effect=OSError("down")), \
-             mock.patch.object(rss, "FEED_INTERVAL", 0), \
-             mock.patch("sys.stderr"), \
+                          mock.patch("sys.stderr"), \
              self.assertRaises(RuntimeError):
             rss.fetch(10, [{"name": "a", "url": "u"}])
 
@@ -90,11 +88,13 @@ class RetryTest(unittest.TestCase):
 
     def test_retries_on_429_then_succeeds(self):
         from demand_radar.sources import http
+        slept = []
+        lim = http.RateLimiter(clock=lambda: 0.0, sleep=slept.append)  # 时钟不走，只看要等多久
         with mock.patch.object(http.urllib.request, "urlopen",
                                side_effect=[self._http_error(429, "3"), self._ok()]), \
-             mock.patch.object(http.time, "sleep") as sleep:
+             mock.patch.object(http, "limiter", lim):
             self.assertEqual(http.get("http://example.test/"), b"ok")
-        sleep.assert_called_once_with(3)   # 遵守 Retry-After
+        self.assertEqual(slept, [3])   # 遵守 Retry-After：整个域名冷却 3 秒后重试
 
     def test_does_not_retry_on_403(self):
         from demand_radar.sources import http

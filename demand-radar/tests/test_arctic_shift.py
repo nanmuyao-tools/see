@@ -94,7 +94,7 @@ class FetchCursorTest(unittest.TestCase):
         urls = [c[0][0] for c in g.call_args_list]
         self.assertIn("after=1000", urls[0])     # after 不含端点，不用 +1
         self.assertNotIn("after=", urls[1])
-        sleep.assert_called_once_with(arctic_shift.SUB_INTERVAL)  # 版块之间歇一下
+        sleep.assert_not_called()  # 版块之间的间隔交给 http 的统一限速，源里不再自己睡
         self.assertEqual(cur, {"macapps": 1000})  # 空批次游标不动
 
     def test_keywords_filter_items_but_cursor_sees_all(self):

@@ -60,6 +60,16 @@ url = "https://www.reddit.com/r/androidapps/search.rss?q=%22is+there+an+app%22&r
 name = "reddit/software"
 url = "https://www.reddit.com/r/software/search.rss?q=%22looking+for%22&restrict_sr=1&sort=new"
 
+# 抓取限速：同一个域名的两次请求之间至少隔多少秒，对所有源生效（实现见 demand_radar/sources/http.py）。
+# 被限流（429）后会按服务器的 Retry-After 让整个域名冷却，不只是重试那一次。
+# 已内置的默认值：GitHub 6.5 秒（设了 GITHUB_TOKEN 是 2.5）、Reddit 3 秒、其他已知站点 1 秒。
+[http]
+min_interval = 1.0   # 没单独配置的域名用这个
+
+[http.hosts]
+# 按域名覆盖，比如自己的博客或内网服务想更客气一点：
+# "blog.example.com" = 10.0
+
 # 规则预过滤：明显不是需求的内容不交给模型。规则说明见 demand_radar/filters.py
 [filters]
 # 想关闭某条规则，把名字写进来，例如 ["empty_body"]

@@ -74,7 +74,9 @@ All public endpoints, no sign-up needed. Configure them in [`sources.toml`](sour
 | `arctic_shift` | Reddit posts via the third-party [Arctic Shift](docs/arctic-shift.md) archive API (doc in Chinese): newest posts per subreddit, keywords filtered locally, can backfill history | score (accurate ~36 h after posting) | dynamic, a few req/s; free service with no uptime guarantee |
 | `rss` | Any RSS / Atom feed; defaults include r/SomebodyMakeThis and a few subreddit searches (same subreddits as `arctic_shift`, kept as its fallback) | — | per site |
 
-If one source fails (network, rate limit), it is skipped and the rest keep going. Rate-limited requests are retried after the server's `Retry-After`.
+If one source fails (network, rate limit), it is skipped and the rest keep going.
+
+**Polite fetching**: every request from every source goes through one rate limiter that keeps a minimum gap between requests to the same host (GitHub 6.5 s, or 2.5 s with `GITHUB_TOKEN`; Reddit 3 s; 1 s otherwise). On 429 the whole host cools down for the server's `Retry-After`, so later requests wait too. The User-Agent carries the project URL. Raise the gaps per host under `[http]` in `sources.toml`.
 
 ## Merging similar needs
 

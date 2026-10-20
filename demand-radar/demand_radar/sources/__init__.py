@@ -5,7 +5,7 @@ from __future__ import annotations
 import tomllib
 
 from ..models import SourceItem
-from . import arctic_shift, github, hn_algolia, rss, softwarerecs
+from . import arctic_shift, github, hn_algolia, http, rss, softwarerecs
 
 # 源名 → 抓取函数(limit, 该源的配置, 游标) -> list[SourceItem]
 # arctic_shift 排在 rss 前面：同一条 Reddit 帖子两边都抓到时，fetch_all 保留先到的那条，
@@ -34,8 +34,11 @@ def backfill_module(name: str):
 
 
 def load_config(path: str) -> dict:
+    """读 sources.toml；顺带把 [http] 的限速设置交给 http 模块，所有命令都经过这里。"""
     with open(path, "rb") as f:
-        return tomllib.load(f)
+        conf = tomllib.load(f)
+    http.configure(conf.get("http"))
+    return conf
 
 
 def enabled(conf: dict) -> list[str]:

@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import sys
-import time
 import xml.etree.ElementTree as ET
 
 from ..models import SourceItem
@@ -51,9 +50,6 @@ def parse(feed_name: str, data: bytes, limit: int) -> list[SourceItem]:
     return items
 
 
-FEED_INTERVAL = 2.0  # 订阅之间的间隔秒数，对网站友好，也降低被限流的概率
-
-
 def fetch(limit: int, conf: list[dict], cursors: dict[str, int] | None = None) -> list[SourceItem]:
     """逐个订阅抓取。单个订阅失败只跳过它；全部失败才报错。
 
@@ -62,9 +58,7 @@ def fetch(limit: int, conf: list[dict], cursors: dict[str, int] | None = None) -
     """
     items: list[SourceItem] = []
     errors: list[str] = []
-    for i, feed in enumerate(conf):
-        if i:
-            time.sleep(FEED_INTERVAL)
+    for feed in conf:  # 同一网站的订阅之间由 http 统一限速（Reddit 默认 3 秒）
         try:
             items += parse(feed["name"], get(feed["url"]), limit)
         except Exception as e:
