@@ -39,7 +39,7 @@ Apple 的 MLX 团队说明过：生成每个 token 的速度受内存带宽限�
 |---|---|
 | Qwen3.8 官方小模型 | **不存在**。Qwen3.8 开放权重只有 27B、Flash-Next（177B MoE，111GB）和 2.4T 旗舰 |
 | empero-ai/Qwen3.8-4B-Distill（第三方蒸馏，22 万下载） | 思考模式**永远开着**、关不掉，每条都要先生成一大段思考，和之前 qwen3:1.7b 一样会把输出额度耗光；模型卡只标了英文；自报的 gsm8k 分数比蒸馏前还低；需要特殊的注意力内核，MLX 下能否正常跑不确定 |
-| Gemma 4 | MLX 社区最小的是 12B，没有 4B 版本 |
+| Gemma 4 | ~~MLX 社区最小的是 12B，没有 4B 版本~~ **更正（2026-10-20）**：这条不对。`mlx-community/gemma-4-e2b-it-4bit` 和 `gemma-4-e4b-it-4bit` 在 2026-04-02 就已发布，mlx-lm 加载时会丢掉视觉和音频权重，只跑文本部分（尚未实测）。另外 Gemma 4 在 HF 上标的是 Apache-2.0。见 [非中国模型调研](research/2026-10-20-non-chinese-models.md) |
 | Gemma 3 4B | 带视觉的多模态结构，体积偏大（3.4GB），协议非 Apache，中文弱于 Qwen |
 | Llama 3.2 3B、Phi-4-mini | 中文能力弱，我们的数据源一半是中文输出 |
 
