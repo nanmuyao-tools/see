@@ -52,7 +52,7 @@ def embedder(base_url: str, model: str, timeout: float = 120) -> Embed:
     try:
         from openai import OpenAI
     except ImportError as e:  # pragma: no cover
-        raise SystemExit("缺少 openai 依赖，请先 `pip install -r requirements.txt`") from e
+        raise SystemExit("缺少 openai 依赖，请先 `pip install -e .`（在 demand-radar 目录）") from e
     client = OpenAI(base_url=base_url, api_key=os.getenv("OPENAI_API_KEY") or "local", timeout=timeout)
 
     def embed(texts: list[str]) -> list[list[float]]:

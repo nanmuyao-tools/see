@@ -26,7 +26,7 @@ def doc(id_, need="一个工具", domain="效率", source="hackernews", days_ago
 
 
 @unittest.skipIf(mongomock is None or TestClient is None,
-                 "需要 mongomock、fastapi、httpx：pip install -r requirements-dev.txt")
+                 "需要 mongomock、fastapi、httpx：pip install -e '.[dev]'")
 class ApiTest(unittest.TestCase):
     def setUp(self):
         from demand_radar.api import create_app

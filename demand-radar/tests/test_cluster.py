@@ -80,7 +80,7 @@ def demand(_id, need, source="hackernews", score=0, confidence=0.9, **extra):
             "feasibility": 3, "status": "extracted", **extra}
 
 
-@unittest.skipIf(mongomock is None, "需要 mongomock：pip install -r requirements-dev.txt")
+@unittest.skipIf(mongomock is None, "需要 mongomock：pip install -e '.[dev]'")
 class SyncTest(unittest.TestCase):
     def setUp(self):
         self.coll = mongomock.MongoClient().db.demands

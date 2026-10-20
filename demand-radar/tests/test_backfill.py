@@ -96,7 +96,7 @@ class RegistryTest(unittest.TestCase):
             Config.from_args(["backfill"])  # --source 必填
 
 
-@unittest.skipIf(mongomock is None, "需要 mongomock：pip install -r requirements-dev.txt")
+@unittest.skipIf(mongomock is None, "需要 mongomock：pip install -e '.[dev]'")
 class StoreBackfillTest(unittest.TestCase):
     def test_roundtrip_and_defaults(self):
         from demand_radar import store
@@ -127,7 +127,7 @@ def fake_source(history: dict[str, list], calls: list):
     return Mod
 
 
-@unittest.skipIf(mongomock is None, "需要 mongomock：pip install -r requirements-dev.txt")
+@unittest.skipIf(mongomock is None, "需要 mongomock：pip install -e '.[dev]'")
 class BackfillCommandTest(unittest.TestCase):
     def setUp(self):
         from demand_radar import store

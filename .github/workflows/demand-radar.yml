@@ -18,8 +18,9 @@ jobs:
         with:
           python-version: "3.12"
           cache: pip
-          cache-dependency-path: demand-radar/requirements*.txt
-      - run: pip install -r requirements-dev.txt
+          cache-dependency-path: demand-radar/requirements.lock
+      # 依赖按锁文件的精确版本装，测试工具按 pyproject 的 dev 可选依赖装
+      - run: pip install -r requirements.lock -e ".[dev]"
       # 单元测试离线运行，不需要网络、MongoDB 或模型。
       # 评测（eval）需要本地模型，不在 CI 里跑，发版前手动执行
       - run: python -m unittest discover -s tests -v

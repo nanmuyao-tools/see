@@ -164,7 +164,7 @@ except ImportError:  # pragma: no cover
     mongomock = None
 
 
-@unittest.skipIf(mongomock is None, "需要 mongomock：pip install -r requirements-dev.txt")
+@unittest.skipIf(mongomock is None, "需要 mongomock：pip install -e '.[dev]'")
 class StoreStatusTest(unittest.TestCase):
     def setUp(self):
         from demand_radar import store

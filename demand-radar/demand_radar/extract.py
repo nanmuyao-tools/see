@@ -66,7 +66,7 @@ def build_client(provider: str, ollama_base_url: str | None = None):
         import instructor
     except ImportError as e:  # pragma: no cover
         raise SystemExit(
-            "缺少 instructor 依赖，请先 `pip install -r requirements.txt`"
+            "缺少 instructor 依赖，请先 `pip install -e .`（在 demand-radar 目录）"
         ) from e
     if provider.startswith("local/"):
         provider = "ollama/" + provider.removeprefix("local/")

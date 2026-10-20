@@ -61,7 +61,7 @@ def by_id(needs: dict[str, str]):
     return lambda it: demand(need=needs[it.external_id])
 
 
-@unittest.skipIf(mongomock is None, "需要 mongomock：pip install -r requirements-dev.txt")
+@unittest.skipIf(mongomock is None, "需要 mongomock：pip install -e '.[dev]'")
 class RunClusterTest(unittest.TestCase):
     ITEMS = [item("1", source="hn"), item("2", source="reddit/software"), item("3", source="hn")]
     ITEMS[0].score = 5  # 并发抽取按完成顺序入库，同分时代表不确定；给 1 更高热度让它稳定当代表
@@ -124,7 +124,7 @@ class RunClusterTest(unittest.TestCase):
         self.assertIn("- 来自 2 个来源，共 2 条\n  - [softwarerecs](u) Is there a tool 4", s)
 
 
-@unittest.skipIf(mongomock is None, "需要 mongomock：pip install -r requirements-dev.txt")
+@unittest.skipIf(mongomock is None, "需要 mongomock：pip install -e '.[dev]'")
 class ClusterCommandTest(unittest.TestCase):
     def setUp(self):
         self.coll = mongomock.MongoClient().db.demands

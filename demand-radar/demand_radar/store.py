@@ -32,7 +32,7 @@ def connect(uri: str, db_name: str, collection: str = "demands"):
         from pymongo import MongoClient
     except ImportError as e:  # pragma: no cover
         raise SystemExit(
-            "缺少 pymongo 依赖，请先 `pip install -r requirements.txt`"
+            "缺少 pymongo 依赖，请先 `pip install -e .`（在 demand-radar 目录）"
         ) from e
     client = MongoClient(uri, serverSelectionTimeoutMS=5000)
     coll = client[db_name][collection]

@@ -148,7 +148,7 @@ class FetchAllCursorTest(unittest.TestCase):
         self.assertEqual(cur["github"], {"q": 9})
 
 
-@unittest.skipIf(mongomock is None, "需要 mongomock：pip install -r requirements-dev.txt")
+@unittest.skipIf(mongomock is None, "需要 mongomock：pip install -e '.[dev]'")
 class StoreCursorTest(unittest.TestCase):
     def setUp(self):
         from demand_radar import store
@@ -186,7 +186,7 @@ class StoreCursorTest(unittest.TestCase):
         self.assertEqual(self.store.retry_items(self.coll), [])
 
 
-@unittest.skipIf(mongomock is None, "需要 mongomock：pip install -r requirements-dev.txt")
+@unittest.skipIf(mongomock is None, "需要 mongomock：pip install -e '.[dev]'")
 class RunCommandTest(unittest.TestCase):
     """run 的编排：游标在整批处理完后落库；没有新内容不算错；失败条目从库里重试。"""
 

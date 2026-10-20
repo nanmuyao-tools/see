@@ -61,7 +61,7 @@ class ExtractManyTest(unittest.TestCase):
         self.assertEqual(list(extract_mod.extract_many(None, [], "zh", 2)), [])
 
 
-@unittest.skipIf(mongomock is None, "需要 mongomock：pip install -r requirements-dev.txt")
+@unittest.skipIf(mongomock is None, "需要 mongomock：pip install -e '.[dev]'")
 class RunWithWorkersTest(unittest.TestCase):
     def test_all_items_stored_from_main_thread(self):
         env = FakeEnv(workers=3)

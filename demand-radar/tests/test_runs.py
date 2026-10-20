@@ -7,7 +7,7 @@ import unittest
 from harness import FakeEnv, item, mongomock
 
 
-@unittest.skipIf(mongomock is None, "需要 mongomock：pip install -r requirements-dev.txt")
+@unittest.skipIf(mongomock is None, "需要 mongomock：pip install -e '.[dev]'")
 class StoreRunTest(unittest.TestCase):
     def setUp(self):
         from demand_radar import store
@@ -39,7 +39,7 @@ class StoreRunTest(unittest.TestCase):
                          [{"source": "a.com", "count": 2}, {"source": "hn", "count": 1}])
 
 
-@unittest.skipIf(mongomock is None, "需要 mongomock：pip install -r requirements-dev.txt")
+@unittest.skipIf(mongomock is None, "需要 mongomock：pip install -e '.[dev]'")
 class RunRecordsTest(unittest.TestCase):
     def test_run_writes_one_record_with_counts(self):
         env = FakeEnv()
