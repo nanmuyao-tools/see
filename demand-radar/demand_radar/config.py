@@ -8,10 +8,23 @@ from __future__ import annotations
 import argparse
 import os
 from dataclasses import dataclass
+from importlib import resources
 
 
 def _env(key: str, default: str) -> str:
     return os.getenv(key, default)
+
+
+def _bundled(path: str, default: str) -> str:
+    """默认的数据文件（sources.toml、评测集）先在当前目录找，找不到再用安装包自带的那份。
+
+    在仓库里或 Docker 里运行时当前目录就有这些文件，行为不变；pip 安装后在任意目录运行，
+    用的是打包进去的默认配置。用户显式指定的路径（和默认值不同）不做回退，找不到就照常报错。
+    """
+    if path != default or os.path.exists(path):
+        return path
+    packaged = resources.files("demand_radar") / "defaults" / os.path.basename(default)
+    return str(packaged) if packaged.is_file() else path
 
 
 @dataclass
@@ -166,7 +179,7 @@ class Config:
         return Config(
             command=ns.command,
             source=getattr(ns, "source", d.source),
-            sources_file=getattr(ns, "sources_file", d.sources_file),
+            sources_file=_bundled(getattr(ns, "sources_file", d.sources_file), Config.sources_file),
             limit=getattr(ns, "limit", d.limit),
             provider=getattr(ns, "provider", d.provider),
             ollama_base_url=getattr(ns, "ollama_base_url", d.ollama_base_url),
@@ -175,7 +188,7 @@ class Config:
             mongo_uri=getattr(ns, "mongo_uri", d.mongo_uri),
             db_name=getattr(ns, "db_name", d.db_name),
             output_path=getattr(ns, "output_path", d.output_path),
-            eval_set=getattr(ns, "eval_set", d.eval_set),
+            eval_set=_bundled(getattr(ns, "eval_set", d.eval_set), Config.eval_set),
             verbose=getattr(ns, "verbose", d.verbose),
             output_language=getattr(ns, "output_language", d.output_language),
             days=getattr(ns, "days", d.days),
@@ -190,7 +203,7 @@ class Config:
             cluster_threshold=getattr(ns, "cluster_threshold", d.cluster_threshold),
             rebuild=getattr(ns, "rebuild", False),
             cluster_eval=getattr(ns, "cluster_eval", False),
-            eval_pairs=getattr(ns, "eval_pairs", d.eval_pairs),
+            eval_pairs=_bundled(getattr(ns, "eval_pairs", d.eval_pairs), Config.eval_pairs),
 
             host=getattr(ns, "host", d.host),
             port=getattr(ns, "port", d.port),

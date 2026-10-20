@@ -200,20 +200,24 @@ python -m demand_radar cluster --eval --embed-model bge-m3 --threshold 0.8
 ```bash
 cd demand-radar
 python3.12 -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt
+pip install -e ".[web]"                         # 装好后有 demand-radar 命令；不要看板可以只装 pip install -e .
 
 # 自备 MongoDB 与 Ollama
-docker run -d -p 27017:27017 --name mongo mongo:7
+docker run -d -p 127.0.0.1:27017:27017 --name mongo mongo:7
 ollama pull qwen3:4b-instruct-2507-q4_K_M
 
-python -m demand_radar run --limit 10          # 结果写到 out/demands.md
-python -m demand_radar digest                  # 周报
+demand-radar run --limit 10                    # 结果写到 out/demands.md
+demand-radar digest                            # 周报
+demand-radar --version
 ```
 
-运行测试（离线，不需要网络、MongoDB 或模型）：
+`demand-radar` 和 `python -m demand_radar` 等价。在仓库目录外运行时，没有本地的 `sources.toml` 和评测集就用安装包自带的默认版本；要改数据源，把仓库里的 `sources.toml` 复制到当前目录再改，或用 `--sources-file` 指定。
+
+开发和测试（离线，不需要网络、MongoDB 或模型）：
 
 ```bash
-pip install -r requirements-dev.txt
+pip install -e ".[dev]"
+ruff check demand_radar tests docker
 python -m unittest discover -s tests
 ```
 

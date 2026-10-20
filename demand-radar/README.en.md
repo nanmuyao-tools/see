@@ -109,19 +109,22 @@ Requires **Python 3.11 or newer** (it uses `tomllib`, added in 3.11). The Python
 ```bash
 cd demand-radar
 python3.12 -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt
+pip install -e ".[web]"     # installs the demand-radar command; drop [web] if you do not need the dashboard
 
-docker run -d -p 27017:27017 --name mongo mongo:7
+docker run -d -p 127.0.0.1:27017:27017 --name mongo mongo:7
 ollama pull qwen3:4b-instruct-2507-q4_K_M
 
-python -m demand_radar run --limit 10 --lang en
-python -m demand_radar digest --lang en
+demand-radar run --limit 10 --lang en
+demand-radar digest --lang en
 ```
 
-Tests run offline, with no network, MongoDB or model:
+`demand-radar` is the same as `python -m demand_radar`. Outside the repo, it falls back to the bundled `sources.toml` and eval sets when there is no local copy; copy `sources.toml` into the working directory to customise it, or pass `--sources-file`.
+
+Development and tests run offline, with no network, MongoDB or model:
 
 ```bash
-pip install -r requirements-dev.txt
+pip install -e ".[dev]"
+ruff check demand_radar tests docker
 python -m unittest discover -s tests
 ```
 

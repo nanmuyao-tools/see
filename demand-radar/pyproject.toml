@@ -1,4 +1,58 @@
-# 代码检查配置。项目元数据（安装、命令行入口）在发行准备的下一步补上
+[build-system]
+requires = ["hatchling>=1.24"]
+build-backend = "hatchling.build"
+
+[project]
+name = "demand-radar"
+dynamic = ["version"]
+description = "从公开社区的吐槽和愿望里发现软件需求：全本地模型、一条命令部署、质量可量化"
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+requires-python = ">=3.11"
+authors = [{ name = "demand-radar contributors" }]
+keywords = ["demand discovery", "pain points", "llm", "ollama", "local-first"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Operating System :: OS Independent",
+    "Environment :: Console",
+    "Natural Language :: Chinese (Simplified)",
+    "Natural Language :: English",
+]
+# 版本上限按大版本卡住：这些库大版本升级常有不兼容改动。精确版本锁在 requirements.lock（Docker 和 CI 用）
+dependencies = [
+    "instructor>=1.0,<2",
+    "pydantic>=2.0,<3",
+    "pymongo>=4.6,<5",
+]
+
+[project.optional-dependencies]
+web = ["fastapi>=0.110,<1", "uvicorn>=0.29,<1"]          # serve 命令（Web 看板）
+dev = ["demand-radar[web]", "mongomock>=4.1", "httpx>=0.27", "ruff>=0.6"]
+
+[project.scripts]
+demand-radar = "demand_radar.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/nanmuyao/see/tree/main/demand-radar"
+
+[tool.hatch.version]
+path = "demand_radar/__init__.py"
+
+[tool.hatch.build.targets.wheel]
+packages = ["demand_radar"]
+
+# 默认配置和评测集随包分发：pip 安装后在任意目录运行也能找到（见 config._bundled）。
+# 仓库里只有一份，打包时复制进 demand_radar/defaults/
+[tool.hatch.build.targets.wheel.force-include]
+"sources.toml" = "demand_radar/defaults/sources.toml"
+"eval/eval_set.json" = "demand_radar/defaults/eval_set.json"
+"eval/cluster_pairs.json" = "demand_radar/defaults/cluster_pairs.json"
+
+[tool.hatch.build.targets.sdist]
+include = ["demand_radar", "sources.toml", "eval", "tests", "README.md", "README.en.md", "CHANGELOG.md", "LICENSE"]
 
 [tool.ruff]
 target-version = "py311"

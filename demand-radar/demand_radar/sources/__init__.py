@@ -35,8 +35,13 @@ def backfill_module(name: str):
 
 def load_config(path: str) -> dict:
     """读 sources.toml；顺带把 [http] 的限速设置交给 http 模块，所有命令都经过这里。"""
-    with open(path, "rb") as f:
-        conf = tomllib.load(f)
+    try:
+        with open(path, "rb") as f:
+            conf = tomllib.load(f)
+    except FileNotFoundError:
+        raise SystemExit(f"找不到数据源配置文件 {path}。用 --sources-file 指定，或去掉这个参数用默认配置") from None
+    except tomllib.TOMLDecodeError as e:
+        raise SystemExit(f"数据源配置文件 {path} 格式有误：{e}") from None
     http.configure(conf.get("http"))
     return conf
 
