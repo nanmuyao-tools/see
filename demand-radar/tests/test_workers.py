@@ -7,9 +7,10 @@ import time
 import unittest
 from unittest import mock
 
+from harness import FakeEnv, demand, item, mongomock
+
 from demand_radar import extract as extract_mod
 from demand_radar.config import Config
-from harness import FakeEnv, demand, item, mongomock
 
 
 class ExtractManyTest(unittest.TestCase):

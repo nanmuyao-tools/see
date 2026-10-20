@@ -17,7 +17,7 @@
 from __future__ import annotations
 
 import re
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from .models import Demand, SourceItem
@@ -47,12 +47,12 @@ def _doc_id(source: str, external_id: str) -> str:
 
 
 def _now() -> datetime:
-    return datetime.now(timezone.utc)
+    return datetime.now(UTC)
 
 
 def _aware(dt: datetime) -> datetime:
     """pymongo 默认返回不带时区的 UTC 时间，补上时区再参与计算。"""
-    return dt if dt.tzinfo else dt.replace(tzinfo=timezone.utc)
+    return dt if dt.tzinfo else dt.replace(tzinfo=UTC)
 
 
 def _to_epoch(dt: datetime | None) -> int:
@@ -71,7 +71,7 @@ def _base(item: SourceItem) -> dict[str, Any]:
         "schema_version": SCHEMA_VERSION,
     }
     if item.created_at:  # 源没给发布时间就不写，读取方按「未知」处理
-        doc["created_at"] = datetime.fromtimestamp(item.created_at, tz=timezone.utc)
+        doc["created_at"] = datetime.fromtimestamp(item.created_at, tz=UTC)
     return doc
 
 

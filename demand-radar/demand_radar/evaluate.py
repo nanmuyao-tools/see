@@ -22,9 +22,8 @@ from __future__ import annotations
 import json
 import sys
 
-from . import filters, safety, sources
+from . import excerpt, filters, safety, sources
 from .config import Config
-from . import excerpt
 from .extract import build_client, extract_raw
 from .models import SourceItem
 

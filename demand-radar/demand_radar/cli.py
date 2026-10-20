@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import sys
 import time
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from . import cluster, filters, rank, report, sources, store
 from .config import Config
@@ -179,7 +179,7 @@ def backfill(cfg: Config) -> None:
                     continue
                 todo = [it for it in items if store.should_process(coll, it)]
                 print(f"      {unit[:40]} 第 {p['pages'] + 1} 页：{len(items)} 条，新 {len(todo)} 条，"
-                      f"最早到 {datetime.fromtimestamp(oldest, tz=timezone.utc):%Y-%m-%d}")
+                      f"最早到 {datetime.fromtimestamp(oldest, tz=UTC):%Y-%m-%d}")
                 stats = _process(coll, client, todo, cfg, fconf)
                 p.update(oldest=oldest, pages=p["pages"] + 1)
                 store.save_backfill(coll, cfg.source, unit, p)
@@ -202,7 +202,7 @@ def digest(cfg: Config) -> None:
     """汇总最近 N 天新增的需求，按领域分组写成周报。不调模型。"""
     conf = sources.load_config(cfg.sources_file)
     coll = store.connect(cfg.mongo_uri, cfg.db_name)
-    since = datetime.now(timezone.utc) - timedelta(days=cfg.days)
+    since = datetime.now(UTC) - timedelta(days=cfg.days)
     w = rank.weights(conf.get("ranking"))
     rows = _grouped(coll, rank.sort(store.recent_demands(coll, cfg.min_confidence, since), w), w)
     held = rank.sort(store.held_demands(coll, cfg.min_confidence, since), w)
@@ -263,6 +263,7 @@ def _connect_patiently(cfg: Config, attempts: int = 30):
 def serve(cfg: Config) -> None:
     """起 Web 看板：直接读库，不调模型。排序权重和出清单一样取自 sources.toml。"""
     import uvicorn
+
     from .api import create_app
 
     conf = sources.load_config(cfg.sources_file)

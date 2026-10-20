@@ -11,7 +11,7 @@
 from __future__ import annotations
 
 import email.utils
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from ..models import SourceItem
 
@@ -40,10 +40,10 @@ def epoch(s: str | None) -> int:
         except (TypeError, ValueError):
             return 0
     if dt.tzinfo is None:
-        dt = dt.replace(tzinfo=timezone.utc)
+        dt = dt.replace(tzinfo=UTC)
     return int(dt.timestamp())
 
 
 def github_time(epoch_s: int) -> str:
     """GitHub 搜索语法 created:>… 接受的格式。"""
-    return datetime.fromtimestamp(epoch_s, tz=timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    return datetime.fromtimestamp(epoch_s, tz=UTC).strftime("%Y-%m-%dT%H:%M:%SZ")

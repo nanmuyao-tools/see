@@ -1,0 +1,16 @@
+# 代码检查配置。项目元数据（安装、命令行入口）在发行准备的下一步补上
+
+[tool.ruff]
+target-version = "py311"
+line-length = 120
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "B", "I", "UP", "SIM"]
+ignore = [
+    "E501",    # 中文注释和提示词按显示宽度算，字符数限制没有意义；行长交给评审
+    "SIM108",  # 三元表达式不一定更好读
+]
+
+[tool.ruff.lint.flake8-bugbear]
+# FastAPI 的依赖注入就是写在参数默认值里的
+extend-immutable-calls = ["fastapi.Depends", "fastapi.Query"]

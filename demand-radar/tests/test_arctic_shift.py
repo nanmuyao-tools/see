@@ -206,8 +206,8 @@ class RegistryTest(unittest.TestCase):
         # 同一帖子两边都抓到：fetch_all 按 (source, external_id) 去重，先到的 Arctic Shift 版本（带 score）胜出
         a = SourceItem("reddit/macapps", "t3_1", "t", "real body", "u", score=5)
         r = SourceItem("reddit/macapps", "t3_1", "t", "submitted by /u/x [link] [comments]", "u")
-        with mock.patch.dict(sources.REGISTRY, {"arctic_shift": lambda l, c, cur: [a],
-                                                "rss": lambda l, c, cur: [r]}):
+        with mock.patch.dict(sources.REGISTRY, {"arctic_shift": lambda _limit, c, cur: [a],
+                                                "rss": lambda _limit, c, cur: [r]}):
             items, errors = sources.fetch_all(["arctic_shift", "rss"], 5, {})
         self.assertEqual(errors, {})
         self.assertEqual([(i.external_id, i.score) for i in items], [("t3_1", 5)])

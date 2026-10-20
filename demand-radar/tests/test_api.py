@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import unittest
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from demand_radar import rank, store
 
@@ -13,7 +13,7 @@ try:
 except ImportError:  # pragma: no cover
     mongomock = TestClient = None
 
-NOW = datetime.now(timezone.utc)
+NOW = datetime.now(UTC)
 
 
 def doc(id_, need="一个工具", domain="效率", source="hackernews", days_ago=1, clarity=3, intensity=3,

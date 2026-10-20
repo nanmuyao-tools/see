@@ -8,6 +8,7 @@ from __future__ import annotations
 import json
 import os
 import unittest
+import urllib.error
 from unittest import mock
 
 from demand_radar import sources
@@ -101,7 +102,7 @@ class RetryTest(unittest.TestCase):
         with mock.patch.object(http.urllib.request, "urlopen",
                                side_effect=[self._http_error(403)]) as op, \
              mock.patch.object(http.time, "sleep"), \
-             self.assertRaises(Exception):
+             self.assertRaises(urllib.error.HTTPError):
             http.get("http://example.test/")
         self.assertEqual(op.call_count, 1)
 
@@ -110,7 +111,7 @@ class RetryTest(unittest.TestCase):
         with mock.patch.object(http.urllib.request, "urlopen",
                                side_effect=[self._http_error(503)] * 5) as op, \
              mock.patch.object(http.time, "sleep"), \
-             self.assertRaises(Exception):
+             self.assertRaises(urllib.error.HTTPError):
             http.get("http://example.test/")
         self.assertEqual(op.call_count, http.RETRIES + 1)
 
@@ -206,6 +207,7 @@ class ReasonTest(unittest.TestCase):
 class BuildClientTest(unittest.TestCase):
     def test_local_prefix_uses_openai_compatible_server(self):
         import instructor
+
         from demand_radar.extract import build_client
         with mock.patch.object(instructor, "from_provider") as fp:
             build_client("local/mlx-community/Qwen3-4B", "http://localhost:8080/v1")

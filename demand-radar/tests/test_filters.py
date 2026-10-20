@@ -5,9 +5,9 @@ from __future__ import annotations
 import json
 import os
 import unittest
+from pathlib import Path
 
-from demand_radar import filters
-from demand_radar import excerpt
+from demand_radar import excerpt, filters
 from demand_radar.models import Demand, SourceItem
 
 HERE = os.path.dirname(__file__)
@@ -59,7 +59,7 @@ class RuleTest(unittest.TestCase):
 
     def test_eval_set_has_no_false_kills(self):
         """评测集里所有「应入选」的样本都不能被规则挡掉。"""
-        data = json.load(open(os.path.join(HERE, "..", "eval", "eval_set.json"), encoding="utf-8"))
+        data = json.loads(Path(os.path.join(HERE, "..", "eval", "eval_set.json")).read_text(encoding="utf-8"))
         conf = {"supply_sources": ["producthunt"]}
         for d in data:
             item = SourceItem(**{k: d[k] for k in
@@ -99,7 +99,7 @@ class ExcerptTest(unittest.TestCase):
         self.assertEqual(excerpt.pick(item), "有没有好用的开源截图工具？")
 
     def test_excerpt_is_always_verbatim(self):
-        data = json.load(open(os.path.join(HERE, "..", "eval", "eval_set.json"), encoding="utf-8"))
+        data = json.loads(Path(os.path.join(HERE, "..", "eval", "eval_set.json")).read_text(encoding="utf-8"))
         for d in data:
             item = SourceItem(**{k: d[k] for k in
                                  ("source", "external_id", "title", "text", "url", "score", "kind")})
@@ -144,6 +144,7 @@ class SafetyTest(unittest.TestCase):
 
     def test_extract_records_cue_with_one_model_call(self):
         from unittest import mock
+
         from demand_radar.extract import extract
         client = mock.MagicMock()
         client.chat.completions.create.return_value = demand()

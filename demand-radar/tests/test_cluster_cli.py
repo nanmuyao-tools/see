@@ -8,13 +8,15 @@ import os
 import tempfile
 import unittest
 from contextlib import redirect_stderr, redirect_stdout
-from datetime import datetime, timezone
+from datetime import UTC, datetime
+from pathlib import Path
 from unittest import mock
+
+from harness import CONF, FakeEnv, demand, item, mongomock
+from test_cluster import FakeEmbed
 
 from demand_radar import cli
 from demand_radar.config import Config
-from harness import CONF, FakeEnv, demand, item, mongomock
-from test_cluster import VECS, FakeEmbed
 
 
 class ConfigTest(unittest.TestCase):
@@ -75,7 +77,7 @@ class RunClusterTest(unittest.TestCase):
         self.assertIn("向量化 3 条，归簇 3 条，新簇 2 个", out)
         self.assertEqual(len(list(env.coll.database["clusters"].find())), 2)
 
-        s = open(env.out, encoding="utf-8").read()
+        s = Path(env.out).read_text(encoding="utf-8")
         self.assertIn("共 2 条", s)
         self.assertIn("- 来自 2 个来源，共 2 条，总热度 5\n  - [reddit/software](u) Is there a tool 2", s)
         self.assertEqual(s.count("\n## "), 2)  # 三条需求折成两条
@@ -94,7 +96,7 @@ class RunClusterTest(unittest.TestCase):
             env.run(self.ITEMS, extract=by_id(self.NEEDS))
         mk.assert_not_called()
         self.assertNotIn("embedding", env.coll.find_one({"_id": "hn:1"}))
-        self.assertEqual(s_count := open(env.out, encoding="utf-8").read().count("\n## "), 3, s_count)
+        self.assertEqual(s_count := Path(env.out).read_text(encoding="utf-8").count("\n## "), 3, s_count)
 
     def test_embed_failure_does_not_break_run(self):
         env = FakeEnv(cluster=True)
@@ -105,7 +107,7 @@ class RunClusterTest(unittest.TestCase):
         with mock.patch.object(cli.cluster, "embedder", return_value=broken):
             out = env.run(self.ITEMS, extract=by_id(self.NEEDS))
         self.assertIn("合并失败", out)
-        self.assertIn("共 3 条", open(env.out, encoding="utf-8").read())
+        self.assertIn("共 3 条", Path(env.out).read_text(encoding="utf-8"))
         (run,) = env.runs()
         self.assertEqual(run["status"], "done")
         self.assertIn("embeddings down", run["cluster_error"])
@@ -117,7 +119,7 @@ class RunClusterTest(unittest.TestCase):
             env.run(self.ITEMS, extract=by_id(self.NEEDS))
             env.run([item("4", source="softwarerecs")], extract=by_id({"4": "自托管密码库"}))
         self.assertEqual(embed.calls[-1], ["自托管密码库"])
-        s = open(env.out, encoding="utf-8").read()
+        s = Path(env.out).read_text(encoding="utf-8")
         self.assertIn("## 2. 密码管理器\n", s)  # 4 分不比 3 高，3 仍是代表，4 作为成员链接挂在下面
         self.assertIn("- 来自 2 个来源，共 2 条\n  - [softwarerecs](u) Is there a tool 4", s)
 
@@ -127,7 +129,7 @@ class ClusterCommandTest(unittest.TestCase):
     def setUp(self):
         self.coll = mongomock.MongoClient().db.demands
         self.out = os.path.join(tempfile.mkdtemp(), "demands.md")
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         base = {"is_request": True, "buildable": True, "confidence": 0.9, "review_cue": "", "status": "extracted",
                 "clarity": 3, "intensity": 3, "feasibility": 3, "extracted_at": now, "url": "u"}
         self.coll.insert_many([
@@ -150,7 +152,7 @@ class ClusterCommandTest(unittest.TestCase):
     def test_cluster_command_writes_list_and_run_record(self):
         out, _ = self.run_cmd(["cluster"])
         self.assertIn("向量化 4 条，归簇 4 条，新簇 3 个，库里共 3 个簇", out)
-        s = open(self.out, encoding="utf-8").read()
+        s = Path(self.out).read_text(encoding="utf-8")
         self.assertIn("## 1. 快递追踪", s)
         self.assertIn("- 来自 2 个来源，共 2 条，总热度 5\n  - [softwarerecs](u) t2", s)
         self.assertIn("旧数据", s)
@@ -180,7 +182,7 @@ class ClusterCommandTest(unittest.TestCase):
         with mock.patch.object(cli.store, "connect", return_value=self.coll), \
              mock.patch.object(cli.sources, "load_config", return_value=CONF), redirect_stdout(buf):
             cli.digest(Config(command="digest", digest_output=path))
-        s = open(path, encoding="utf-8").read()
+        s = Path(path).read_text(encoding="utf-8")
         self.assertIn("- 来自 2 个来源，共 2 条", s)
         self.assertIn("新增 3 条需求", buf.getvalue())
 

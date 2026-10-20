@@ -7,7 +7,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
@@ -25,7 +25,7 @@ ITEM_FIELDS = ("need", "domain", "pain_point", "excerpt", "clarity", "intensity"
 
 def _aware(dt: datetime) -> datetime:
     """pymongo 返回不带时区的 UTC 时间，补上时区；前端拿到 ISO 串后自己换算本地时间。"""
-    return dt if dt.tzinfo else dt.replace(tzinfo=timezone.utc)
+    return dt if dt.tzinfo else dt.replace(tzinfo=UTC)
 
 
 def _iso(dt: datetime | None) -> str | None:
@@ -93,7 +93,7 @@ def create_app(coll, weights: dict[str, float] | None = None, default_min_confid
                 min_confidence: float = Query(default_min_confidence, ge=0.0, le=1.0),
                 source: str | None = None,
                 q: str | None = Query(None, max_length=200, description="在需求描述和原帖标题里包含匹配")) -> dict:
-        since = datetime.now(timezone.utc) - timedelta(days=days) if days else None
+        since = datetime.now(UTC) - timedelta(days=days) if days else None
         return {"min_confidence": min_confidence, "domain": domain, "source": source, "since": since, "q": q}
 
     def paging(sort: str = Query("rank", pattern="^(rank|heat|time)$"),

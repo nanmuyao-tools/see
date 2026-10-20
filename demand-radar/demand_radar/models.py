@@ -7,6 +7,7 @@ Demand 的字段说明用英文写：它们会作为 JSON schema 发给模型，
 from __future__ import annotations
 
 from dataclasses import dataclass
+
 from pydantic import BaseModel, Field, field_validator
 from pydantic.json_schema import SkipJsonSchema
 

@@ -51,7 +51,7 @@ class Config:
     port: int = 8501  # serve 命令：看板端口
 
     @staticmethod
-    def from_args(argv: list[str] | None = None) -> "Config":
+    def from_args(argv: list[str] | None = None) -> Config:
         # 默认值先吃环境变量，再被命令行覆盖
         d = Config(
             source=_env("DR_SOURCE", Config.source),

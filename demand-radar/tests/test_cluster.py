@@ -5,6 +5,7 @@ from __future__ import annotations
 import os
 import tempfile
 import unittest
+from pathlib import Path
 
 from demand_radar import cluster, rank, report
 
@@ -234,7 +235,7 @@ class ReportClusterTest(unittest.TestCase):
     def test_zh_cluster_line_and_member_links(self):
         p = self._out()
         report.write_markdown([self._rep()], p, "zh")
-        s = open(p, encoding="utf-8").read()
+        s = Path(p).read_text(encoding="utf-8")
         self.assertIn("## 1. 一个快递追踪工具", s)
         self.assertIn("- 来自 2 个来源，共 3 条\n  - [reddit/software](https://x/b) 帖子 b\n  - [hackernews](https://x/x) 帖子 x", s)
         self.assertNotIn("## 2.", s)
@@ -242,14 +243,14 @@ class ReportClusterTest(unittest.TestCase):
     def test_total_heat_shown_only_when_nonzero(self):
         p = self._out()
         report.write_markdown([{**self._rep(), "cluster_heat": 15}], p, "zh")
-        self.assertIn("- 来自 2 个来源，共 3 条，总热度 15\n", open(p, encoding="utf-8").read())
+        self.assertIn("- 来自 2 个来源，共 3 条，总热度 15\n", Path(p).read_text(encoding="utf-8"))
         report.write_markdown([{**self._rep(), "cluster_heat": 15}], p, "en")
-        self.assertIn("- From 2 sources, 3 posts, total heat 15\n", open(p, encoding="utf-8").read())
+        self.assertIn("- From 2 sources, 3 posts, total heat 15\n", Path(p).read_text(encoding="utf-8"))
 
     def test_en_digest_cluster_line(self):
         p = self._out()
         report.write_digest([self._rep()], p, 7, "en")
-        s = open(p, encoding="utf-8").read()
+        s = Path(p).read_text(encoding="utf-8")
         self.assertIn("- From 2 sources, 3 posts", s)
         self.assertIn("  - [reddit/software](https://x/b) 帖子 b", s)
 
@@ -257,7 +258,7 @@ class ReportClusterTest(unittest.TestCase):
         p1, p2 = self._out(), self._out()
         report.write_markdown([demand("a", "一个工具")], p1, "zh")
         report.write_markdown([{**demand("a", "一个工具"), "cluster_size": 1, "cluster_members": []}], p2, "zh")
-        s1, s2 = (open(p, encoding="utf-8").read() for p in (p1, p2))
+        s1, s2 = (Path(p).read_text(encoding="utf-8") for p in (p1, p2))
         self.assertNotIn("来自", s1)
         self.assertEqual(s1.split("\n")[3:], s2.split("\n")[3:])  # 第 3 行是生成时间
 

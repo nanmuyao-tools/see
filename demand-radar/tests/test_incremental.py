@@ -7,9 +7,10 @@ import os
 import unittest
 from unittest import mock
 
+from harness import demand, item, mongomock
+
 from demand_radar import sources
 from demand_radar.sources import cursor, github, hn_algolia, rss, softwarerecs
-from harness import demand, item, mongomock
 
 HERE = os.path.dirname(__file__)
 
@@ -132,7 +133,7 @@ class FetchAllCursorTest(unittest.TestCase):
 
     def test_none_means_no_cursors(self):
         got = []
-        with mock.patch.dict(sources.REGISTRY, {"github": lambda l, c, cur: got.append(cur) or []}):
+        with mock.patch.dict(sources.REGISTRY, {"github": lambda _limit, c, cur: got.append(cur) or []}):
             sources.fetch_all(["github"], 5, {})
         self.assertEqual(got, [None])
 

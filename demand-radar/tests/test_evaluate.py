@@ -8,6 +8,7 @@ import os
 import tempfile
 import unittest
 from contextlib import redirect_stdout
+from pathlib import Path
 from unittest import mock
 
 from demand_radar import evaluate
@@ -27,7 +28,7 @@ def demand(is_request, buildable, confidence=0.9):
 
 def run_eval(eset, fake, min_confidence=0.5, fconf=None):
     p = os.path.join(tempfile.mkdtemp(), "e.json")
-    json.dump(eset, open(p, "w"))
+    Path(p).write_text(json.dumps(eset))
     cfg = Config(command="eval", eval_set=p, provider="ollama/x",
                  min_confidence=min_confidence, verbose=True)
     buf = io.StringIO()
@@ -138,7 +139,7 @@ class MetricsTest(unittest.TestCase):
 
 class EvalSetIntegrityTest(unittest.TestCase):
     def test_labels_wellformed(self):
-        data = json.load(open(EVAL_SET, encoding="utf-8"))
+        data = json.loads(Path(EVAL_SET).read_text(encoding="utf-8"))
         self.assertGreaterEqual(len(data), 40)
         keys = set()
         for d in data:
@@ -158,7 +159,7 @@ class EvalSetIntegrityTest(unittest.TestCase):
         self.assertEqual(len(keys), len(data), "标注集有重复条目")
 
     def test_balanced(self):
-        data = json.load(open(EVAL_SET, encoding="utf-8"))
+        data = json.loads(Path(EVAL_SET).read_text(encoding="utf-8"))
         listed = sum(1 for d in data if d["label"]["is_request"] and d["label"]["buildable"])
         not_req = sum(1 for d in data if not d["label"]["is_request"])
         # 正负样本都要有，不能退化成单一类别

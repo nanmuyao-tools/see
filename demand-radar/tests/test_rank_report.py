@@ -5,7 +5,8 @@ from __future__ import annotations
 import os
 import tempfile
 import unittest
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
+from pathlib import Path
 
 from demand_radar import rank, report
 
@@ -45,7 +46,7 @@ class ReportTest(unittest.TestCase):
     def test_list_zh_has_excerpt_and_scores(self):
         p = self._out()
         report.write_markdown(rank.sort([doc("一个工具")]), p, "zh")
-        s = open(p, encoding="utf-8").read()
+        s = Path(p).read_text(encoding="utf-8")
         self.assertIn("# 需求雷达清单", s)
         self.assertIn("原文：“原话”", s)
         self.assertIn("清晰度 3 · 迫切度 3 · 可实现性 3", s)
@@ -53,7 +54,7 @@ class ReportTest(unittest.TestCase):
     def test_list_en_labels(self):
         p = self._out()
         report.write_markdown([doc("A tool", domain="productivity")], p, "en")
-        s = open(p, encoding="utf-8").read()
+        s = Path(p).read_text(encoding="utf-8")
         self.assertIn("# Demand Radar", s)
         self.assertIn("Domain: productivity", s)
         self.assertIn("clarity 3 · intensity 3 · feasibility 3", s)
@@ -63,7 +64,7 @@ class ReportTest(unittest.TestCase):
         p = self._out()
         rows = [doc("a", "截图"), doc("b", "效率"), doc("c", "效率"), doc("d", "")]
         report.write_digest(rows, p, 7, "zh")
-        s = open(p, encoding="utf-8").read()
+        s = Path(p).read_text(encoding="utf-8")
         self.assertLess(s.index("## 效率（2）"), s.index("## 截图（1）"))
         self.assertIn("## 其他（1）", s)
         self.assertIn("最近 7 天新增", s)
@@ -71,7 +72,7 @@ class ReportTest(unittest.TestCase):
     def test_digest_empty(self):
         p = self._out()
         report.write_digest([], p, 7, "en")
-        self.assertIn("No new needs", open(p, encoding="utf-8").read())
+        self.assertIn("No new needs", Path(p).read_text(encoding="utf-8"))
 
     def test_held_section_at_end_with_cue(self):
         held = [{**doc("盯梢工具"), "review_cue": "makes public"}]
@@ -79,7 +80,7 @@ class ReportTest(unittest.TestCase):
                       lambda p: report.write_markdown([doc("一个工具")], p, "zh", held)):
             p = self._out()
             write(p)
-            s = open(p, encoding="utf-8").read()
+            s = Path(p).read_text(encoding="utf-8")
             self.assertLess(s.index("一个工具"), s.index("## 待人工确认（1）"))
             self.assertLess(s.index("## 待人工确认（1）"), s.index("盯梢工具"))
             self.assertIn("命中：“makes public”", s)
@@ -87,7 +88,7 @@ class ReportTest(unittest.TestCase):
     def test_no_held_section_when_empty(self):
         p = self._out()
         report.write_digest([doc("一个工具")], p, 7, "en", [])
-        self.assertNotIn("Held for review", open(p, encoding="utf-8").read())
+        self.assertNotIn("Held for review", Path(p).read_text(encoding="utf-8"))
 
 
 try:
@@ -101,7 +102,7 @@ class RecentDemandsTest(unittest.TestCase):
     def test_only_recent_listed_demands(self):
         from demand_radar import store
         coll = mongomock.MongoClient().db.demands
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         base = {"is_request": True, "buildable": True, "confidence": 0.9}
         coll.insert_many([
             {"_id": "new", **base, "extracted_at": now - timedelta(days=1)},

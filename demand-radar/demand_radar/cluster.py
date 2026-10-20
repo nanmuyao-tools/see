@@ -21,7 +21,7 @@ import json
 import math
 import os
 from collections.abc import Callable
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from operator import mul
 
 from . import rank, store
@@ -124,7 +124,7 @@ def _refresh(coll, cid: str, members: list[str], model: str, w: dict[str, float]
         "best_rank_score": rep["rank_score"],
         "size": len(docs),
         "model": model,
-        "updated_at": datetime.now(timezone.utc),
+        "updated_at": datetime.now(UTC),
     }
     store.save_cluster(coll, doc)
     return doc
@@ -145,7 +145,8 @@ def sync(coll, embed: Embed, model: str, threshold: float, w: dict[str, float],
     todo = [d for d in store.to_embed(coll, model, min_confidence) if text_of(d)]
     for i in range(0, len(todo), BATCH):
         batch = todo[i:i + BATCH]
-        for d, v in zip(batch, embed([text_of(d) for d in batch])):
+        # strict：嵌入服务少返回几条时要报错，不能让那几条需求悄悄永远没有向量
+        for d, v in zip(batch, embed([text_of(d) for d in batch]), strict=True):
             store.save_embedding(coll, d["_id"], v, model)
         stats["embedded"] += len(batch)
         log(f"      向量化 {stats['embedded']}/{len(todo)}")
@@ -224,7 +225,7 @@ def summarize(pairs: list[dict], sims: list[float], threshold: float) -> dict:
     """按阈值判「是否同一需求」，和标注比：准确率、正类的精确率 / 召回率 / F1，
     以及这个集合上让准确率最高的阈值（给调参参考，别直接当真——样本太少）。"""
     tp = fp = fn = tn = 0
-    for p, s in zip(pairs, sims):
+    for p, s in zip(pairs, sims, strict=True):
         pred, gold = s >= threshold, bool(p["same"])
         tp += pred and gold
         fp += pred and not gold
@@ -236,13 +237,13 @@ def summarize(pairs: list[dict], sims: list[float], threshold: float) -> dict:
     f1 = 2 * prec * rec / (prec + rec) if prec + rec else 0.0
     best_t, best_acc = threshold, (tp + tn) / n if n else 0.0
     for t in sorted({round(s, 4) for s in sims}):
-        acc = sum((s >= t) == bool(p["same"]) for p, s in zip(pairs, sims)) / n
+        acc = sum((s >= t) == bool(p["same"]) for p, s in zip(pairs, sims, strict=True)) / n
         if acc > best_acc:
             best_t, best_acc = t, acc
     return {"n": n, "tp": tp, "fp": fp, "fn": fn, "tn": tn, "accuracy": (tp + tn) / n if n else 0.0,
             "precision": prec, "recall": rec, "f1": f1, "best_threshold": best_t, "best_accuracy": best_acc,
-            "min_same": min((s for p, s in zip(pairs, sims) if p["same"]), default=0.0),
-            "max_diff": max((s for p, s in zip(pairs, sims) if not p["same"]), default=0.0)}
+            "min_same": min((s for p, s in zip(pairs, sims, strict=True) if p["same"]), default=0.0),
+            "max_diff": max((s for p, s in zip(pairs, sims, strict=True) if not p["same"]), default=0.0)}
 
 
 def evaluate(path: str, embed: Embed, threshold: float, verbose: bool = False, out=print) -> int:
@@ -251,7 +252,7 @@ def evaluate(path: str, embed: Embed, threshold: float, verbose: bool = False, o
     sims = score_pairs(pairs, embed)
     out(f"在 {len(pairs)} 对标注样本上评测（阈值 {threshold}）…\n")
     lines = []
-    for p, s in zip(pairs, sims):
+    for p, s in zip(pairs, sims, strict=True):
         hit = (s >= threshold) == bool(p["same"])
         if verbose or not hit:
             lines.append(f"  {'✓' if hit else '✗'} 标注={'同' if p['same'] else '异'} 相似度={s:.3f}  "
@@ -264,7 +265,7 @@ def evaluate(path: str, embed: Embed, threshold: float, verbose: bool = False, o
     out(f"准确率   : {r['tp'] + r['tn']}/{r['n']} = {r['accuracy'] * 100:4.1f}%")
     out(f"同一需求 : 精确率 {r['precision'] * 100:4.1f}%  召回率 {r['recall'] * 100:4.1f}%  F1 {r['f1'] * 100:4.1f}%")
     for lang in sorted({p.get("lang", "") for p in pairs} - {""}):
-        sub = [(p, s) for p, s in zip(pairs, sims) if p.get("lang") == lang]
+        sub = [(p, s) for p, s in zip(pairs, sims, strict=True) if p.get("lang") == lang]
         rl = summarize([p for p, _ in sub], [s for _, s in sub], threshold)
         out(f"  {lang:<6} : {rl['tp'] + rl['tn']}/{rl['n']} = {rl['accuracy'] * 100:4.1f}%")
     out(f"相似度   : 同一需求最低 {r['min_same']:.3f}，不同需求最高 {r['max_diff']:.3f}"

@@ -7,11 +7,12 @@ import os
 import unittest
 from unittest import mock
 
+from harness import FakeEnv, demand, item, mongomock
+
 from demand_radar import sources
 from demand_radar.config import Config
 from demand_radar.sources import github, hn_algolia, softwarerecs
 from demand_radar.sources.http import QuotaExhausted
-from harness import FakeEnv, demand, item, mongomock
 
 HERE = os.path.dirname(__file__)
 
