@@ -12,8 +12,10 @@ import urllib.error
 import urllib.parse
 import urllib.request
 
+from .. import __version__
+
 # 带上项目地址：站长看到流量时能找到我们，而不是只能封 IP
-USER_AGENT = "Mozilla/5.0 (compatible; demand-radar/0.3; +https://github.com/nanmuyao/see)"
+USER_AGENT = f"Mozilla/5.0 (compatible; demand-radar/{__version__}; +https://github.com/nanmuyao/see)"
 _TAG = re.compile(r"<[^>]+>")
 _SPACE = re.compile(r"\s+")
 MAX_TEXT = 1500  # 送给 LLM 的正文上限，避免长帖拖慢推理

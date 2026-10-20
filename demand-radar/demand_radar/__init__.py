@@ -9,4 +9,4 @@ if sys.version_info < (3, 11):  # pragma: no cover
         "macOS 自带的 3.9 不够，请用 brew install python@3.12 装一个，再用 python3.12 运行。"
     )
 
-__version__ = "0.1.0"
+__version__ = "0.3.0"

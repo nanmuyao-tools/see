@@ -202,6 +202,10 @@ This happens when a Clash / mihomo style proxy runs in fake-ip (TUN) mode: insid
 
 Demand Radar only uses each platform's public API or RSS and respects their rate limits. You run it yourself, so please also follow each source's terms of service. Reports contain only the summarized need, one short quote and a link to the original post.
 
+## Changelog
+
+Current version: v0.3.0. See [`CHANGELOG.md`](CHANGELOG.md) (in Chinese).
+
 ## License
 
 [MIT](LICENSE)

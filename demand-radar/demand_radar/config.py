@@ -80,6 +80,8 @@ class Config:
         )
 
         p = argparse.ArgumentParser(prog="demand_radar")
+        from . import __version__
+        p.add_argument("--version", action="version", version=f"demand-radar {__version__}")
         sub = p.add_subparsers(dest="command", required=True)
 
         run = sub.add_parser("run", help="抓取 → 抽取 → 存储 → 输出清单")
