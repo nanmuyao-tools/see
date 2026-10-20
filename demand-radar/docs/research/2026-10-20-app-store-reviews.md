@@ -6,7 +6,7 @@
 
 1. **技术上拿得到，但两边都不稳、都不是公开 API。**
    - App Store 有苹果自己的老接口「用户评论 RSS」，不用 key。每个 app、每个国家最多拿最近 500 条（50 条一页 × 10 页）。但实测 27 次请求里只有 5 次真的带了评论，其余都是空 feed。空结果被 Akamai CDN 缓存住了，同一个地址隔几分钟再请求还是空的。
-   - Google Play 只能靠开源抓取库 google-play-scraper。它调的是 Play 网页自己用的内部接口 `batchexecute`。11 次请求全部成功，一次最多拿到 300 条，能按星级筛、按时间倒序翻页。
+   - Google Play 只能靠开源抓取库 google-play-scraper。它调的是 Play 网页自己用的内部接口 `batchexecute`。8 次有效请求全部成功（另 3 次是包名写错，库静默返回空），一次最多拿到 300 条，能按星级筛、按时间倒序翻页。
 2. **条款比 Reddit 那次更明确，而且明确是不利的。**
    - 苹果 Apple Media Services Terms 原文禁止「用软件、自动化流程……抓取、复制，或对内容和服务做测量、分析、监控」。itunes.apple.com 的 robots.txt 也写了 `Disallow: /*/rss/*`。
    - Google 服务条款禁止「违反网页上机器可读指令（如 robots.txt）用自动化手段访问内容」。play.google.com 的 robots.txt 有 `Disallow: /_`，正好覆盖抓取库用的 `/_/PlayStoreUi/data/batchexecute`。
@@ -30,11 +30,11 @@
 | 方式 | 要账号 / 付费 | 能看别人的 app | 字段 | 每次最多 | 按时间增量 | 按国家 / 语言 | 实测 |
 |---|---|---|---|---|---|---|---|
 | **App Store 用户评论 RSS**（`itunes.apple.com/{cc}/rss/customerreviews/page={1-10}/id={id}/sortby=mostrecent/{json\|xml}`） | 否 | 能 | 评论 id、星级、标题、正文、app 版本、更新时间（带时区）、`voteSum` / `voteCount`（有用票）、作者昵称 | 50 条 / 页，最多 10 页。第 11 页返回 400，正文是 `CustomerReviews RSS page depth is limited to 10` `[一手]` | 没有时间参数，只能按 `mostrecent` 倒序翻到游标为止。每个 app 每个国家最多只能看到最近 500 条 | 按国家（URL 里的 `cc`，`us` / `cn` 都实测过）。没有语言参数，中国区评论基本是中文 | 27 次只有 5 次有数据，见 3.1 |
-| App Store Search / Lookup API（`itunes.apple.com/search`、`/lookup`） | 否 | 能 | 只有元数据：`averageUserRating`、`userRatingCount`、类别、版本、发布说明等，**没有评论正文** `[一手]` | search `limit` ≤ 200（文档值，未实测上限） | — | `country=` | 3 次全部成功。用途是查 app id |
-| App Store 榜单 RSS | 否 | 能 | app 名、id、类别 | v2（`rss.applemarketingtools.com/api/v2/us/apps/top-free/10/apps.json`）**不能按类别**；老接口（`itunes.apple.com/us/rss/topfreeapplications/limit=10/genre=6015/json`）能按类别，6015 是财务类 `[一手]` | — | 按国家 | 2 次全部成功。可以拿来做「按类别榜单配置要监控的 app」 |
-| App Store Connect API `customerReviews` | 要开发者账号（$99/年）和 JWT 密钥 | **不能**，只能看自己团队的 app | 全量评论 | — | — | — | 没试。文档页是前端渲染，没抓到正文，「只能看自己的 app」是 `[推断]`，依据是鉴权模型 |
+| App Store Search / Lookup API（`itunes.apple.com/search`、`/lookup`） | 否 | 能 | 只有元数据：`averageUserRating`、`userRatingCount`、类别、版本、发布说明等，**没有评论正文** `[一手]` | search `limit` ≤ 200 `[二手 / 未核实]`，未实测上限 | — | `country=` | 3 次全部成功。用途是查 app id |
+| App Store 榜单 RSS | 否 | 能 | app 名、id、类别 | v2（`rss.applemarketingtools.com/api/v2/us/apps/top-free/10/apps.json`）的地址里没有类别参数，能不能按类别没验证 `[推断]`；老接口（`itunes.apple.com/us/rss/topfreeapplications/limit=10/genre=6015/json`）能按类别，6015 是财务类 `[一手]` | — | 按国家 | 2 次全部成功。可以拿来做「按类别榜单配置要监控的 app」 |
+| App Store Connect API `customerReviews` | 要开发者账号（年费，金额未核实）和 JWT 密钥 | **不能**，只能看自己团队的 app | 全量评论 | — | — | — | 没试。文档页是前端渲染，没抓到正文，「只能看自己的 app」是 `[推断]`，依据是鉴权模型 |
 | `amp-api.apps.apple.com`（App Store 网页版用的接口） | 要从网页里拿 bearer token | 能 | 更全，可翻更深 | — | — | — | **没试**：要拿网页的 token 去调，属于绕过，不考虑 |
-| **google-play-scraper（Python，JoMingyu）** | 否 | 能 | `reviewId`、`score`（星级）、`content`、`thumbsUpCount`、`reviewCreatedVersion`、`at`（时间）、`replyContent` / `repliedAt`（开发者回复）、`userName`。**没有标题** `[一手]` | 实测一次请求 `count=300` 返回 300 条。库里的常量是单次最多 4500 | `sort=NEWEST` 倒序 + `continuation_token` 翻页，翻到游标就停。没有服务端时间过滤 | `lang` + `country`。`zh-TW` / `tw` 实测 100 条里 85 条含中文 | 11 次全部成功 |
+| **google-play-scraper（Python，JoMingyu）** | 否 | 能 | `reviewId`、`score`（星级）、`content`、`thumbsUpCount`、`reviewCreatedVersion`、`at`（时间）、`replyContent` / `repliedAt`（开发者回复）、`userName`。**没有标题** `[一手]` | 实测一次请求 `count=300` 返回 300 条。库里的常量是单次最多 4500 | `sort=NEWEST` 倒序 + `continuation_token` 翻页，翻到游标就停。没有服务端时间过滤 | `lang` + `country`。`zh-TW` / `tw` 实测 100 条里 85 条含中文 | 11 次请求。8 次有效请求全部成功；另 3 次因包名写错（`so.notion.id`）静默返回空 |
 | google-play-scraper（Node，facundoolano） | 否 | 能 | 同上 | 同上 | 同上 | 同上 | 没装：要 Node 运行时，镜像会多出一大块，不考虑 |
 | Google Play Developer API `reviews` | 要 Play 开发者账号和服务账号 | **不能**，只能看自己的 app | 只返回「最近一周内创建或修改的、带正文的」评论，GET 每个 app 每小时 200 次 `[一手]` [文档](https://developers.google.com/android-publisher/reply-to-reviews) | — | — | — | 没试 |
 
@@ -43,7 +43,8 @@
 **App Store RSS**：这是苹果公开提供的老 feed，地址里不需要任何凭证，和 RSS 阅读器订阅的是同一个东西。
 
 - 苹果新版的 RSS 生成器（marketing tools）只有榜单，**没有评论 feed**。评论 RSS 是没进新文档的遗留接口，随时可能停 `[推断]`。依据是生成器页面里没有这一项，开发者论坛也有「老 RSS 地址失效、改到 v2」的帖子 `[二手]` [Apple Developer Forums](https://developer.apple.com/forums/thread/705196)。
-- JSON 和 XML 两种格式拿到的内容一样。JSON 版第一页第一条有时是 app 元数据，sift 的代码里专门跳过带 `im:name` 的条目。
+- JSON 和 XML 两种格式应该是同一份数据 `[推断]`。本次没拿到过同一页的两种格式，没法对比。
+- 「JSON 第一页第一条是 app 元数据」本次没观察到：拿到的 3 个 JSON 页都是 50 条带星级的评论。sift 的代码里专门跳过带 `im:name` 的条目，说明以前出现过 `[推断]`。
 
 **google-play-scraper**：不需要登录，没有破解签名，也没有绕过验证码。
 
@@ -107,12 +108,13 @@ curl -s "https://itunes.apple.com/us/rss/customerreviews/page=1/id=1232780281/so
 | 3 | 10 秒 | 6 | 3（Notion 美区 XML 第 1 页再次成功；随手记中国区不带 sortby 的 JSON；鲨鱼记账中国区 JSON 第 2 页） | 3 | 0 |
 
 - 空 feed 是 HTTP 200，只有 feed 头，没有 entry。
-- HEAD 请求看到 `x-cache: TCP_HIT from ...akamaitechnologies.com`，`apple-timing-app: 3 ms`。也就是说，空结果是 CDN 缓存命中的，不是我们被限流 `[一手]`。
+- HEAD 请求看到 `x-cache: TCP_HIT from ...akamaitechnologies.com`，`apple-timing-app: 3 ms` `[一手]`。
+- 由此判断，空结果是 CDN 缓存命中的，不是我们被限流 `[推断]`。
 - 规律 `[推断]`：同一个 URL 空了就会持续空一段时间（鲨鱼记账第 1 页、Notion JSON 第 1 页都两次为空）。换一个等价的 URL（JSON 换 XML、带不带 `sortby`）有时能拿到。
 - 加随机参数打穿缓存在技术上可行，但等于绕开对方的 CDN 去压源站。**没有试，也不建议。**
 - 能拿到的数据在时间上很新：Notion 美区第 1 页 50 条里最新一条是 2026-10-16。YNAB 第 2 页覆盖 2026-08-14 到 09-10。
 
-**对接入的影响**：日常增量可以接受「这次空、下次再试」，游标不动即可。但不能把空结果当成「没有新评论」，要和真正的空区分开。办法是看 feed 的 `link rel="last"` 是否为空字符串：拿到数据时 `last` 指向第 10 页，空 feed 时 `last` 是空字符串。
+**对接入的影响**：日常增量可以接受「这次空、下次再试」，游标不动即可。但不能把空结果当成「没有新评论」，要和真正的空区分开。办法是看 feed 的 `link rel="last"` 是否为空字符串：拿到数据时 `last` 指向第 10 页，空 feed 时 `last` 是空字符串。这一点只对比了「有数据的页」和「缓存空页」，评论很少或者没有评论的 app 是什么样，没有测 `[推断，未验证]`。
 
 ### 3.2 Google Play：稳定
 
@@ -127,8 +129,8 @@ curl -s "https://itunes.apple.com/us/rss/customerreviews/page=1/id=1232780281/so
 
 **「中文区」在两个商店的含义不同**：
 
-- Google Play 在中国大陆没有服务，所以中文评论只能取台湾区或香港区（繁体）。
-- 鲨鱼记账、随手记这类大陆 app 主要在国内安卓商店分发。国内商店（华为、小米、应用宝等）本次没有调研。
+- Google Play 在中国大陆没有服务，所以中文评论只能取台湾区或香港区（繁体）`[推断]`。
+- 鲨鱼记账、随手记这类大陆 app 主要在国内安卓商店分发 `[推断]`。国内商店（华为、小米、应用宝等）本次没有调研。
 - 简体中文的 app 评论，实际上只有 App Store 中国区能拿到。
 
 ### 3.3 评论长什么样：150 条低分评论人工标注
@@ -139,6 +141,7 @@ curl -s "https://itunes.apple.com/us/rss/customerreviews/page=1/id=1232780281/so
 - App Store 4 组：美区 Notion、美区 YNAB、中国区随手记、中国区鲨鱼记账。
 - Google Play 6 组：美区 Notion（最新）、美区 Notion（1 星）、美区 YNAB、美区 Evernote（2 星）、台湾区 Notion、台湾区簡單記帳。
 - 15 条是为了在请求和标注量受限时覆盖更多组。每组的比例误差很大，**只看量级**。
+- 标注只有本调研员一人标了一遍，没有交叉核对。N1 和 N2、N2 和 V 的边界有主观成分。
 
 **口径**（先定口径再标）：
 
@@ -164,8 +167,8 @@ curl -s "https://itunes.apple.com/us/rss/customerreviews/page=1/id=1232780281/so
   - Notion 的低分集中在「移动端难用、强推 AI、不能离线」。
   - 两个国内记账 app 的低分几乎全是开屏广告、摇一摇跳转和会员墙。「无广告、买断制、可导出的记账 app」这个机会是从 23 条 N2 里聚出来的，任何单条都看不出来。
 - **评论很短**：
-  - 正文长度中位数：中国区鲨鱼记账 13 字，随手记 33 字，台湾区簡單記帳 14 字，台湾区 Notion 23 字。
-  - 美区 App Store 约 200 字符，美区 Play 48–204 字符。
+  - 只看 1–3 星评论，正文长度中位数是：中国区鲨鱼记账 13 字，随手记 27 字，台湾区簡單記帳 33 字，台湾区 Notion 53 字。
+  - 美区 App Store 约 200–220 字符，美区 Play 93–233 字符。
   - 现有 `empty_body` 规则（去掉模板后少于 20 个字符就丢）会挡掉大批中文短评，见第四节。
 - **语言混杂**：台湾区 Notion 里有粤语、简体、英文；美区 Notion 里有日文、印地语、葡萄牙语。
 - **点赞数**：Play 有 `thumbsUpCount`，YNAB 300 条里 143 条大于 0，可以当热度。App Store 的 `voteSum` 大多是 0，中国区两组 50 条里各只有 0–1 条非 0，基本不能当热度用。
@@ -197,7 +200,8 @@ curl -s "https://itunes.apple.com/us/rss/customerreviews/page=1/id=1232780281/so
 **规则预过滤**：`empty_body` 挡掉 27 条（18%）。
 
 - 其中 App Store 中国区 30 条里挡掉 16 条。
-- 被挡的有 13 条 N2、2 条 N1：「为什么不可以多人共享旧帐本」就差点被挡。
+- 被挡的有 13 条 N2、2 条 N1。这 2 条 N1 是「为什么不可以多人共享旧帐本」（13 个字）和「ipad冇中文 android 就有」。
+- 前一条模型本来能识别：绕过过滤直接交给模型，判成了需求。但在真实管线里，它会在模型之前就被丢掉。
 - 帖子用的 20 字符门槛对中文短评太高。
 
 **模型判断**：下表忽略过滤，150 条全部交给模型。
@@ -262,6 +266,7 @@ googleplay = { package = "notion.id", locales = ["en-us", "zh-tw"] }
 
 - **按 app id 列表**：可控，请求量可预估。每个 app、每个国家每天 1–2 次请求。用户需要知道 app id，可以提供一个 `appreview lookup "鲨鱼记账" --country cn` 子命令走 Search API 查。
 - **按类别榜单**：老榜单 RSS 能按 `genre` 取前 N 名，适合「看看记账这一类普遍在抱怨什么」。但请求量是 N 倍，而且排名每天在变，游标管理更复杂。
+- **注意**：这两种辅助方式本身也落在 robots.txt 禁止的路径上。`lookup` 子命令走 `itunes.apple.com/search`，对应 `Disallow: /search*`；老榜单 `/us/rss/topfreeapplications/...` 对应 `Disallow: /*/rss/*`。条款风险不只在评论 feed 上。
 
 ### 4.5 对镜像和依赖的影响
 
@@ -329,6 +334,7 @@ Google Play 自己的服务条款页是前端渲染，没抓到正文。Play 是
 4. **AI 用途**。苹果条款禁止用内容「train, fine-tune, or improve any AI model or other software」。我们是本地推理不是训练，但「improve … other software」措辞很宽：用评论找痛点去改进自己的产品，算不算？不确定。
 5. **个人信息**。评论带用户昵称。我们计划不入库，但原文正文仍存在用户自己的 MongoDB 里。
 6. **依赖一个随时会坏的接口**。评论 RSS 是遗留接口，Play 是内部接口，都没有可用性承诺。
+7. **中国区条款没查**。本文只读了美国版的 Apple Media Services Terms。中国区 App Store 是唯一的简体中文来源，它适用的条款版本可能不同。
 
 ## 六、同类做法
 
