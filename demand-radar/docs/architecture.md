@@ -17,31 +17,40 @@ npx -y @mermaid-js/mermaid-cli@11.4.2 -i architecture.md -o /tmp/arch.md -e png 
 <summary>Mermaid 源码（改图时改这里，再重新生成图片）</summary>
 
 ```mermaid
-flowchart TB
-    EXT["公开数据源（只读，sources.toml 配置）<br/>StackExchange softwarerecs · Hacker News（Algolia）· GitHub issue<br/>Reddit（Arctic Shift 归档 / RSS）· 任意 RSS / Atom"]
-
-    subgraph DC["docker compose（你的机器）"]
-        direction TB
-        subgraph RUNNERS[" "]
-            direction LR
-            APP["app<br/>run / eval / digest / backfill / cluster<br/>跑完即退出"]
-            SCH["scheduler（--profile cron）<br/>每天 run，每周 digest"]
-        end
-        OLL["ollama<br/>抽取 qwen3:4b-instruct-2507<br/>嵌入 qwen3-embedding:0.6b"]
-        MDB[("MongoDB<br/>demands · clusters · cursors · runs")]
-        WEB["web（--profile web）<br/>FastAPI 看板 :8501"]
+flowchart LR
+    subgraph EXT["公开数据源（只读，sources.toml 配置）"]
+        SE["StackExchange<br/>softwarerecs"]
+        HN["Hacker News<br/>Algolia 搜索"]
+        GH["GitHub<br/>issue 搜索"]
+        AS["Arctic Shift<br/>Reddit 归档"]
+        RSS["RSS / Atom<br/>Reddit 等"]
     end
 
-    MLX["mlx-lm :8765（Mac 可选）<br/>Qwen3-4B 跑在 Apple GPU<br/>docker-compose.mac-gpu.yml"]
-    OUT["./out<br/>demands.md · digest-日期.md"]
+    subgraph DC["docker compose"]
+        APP["app<br/>run / eval / digest<br/>backfill / cluster<br/>（跑完即退出）"]
+        SCH["scheduler（可选，--profile cron）<br/>每天 run，每周 digest"]
+        WEB["web（可选，--profile web）<br/>FastAPI 看板 :8501"]
+        OLL["ollama<br/>抽取：qwen3:4b-instruct-2507<br/>嵌入：qwen3-embedding:0.6b"]
+        MDB[("MongoDB<br/>demands / clusters<br/>cursors / runs")]
+    end
+
+    subgraph HOST["Mac 宿主机（可选，docker-compose.mac-gpu.yml）"]
+        MLX["mlx-lm :8765<br/>Qwen3-4B，Apple GPU"]
+    end
+
+    OUT["./out<br/>demands.md<br/>digest-日期.md"]
     USER(("你"))
 
-    EXT -->|HTTP 只读| RUNNERS
-    RUNNERS -->|抽取 / 向量化| OLL
-    RUNNERS -.->|Mac 上替代 ollama 做抽取| MLX
-    RUNNERS -->|写| MDB
-    RUNNERS -->|写| OUT
-    MDB -->|只读| WEB
+    EXT -->|HTTP 只读| APP
+    EXT --> SCH
+    APP -->|抽取 / 向量化| OLL
+    SCH --> OLL
+    APP -.->|Mac GPU 模式下替代 ollama 做抽取| MLX
+    APP --> MDB
+    SCH --> MDB
+    WEB -->|只读| MDB
+    APP --> OUT
+    SCH --> OUT
     OUT --> USER
     WEB --> USER
 ```
@@ -101,40 +110,25 @@ flowchart TD
 <summary>Mermaid 源码（改图时改这里，再重新生成图片）</summary>
 
 ```mermaid
-flowchart TB
-    subgraph L1["入口"]
-        direction LR
-        CLI["cli.py<br/>七个命令"]
-        CFG["config.py<br/>命令行 > 环境变量 > 默认值"]
-        SCHD["schedule.py<br/>常驻定时"]
-    end
-    subgraph L2["采集"]
-        SRC["sources/<br/>softwarerecs · hn_algolia · github · arctic_shift · rss<br/>cursor.py 增量游标 · http.py 限流重试"]
-    end
-    subgraph L3["处理"]
-        direction LR
-        FIL["filters.py<br/>规则预过滤"]
-        EXT["extract.py<br/>本地模型抽取"]
-        EXC["excerpt.py<br/>挑原文摘录"]
-        SAF["safety.py<br/>有害规则"]
-    end
-    subgraph L4["存储"]
-        STO["store.py<br/>MongoDB 读写、去重、状态、游标、运行记录"]
-    end
-    subgraph L5["排序、合并、输出"]
-        direction LR
-        RNK["rank.py<br/>排序分"]
-        CLU["cluster.py<br/>相似需求合并"]
-        REP["report.py<br/>清单 / 周报"]
-        API["api.py + web/<br/>看板"]
-    end
-    subgraph L6["评测"]
-        EVA["evaluate.py + cluster --eval<br/>eval_set.json 116 条 · cluster_pairs.json 23 对"]
-    end
-
-    L1 --> L2 --> L3 --> L4 --> L5
-    L1 --> L6
-    L6 -.->|调用同一套抽取 / 嵌入| L3
+flowchart LR
+    CLI["cli.py<br/>命令入口"] --> CFG["config.py<br/>命令行 > 环境变量 > 默认值"]
+    CLI --> SRC["sources/<br/>softwarerecs · hn_algolia · github<br/>arctic_shift · rss<br/>cursor · http"]
+    CLI --> FIL["filters.py"]
+    CLI --> EXT["extract.py<br/>Instructor + OpenAI 兼容接口"]
+    EXT --> EXC["excerpt.py"]
+    EXT --> SAF["safety.py"]
+    CLI --> STO["store.py<br/>MongoDB 读写"]
+    CLI --> RNK["rank.py"]
+    CLI --> CLU["cluster.py"]
+    CLI --> REP["report.py"]
+    CLI --> SCHD["schedule.py"]
+    CLI --> API["api.py + web/index.html"]
+    CLI --> EVA["evaluate.py<br/>eval 命令"]
+    EVA --> DATA[("eval/eval_set.json 116 条<br/>eval/cluster_pairs.json 23 对")]
+    API --> STO
+    API --> RNK
+    API --> CLU
+    CLU --> STO
 ```
 
 </details>
