@@ -239,6 +239,13 @@ class ReportClusterTest(unittest.TestCase):
         self.assertIn("- 来自 2 个来源，共 3 条\n  - [reddit/software](https://x/b) 帖子 b\n  - [hackernews](https://x/x) 帖子 x", s)
         self.assertNotIn("## 2.", s)
 
+    def test_total_heat_shown_only_when_nonzero(self):
+        p = self._out()
+        report.write_markdown([{**self._rep(), "cluster_heat": 15}], p, "zh")
+        self.assertIn("- 来自 2 个来源，共 3 条，总热度 15\n", open(p, encoding="utf-8").read())
+        report.write_markdown([{**self._rep(), "cluster_heat": 15}], p, "en")
+        self.assertIn("- From 2 sources, 3 posts, total heat 15\n", open(p, encoding="utf-8").read())
+
     def test_en_digest_cluster_line(self):
         p = self._out()
         report.write_digest([self._rep()], p, 7, "en")

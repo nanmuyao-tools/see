@@ -77,7 +77,7 @@ class RunClusterTest(unittest.TestCase):
 
         s = open(env.out, encoding="utf-8").read()
         self.assertIn("共 2 条", s)
-        self.assertIn("- 来自 2 个来源，共 2 条\n  - [reddit/software](u) Is there a tool 2", s)
+        self.assertIn("- 来自 2 个来源，共 2 条，总热度 5\n  - [reddit/software](u) Is there a tool 2", s)
         self.assertEqual(s.count("\n## "), 2)  # 三条需求折成两条
         (run,) = env.runs()
         self.assertEqual((run["cluster_embedded"], run["cluster_new_clusters"], run["listed"]), (3, 2, 2))
@@ -152,7 +152,7 @@ class ClusterCommandTest(unittest.TestCase):
         self.assertIn("向量化 4 条，归簇 4 条，新簇 3 个，库里共 3 个簇", out)
         s = open(self.out, encoding="utf-8").read()
         self.assertIn("## 1. 快递追踪", s)
-        self.assertIn("- 来自 2 个来源，共 2 条\n  - [softwarerecs](u) t2", s)
+        self.assertIn("- 来自 2 个来源，共 2 条，总热度 5\n  - [softwarerecs](u) t2", s)
         self.assertIn("旧数据", s)
         (run,) = self.coll.database["runs"].find()
         self.assertEqual((run["command"], run["status"], run["embedded"], run["clusters"]), ("cluster", "done", 4, 3))

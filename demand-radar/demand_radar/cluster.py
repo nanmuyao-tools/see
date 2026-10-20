@@ -196,7 +196,7 @@ def group(rows: list[dict], clusters: list[dict], members: list[dict],
         others = [mem[i] for i in c["members"] if i != rep["_id"] and i in mem]
         others.sort(key=lambda d: d.get("rank_score", rank.score(d, w)), reverse=True)
         out.append({**rep, "cluster_size": c["size"], "cluster_sources": c["sources"],
-                    "cluster_members": others,
+                    "cluster_heat": c.get("total_score", 0), "cluster_members": others,
                     "rank_score": round(rank.cluster_score(rep.get("rank_score", rank.score(rep, w)),
                                                            c["size"], w), 2)})
     return sorted(out, key=lambda r: r.get("rank_score", 0), reverse=True)

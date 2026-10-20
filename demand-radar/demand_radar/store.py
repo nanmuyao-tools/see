@@ -310,8 +310,8 @@ def dashboard_query(min_confidence: float, *, held: bool = False, domain: str | 
 
 
 def query_demands(coll, min_confidence: float, **filters) -> list[dict]:
-    """按看板条件取需求，排序交给 rank.sort（排序分在读取时算，不入库）。"""
-    return list(coll.find(dashboard_query(min_confidence, **filters)))
+    """按看板条件取需求，排序交给 rank.sort（排序分在读取时算，不入库）。不带向量：几百维 × 几千条用不着。"""
+    return list(coll.find(dashboard_query(min_confidence, **filters), {"embedding": 0}))
 
 
 def facet_counts(coll, field: str, min_confidence: float, **filters) -> list[dict]:

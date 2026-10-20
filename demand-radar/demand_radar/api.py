@@ -14,7 +14,7 @@ from typing import Any
 from fastapi import Depends, FastAPI, Query
 from fastapi.responses import HTMLResponse
 
-from . import rank, store
+from . import cluster, rank, store
 
 WEB_DIR = Path(__file__).parent / "web"
 
@@ -50,6 +50,12 @@ def _item(d: dict) -> dict:
     out["id"] = d["_id"]
     out["extracted_at"] = _iso(d.get("extracted_at"))
     out["created_at"] = _iso(d.get("created_at"))
+    # 相似需求合并后，代表条目带上整个簇的规模和其余成员的原帖（字段由 cluster.group 挂上）
+    out["cluster_size"] = d.get("cluster_size", 1)
+    out["cluster_sources"] = d.get("cluster_sources") or [d.get("source")]
+    out["cluster_heat"] = d.get("cluster_heat", d.get("score") or 0)
+    out["cluster_members"] = [{"source": m.get("source"), "url": m.get("url"), "title": m.get("title")}
+                              for m in d.get("cluster_members") or []]
     return out
 
 
@@ -59,15 +65,18 @@ def _run(d: dict) -> dict:
     return out
 
 
-def _order(docs: list[dict], sort: str, w: dict[str, float]) -> list[dict]:
-    """先算 rank_score（不管按什么排都要展示），再按指定方式排。"""
-    docs = rank.sort(docs, w)
+def _resort(docs: list[dict], sort: str) -> list[dict]:
     if sort == "heat":
         docs.sort(key=lambda d: d.get("score") or 0, reverse=True)
     elif sort == "time":
         docs.sort(key=lambda d: _aware(d["extracted_at"]).timestamp() if d.get("extracted_at") else 0,
                   reverse=True)
     return docs
+
+
+def _order(docs: list[dict], sort: str, w: dict[str, float]) -> list[dict]:
+    """先算 rank_score（不管按什么排都要展示），再按指定方式排。"""
+    return _resort(rank.sort(docs, w), sort)
 
 
 def create_app(coll, weights: dict[str, float] | None = None, default_min_confidence: float = 0.5) -> FastAPI:
@@ -92,9 +101,21 @@ def create_app(coll, weights: dict[str, float] | None = None, default_min_confid
                offset: int = Query(0, ge=0)) -> dict:
         return {"sort": sort, "limit": limit, "offset": offset}
 
+    def fold(docs: list[dict], sort: str) -> list[dict]:
+        """同一簇只留一条，和清单 / 周报用同一个 cluster.group：代表、簇排序分完全一致。
+        没跑过 cluster 的库没有 cluster_id，原样返回。"""
+        cids = {d.get("cluster_id") for d in docs} - {None}
+        if not cids:
+            return docs
+        clusters = [c for c in store.load_clusters(coll) if c["_id"] in cids]
+        members = store.member_docs(coll, {i for c in clusters for i in c["members"]})
+        return _resort(cluster.group(docs, clusters, members, w), sort)
+
     def listing(held: bool, f: dict, p: dict) -> dict:
         # 排序分要全量算完才能分页；几千条在内存里排很快，不值得为此入库
         docs = _order(store.query_demands(coll, held=held, **f), p["sort"], w)
+        if not held:  # 待确认区不合并，和清单一致
+            docs = fold(docs, p["sort"])
         page = docs[p["offset"]:p["offset"] + p["limit"]]
         return {"total": len(docs), "offset": p["offset"], "limit": p["limit"], "items": [_item(d) for d in page]}
 

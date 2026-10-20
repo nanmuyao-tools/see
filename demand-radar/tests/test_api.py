@@ -52,6 +52,52 @@ class ApiTest(unittest.TestCase):
         s = self.get("/api/stats")
         self.assertEqual((s["total"], s["listed"], s["held"], s["last_run"]), (0, 0, 0, None))
 
+    # ---- 相似需求合并 ----
+
+    def _seed_cluster(self):
+        # a、b、c 同一簇（a 排序分最高），d 单独
+        self.coll.insert_many([doc("a", clarity=5, source="hackernews", score=50, cluster_id="c:a"),
+                               doc("b", clarity=3, source="github", cluster_id="c:a"),
+                               doc("c", clarity=1, source="github", cluster_id="c:a", embedding=[0.1] * 4),
+                               doc("d", clarity=2)])
+        self.coll.database["clusters"].insert_one(
+            {"_id": "c:a", "rep_id": "a", "members": ["a", "b", "c"], "sources": ["github", "hackernews"],
+             "size": 3, "model": "m"})
+
+    def test_cluster_folded_to_one_card(self):
+        self._seed_cluster()
+        r = self.get("/api/demands")
+        self.assertEqual(r["total"], 2)  # 4 条帖子，2 个需求
+        top = r["items"][0]
+        self.assertEqual(top["id"], "a")
+        self.assertEqual((top["cluster_size"], top["cluster_sources"]), (3, ["github", "hackernews"]))
+        self.assertEqual(top["cluster_heat"], 0)  # 测试簇没存 total_score
+        self.assertEqual([m["url"] for m in top["cluster_members"]], ["https://x/b", "https://x/c"])
+        self.assertNotIn("embedding", str(r))
+        single = r["items"][1]
+        self.assertEqual((single["id"], single["cluster_size"], single["cluster_members"]), ("d", 1, []))
+
+    def test_cluster_rank_matches_report(self):
+        # 看板的代表和簇排序分要和清单（cluster.group）一模一样
+        from demand_radar import cluster
+        self._seed_cluster()
+        w = rank.weights({"heat": 1.0})
+        docs = rank.sort(list(self.coll.find({}, {"embedding": 0})), w)
+        expected = cluster.group(docs, list(self.coll.database["clusters"].find()), docs, w)
+        got = self.get("/api/demands")["items"]
+        self.assertEqual([(i["id"], i["rank_score"]) for i in got],
+                         [(e["_id"], e["rank_score"]) for e in expected])
+
+    def test_cluster_folded_under_other_sorts(self):
+        self._seed_cluster()
+        self.assertEqual(len(self.ids("/api/demands", sort="heat")), 2)
+        self.assertEqual(len(self.ids("/api/demands", sort="time")), 2)
+
+    def test_unclustered_db_unchanged(self):
+        self.coll.insert_many([doc("a"), doc("b")])
+        items = self.get("/api/demands")["items"]
+        self.assertEqual([i["cluster_size"] for i in items], [1, 1])
+
     # ---- 条目内容 ----
 
     def test_item_fields_match_report(self):

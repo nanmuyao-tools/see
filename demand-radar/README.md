@@ -109,11 +109,12 @@ DR_RUN_AT=18:00 DR_DIGEST_WEEKDAY=5 docker compose --profile cron up -d schedule
 docker compose --profile web up -d web                    # 起看板，浏览器打开 http://localhost:8501
 docker compose logs -f web                                # 看日志
 DR_WEB_PORT=8600 docker compose --profile web up -d web   # 宿主机 8501 被占时换一个
+docker compose --profile web up -d --build web            # 更新代码后：web 是单独的镜像，只 build app 不会更新它
 ```
 
 看板直接读 MongoDB，不需要模型，和 `app` / `scheduler` 用同一份配置和排序权重；数据来自它们跑出来的结果，看板本身不抓取。能看到：
 
-- **需求**：通过筛选的需求卡片——需求描述、领域、现有痛点、原文摘录、清晰度 / 迫切度 / 可实现性、热度、排序分、原帖链接。左侧按领域（带条数）、时间范围（按抽取时间）、来源筛，搜索框在需求描述和原帖标题里做包含匹配；排序可选排序分（和清单一致）、热度、最新
+- **需求**：通过筛选的需求卡片——需求描述、领域、现有痛点、原文摘录、清晰度 / 迫切度 / 可实现性、热度、排序分、原帖链接。左侧按领域（带条数）、时间范围（按抽取时间）、来源筛，搜索框在需求描述和原帖标题里做包含匹配；排序可选排序分（和清单一致）、热度、最新。跑过 `cluster` 后，同一需求只显示一张卡，标「来自 N 个来源，共 M 条」，点开看其余原帖；代表和排序分与清单完全一致
 - **待人工确认**：命中有害规则、没进正文的需求，标出命中了哪句话
 - **运行记录**：每次 `run` / `backfill` 的各源抓取数、过滤 / 抽取 / 失败数、入选数、耗时和状态（停在「运行中」说明进程中途死了）
 - 顶部四个数：库里总条数、入选数、待确认数、最近一次运行
@@ -124,7 +125,7 @@ DR_WEB_PORT=8600 docker compose --profile web up -d web   # 宿主机 8501 被�
 
 | 接口 | 参数 | 返回 |
 |---|---|---|
-| `GET /api/demands` | `domain`、`days`（最近 N 天，按抽取时间）、`min_confidence`（默认取配置，0.5）、`source`、`q`（关键词）、`sort`（`rank` / `heat` / `time`，默认 `rank`）、`limit`（默认 50，最大 500）、`offset` | `{total, offset, limit, items}`，每条含 need、domain、pain_point、excerpt、clarity / intensity / feasibility、rank_score、score（热度）、source、url、title、extracted_at |
+| `GET /api/demands` | `domain`、`days`（最近 N 天，按抽取时间）、`min_confidence`（默认取配置，0.5）、`source`、`q`（关键词）、`sort`（`rank` / `heat` / `time`，默认 `rank`）、`limit`（默认 50，最大 500）、`offset` | `{total, offset, limit, items}`，每条含 need、domain、pain_point、excerpt、clarity / intensity / feasibility、rank_score、score（热度）、source、url、title、extracted_at，以及 cluster_size、cluster_sources、cluster_members（相似需求合并后的簇规模和其余原帖）；`total` 按合并后的条数算 |
 | `GET /api/held` | 同上 | 待人工确认的需求，每条多一个 `review_cue` |
 | `GET /api/domains`、`GET /api/sources` | 同上的筛选参数；`held=true` 时数待确认的 | 各领域 / 各来源的条数，降序 |
 | `GET /api/runs` | `limit`（默认 20） | 最近的运行记录，新的在前 |

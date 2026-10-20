@@ -77,6 +77,9 @@
   .card .pain b { font-weight: 500; color: var(--muted); margin-right: 4px; }
   .card blockquote { margin: 8px 0 0; padding: 6px 12px; border-left: 3px solid var(--border); color: var(--muted);
     font-size: 14px; }
+  .cluster { margin-top: 8px; font-size: 13px; }
+  .cluster summary { cursor: pointer; color: var(--accent); }
+  .cluster ul { margin: 6px 0 0; padding-left: 18px; color: var(--muted); }
   .scores { display: flex; flex-wrap: wrap; gap: 6px 16px; margin-top: 10px; font-size: 13px; color: var(--muted); }
   .scores .s { display: inline-flex; align-items: center; gap: 6px; }
   .meter { display: inline-flex; gap: 2px; }
@@ -187,7 +190,7 @@
       empty: "没有符合条件的需求。", empty_held: "没有待人工确认的需求。",
       empty_runs: "还没有运行记录。先跑一次：docker compose run --rm app", error: "接口请求失败：{e}",
       held_note: "以下需求提到了特定的他人，可能被用来追踪、监视、曝光、骚扰或欺骗别人，没有列入正文。请人工确认后再决定是否发布。",
-      cue: "命中", pain: "现有痛点", clarity: "清晰度", intensity: "迫切度", feasibility: "可实现性",
+      cue: "命中", cluster: "来自 {s} 个来源，共 {n} 条", cluster_heat: "，总热度 {h}", pain: "现有痛点", clarity: "清晰度", intensity: "迫切度", feasibility: "可实现性",
       heat: "热度", rank: "排序分", confidence: "可信度",
       started: "开始时间", command: "命令", status: "状态", sources: "来源", fetched: "抓取", filtered: "过滤",
       extracted: "抽取", failed: "失败", listed: "入选", held: "待确认", duration: "耗时", pages: "页",
@@ -207,7 +210,7 @@
       empty: "No needs match these filters.", empty_held: "Nothing is held for review.",
       empty_runs: "No runs yet. Run once: docker compose run --rm app", error: "Request failed: {e}",
       held_note: "These needs mention specific other people and could be used to track, monitor, expose, harass or deceive someone, so they are not in the main list. Check them before publishing.",
-      cue: "Matched", pain: "Pain point", clarity: "clarity", intensity: "intensity", feasibility: "feasibility",
+      cue: "Matched", cluster: "From {s} sources, {n} posts", cluster_heat: ", total heat {h}", pain: "Pain point", clarity: "clarity", intensity: "intensity", feasibility: "feasibility",
       heat: "heat", rank: "rank", confidence: "confidence",
       started: "Started", command: "Command", status: "Status", sources: "Sources", fetched: "Fetched", filtered: "Filtered",
       extracted: "Extracted", failed: "Failed", listed: "Listed", held: "Held", duration: "Duration", pages: "pages",
@@ -331,6 +334,17 @@
       "</a> · " + esc(it.title) + "</span>";
     if (it.extracted_at) h += "<time>" + esc(fmtDate(it.extracted_at)) + "</time>";
     h += "</div>";
+    if (it.cluster_size > 1) {
+      // 相似需求合并后的代表：其余原帖折叠在下面，点开看
+      h += '<details class="cluster"><summary>' +
+        esc(t("cluster", { s: (it.cluster_sources || []).length, n: it.cluster_size }) +
+          (it.cluster_heat ? t("cluster_heat", { h: it.cluster_heat }) : "")) + "</summary><ul>";
+      (it.cluster_members || []).forEach(function (m) {
+        h += '<li><a href="' + esc(m.url) + '" target="_blank" rel="noopener">' + esc(m.source) + "</a> · " +
+          esc(m.title) + "</li>";
+      });
+      h += "</ul></details>";
+    }
     if (it.review_cue) h += '<p class="cue">' + esc(t("cue")) + esc(t("sep")) + "“" + esc(it.review_cue) + "”</p>";
     if (it.pain_point) h += '<p class="pain"><b>' + esc(t("pain")) + "</b>" + esc(it.pain_point) + "</p>";
     if (it.excerpt) h += "<blockquote>“" + esc(it.excerpt) + "”</blockquote>";

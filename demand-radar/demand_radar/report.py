@@ -30,6 +30,7 @@ _LABELS = {
                      "请人工确认后再决定是否发布。",
         "cue": "命中",
         "cluster": "来自 {s} 个来源，共 {n} 条",
+        "cluster_heat": "，总热度 {h}",
         "sep": "：",
     },
     "en": {
@@ -52,6 +53,7 @@ _LABELS = {
                      "harass or deceive someone, so they are not in the list above. Check them before publishing.",
         "cue": "Matched",
         "cluster": "From {s} sources, {n} posts",
+        "cluster_heat": ", total heat {h}",
         "sep": ": ",
     },
 }
@@ -89,7 +91,10 @@ def _cluster_lines(r: dict, L: dict[str, str]) -> list[str]:
     旧数据没有这些字段，输出和以前一字不差。"""
     if r.get("cluster_size", 1) <= 1:
         return []
-    lines = [f"- {L['cluster'].format(s=len(r.get('cluster_sources') or []), n=r['cluster_size'])}"]
+    head = L["cluster"].format(s=len(r.get("cluster_sources") or []), n=r["cluster_size"])
+    if r.get("cluster_heat"):  # 成员热度之和；全是零赞帖时不写，免得「总热度 0」看着像出错
+        head += L["cluster_heat"].format(h=r["cluster_heat"])
+    lines = [f"- {head}"]
     for m in r.get("cluster_members") or []:
         lines.append(f"  - [{m['source']}]({m['url']}) {m['title']}")
     return lines
