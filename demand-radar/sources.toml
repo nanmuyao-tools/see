@@ -31,8 +31,10 @@ queries = [
 # 比 RSS 好在不限流、能回填历史、老帖带 score；但它是志愿者维护的免费服务、不保证可用，
 # 所以下面四个 Reddit RSS 订阅保留做兜底——同一帖子两边都抓到会按 id 去重，不会重复抽取。
 # 调研与条款见 docs/arctic-shift.md
+# 暂时关闭（2026-10-21）：dr-weekly 一周验收（10-27）结束前先不抓 Reddit。恢复时改回 true，
+# 并把下面四个 Reddit RSS 订阅取消注释
 [arctic_shift]
-enabled = true
+enabled = false
 subreddits = ["SomebodyMakeThis", "macapps", "androidapps", "software"]
 
 # 本地关键词过滤：标题或正文含任一短语才保留（不区分大小写）；没列出的版块全部保留。
@@ -44,21 +46,22 @@ software = ["is there a", "looking for", "recommend", "alternative to"]
 
 # RSS / Atom 订阅，加一个 [[rss]] 块就是加一个源
 # 下面四个 Reddit 订阅和 [arctic_shift] 覆盖同样的版块，是它的兜底；嫌 429 日志吵可以删掉
-[[rss]]
-name = "reddit/SomebodyMakeThis"
-url = "https://www.reddit.com/r/SomebodyMakeThis/new/.rss"
+# 暂时注释掉（2026-10-21，先不抓 Reddit）；没有任何 [[rss]] 块时 rss 源视为关闭
+# [[rss]]
+# name = "reddit/SomebodyMakeThis"
+# url = "https://www.reddit.com/r/SomebodyMakeThis/new/.rss"
 
-[[rss]]
-name = "reddit/macapps"
-url = "https://www.reddit.com/r/macapps/search.rss?q=%22is+there+an+app%22&restrict_sr=1&sort=new"
+# [[rss]]
+# name = "reddit/macapps"
+# url = "https://www.reddit.com/r/macapps/search.rss?q=%22is+there+an+app%22&restrict_sr=1&sort=new"
 
-[[rss]]
-name = "reddit/androidapps"
-url = "https://www.reddit.com/r/androidapps/search.rss?q=%22is+there+an+app%22&restrict_sr=1&sort=new"
+# [[rss]]
+# name = "reddit/androidapps"
+# url = "https://www.reddit.com/r/androidapps/search.rss?q=%22is+there+an+app%22&restrict_sr=1&sort=new"
 
-[[rss]]
-name = "reddit/software"
-url = "https://www.reddit.com/r/software/search.rss?q=%22looking+for%22&restrict_sr=1&sort=new"
+# [[rss]]
+# name = "reddit/software"
+# url = "https://www.reddit.com/r/software/search.rss?q=%22looking+for%22&restrict_sr=1&sort=new"
 
 # 应用商店低分评论：从别人 app 的 1–3 星评论里找「换个 app 就能解决」的痛点。
 # 默认关闭：两个商店都不是公开 API，苹果和 Google 的条款、robots.txt 都不鼓励自动抓取，
