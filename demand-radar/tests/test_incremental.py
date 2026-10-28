@@ -86,6 +86,48 @@ class HnCursorTest(unittest.TestCase):
         self.assertNotIn("numericFilters", urls[1])
 
 
+class AskHnTest(unittest.TestCase):
+    def hit(self, oid, title, text="", ts=100):
+        return {"objectID": oid, "title": title, "story_text": text, "points": 3, "created_at_i": ts}
+
+    def test_keyword_filter_whole_words_case_insensitive(self):
+        hits = {"hits": [self.hit("1", "Ask HN: Is there a tool to diff PDFs?"),
+                         self.hit("2", "Ask HN: What did you do this weekend?"),
+                         self.hit("3", "Ask HN: Anyone tried Apple Vision?"),   # apple 不算 app
+                         self.hit("4", "Ask HN: Thoughts?", "Looking for an ALTERNATIVE to Notion")]}
+        with mock.patch.object(hn_algolia, "get_json", return_value=hits):
+            got = hn_algolia.fetch(5, {"queries": [], "ask_hn": {"keywords": ["is there", "app", "alternative"]}})
+        self.assertEqual([i.external_id for i in got], ["1", "4"])
+        self.assertTrue(all(i.source == "hackernews" for i in got))
+
+    def test_request_shape_and_cursor_advances_past_filtered_posts(self):
+        hits = {"hits": [self.hit("1", "Ask HN: Is there a tool", ts=50), self.hit("2", "Ask HN: weekend?", ts=90)]}
+        cur = {"ask_hn": 10}
+        with mock.patch.object(hn_algolia, "get_json", return_value=hits) as g:
+            got = hn_algolia.fetch(5, {"ask_hn": {"keywords": ["tool"]}}, cur)
+        url = g.call_args[0][0]
+        self.assertIn("tags=ask_hn", url)
+        self.assertIn("hitsPerPage=100", url)  # 不受 --limit 影响
+        self.assertIn("numericFilters=created_at_i%3E10", url)
+        self.assertEqual(len(got), 1)
+        self.assertEqual(cur["ask_hn"], 90)  # 被筛掉的 90 也算看过
+
+    def test_no_keywords_keeps_everything_and_missing_table_means_off(self):
+        hits = {"hits": [self.hit("1", "anything")]}
+        with mock.patch.object(hn_algolia, "get_json", return_value=hits) as g:
+            self.assertEqual(len(hn_algolia.fetch(5, {"ask_hn": {}})), 1)
+            g.reset_mock()
+            hn_algolia.fetch(5, {"queries": []})
+        g.assert_not_called()
+
+    def test_shipped_sources_toml_enables_ask_hn(self):
+        import tomllib
+        from pathlib import Path
+        conf = tomllib.loads((Path(__file__).parent.parent / "sources.toml").read_text(encoding="utf-8"))
+        self.assertIn("keywords", conf["hn_algolia"]["ask_hn"])
+        self.assertIn("wish someone would", conf["hn_algolia"]["queries"])
+
+
 class GithubCursorTest(unittest.TestCase):
     def test_cursor_ignored_always_top_by_reactions(self):
         """GitHub 是「当前最热」榜单而非时间流：有游标也不加 created:>，也不推进游标。"""

@@ -16,7 +16,15 @@ queries = [
   "is there an app",
   "someone should build",
   "would pay for",
+  "wish someone would",      # 调研 2026-10-28 抽样约 5/30 是需求
+  "does anyone know of",
 ]
+
+# Ask HN 帖子：每周约 240 帖、浓度低，先在本地按整词关键词筛一遍再交给模型。
+# 删掉这个表（或整段注释）就关闭。--limit 不管它，一次最多取 100 帖
+[hn_algolia.ask_hn]
+keywords = ["is there", "looking for", "recommend", "should there be", "alternative", "alternatives",
+            "wish", "any way to", "a tool", "an app", "tool for", "app for", "software for"]
 
 # GitHub issues：点赞多的 feature request = 很多人想要、项目一直没做
 # 不带 token 每分钟 10 次搜索；设置 GITHUB_TOKEN 可提高到每分钟 30 次

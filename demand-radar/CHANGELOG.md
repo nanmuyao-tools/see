@@ -2,6 +2,15 @@
 
 ## 未发布
 
+### 数据源：HN 加 Ask HN 和两个短语
+
+依据 `docs/research/2026-10-28-data-sources.md`（在分支 `worktree-agent-aee21136855d97d40`，未合并）。
+
+- **Ask HN 模式**：`sources.toml` 里写 `[hn_algolia.ask_hn]` 即开启，删掉这个表就关。每周约 240 个 Ask HN 帖、浓度低（抽样约 3/30 是需求），所以抓回来先在本地按整词关键词筛，再交给模型。游标按筛之前的结果推进，被筛掉的帖子不会下次再拉。一次最多取 100 帖，不受 `--limit` 影响。真机试抓一次：100 帖留下 10 条。
+- **两个新短语**：`wish someone would`（抽样约 5/30）、`does anyone know of`。调研里 `alternative to` 抽样 0/30，没有加。
+- **不支持回填**：Ask HN 目前只做增量，`backfill` 仍只回填短语查询。
+- **升级**：`sources.toml` 是挂载进容器的，但 Ask HN 的抓取是新代码，要重建镜像才生效。第一次运行会取最近约 100 帖（约 3 天），之后每次只取新的。
+
 ### 排序分两个榜
 
 - **问题**：热度信号实际上只有 GitHub 有（HN 评论、softwarerecs、Reddit 新帖基本是 0），而排序里热度项是 `log1p(热度)`：一个 1500 赞的 issue 加 7.3 分，分项打分每差一档才 1–1.5 分。一周验收（10-20～10-27）的清单前 12 名全是 GitHub，而且多是给 VSCode、terraform 提的功能请求，不是「还不存在的新产品」。

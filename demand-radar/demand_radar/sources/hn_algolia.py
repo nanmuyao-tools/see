@@ -2,10 +2,14 @@
 
 按短语精确搜索帖子和评论，比抓 Ask HN 首页的信噪比高得多。
 文档：https://hn.algolia.com/api
+
+另有 Ask HN 模式（sources.toml 里写 [hn_algolia.ask_hn]）：每周约 240 个 Ask HN 帖，浓度低（调研抽样约 3/30
+是需求），所以先在本地按关键词筛一遍再交给模型。它和短语查询用同一个来源名 hackernews，同一帖两边都命中会去重。
 """
 
 from __future__ import annotations
 
+import re
 import urllib.parse
 
 from ..models import SourceItem
@@ -43,6 +47,30 @@ def _params(query: str, pagesize: int) -> dict:
     return {"query": f'"{query}"', "tags": "(story,comment)", "hitsPerPage": pagesize}
 
 
+ASK_KEY = "ask_hn"      # Ask HN 在游标表里的键
+ASK_PAGE = 100          # Ask HN 每次最多取多少帖：日均约 35 帖，一页够隔几天抓一次；--limit 只管短语查询
+
+
+def ask_filter(items: list[SourceItem], keywords: list[str]) -> list[SourceItem]:
+    """标题或正文里含任一关键词才留（不区分大小写，按整词匹配：app 不会命中 apple）。没配关键词就全留。"""
+    if not keywords:
+        return items
+    pat = re.compile(r"\b(?:" + "|".join(re.escape(k) for k in keywords) + r")\b", re.IGNORECASE)
+    return [it for it in items if pat.search(f"{it.title}\n{it.text}")]
+
+
+def fetch_ask(conf: dict, cursors: dict[str, int] | None) -> list[SourceItem]:
+    """Ask HN 帖子，取游标之后的最新 ASK_PAGE 条，本地关键词筛后返回。
+
+    游标按筛之前的结果推进：被筛掉的帖子不用下次再拉一遍。"""
+    params = {"query": "", "tags": "ask_hn", "hitsPerPage": conf.get("page", ASK_PAGE)}
+    if cursors and cursors.get(ASK_KEY):
+        params["numericFilters"] = f"created_at_i>{cursors[ASK_KEY]}"
+    got = parse(get_json(f"{API}?{urllib.parse.urlencode(params)}"))
+    cursor.advance(cursors, ASK_KEY, got)
+    return ask_filter(got, conf.get("keywords", []))
+
+
 def fetch(limit: int, conf: dict, cursors: dict[str, int] | None = None) -> list[SourceItem]:
     """每个查询抓最新 limit 条。有游标时用 numericFilters 只要游标之后发布的。"""
     items: list[SourceItem] = []
@@ -53,6 +81,8 @@ def fetch(limit: int, conf: dict, cursors: dict[str, int] | None = None) -> list
         got = parse(get_json(f"{API}?{urllib.parse.urlencode(params)}"))
         cursor.advance(cursors, q, got)
         items += got
+    if conf.get("ask_hn") is not None:
+        items += fetch_ask(conf["ask_hn"], cursors)
     return items
 
 
