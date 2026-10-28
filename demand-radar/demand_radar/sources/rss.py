@@ -55,12 +55,14 @@ def fetch(limit: int, conf: list[dict], cursors: dict[str, int] | None = None) -
 
     cursors 不用：RSS 没有按时间过滤的参数，订阅本身只给最新几十条，新旧靠入库去重。
     参数保留是为了和其他源的 fetch 签名一致。
+    每个订阅可以用 limit 单独设条数，覆盖全局的 --limit：V2EX 这类每天几十帖的订阅，
+    全局取 10 条会漏掉大半。
     """
     items: list[SourceItem] = []
     errors: list[str] = []
     for feed in conf:  # 同一网站的订阅之间由 http 统一限速（Reddit 默认 3 秒）
         try:
-            items += parse(feed["name"], get(feed["url"]), limit)
+            items += parse(feed["name"], get(feed["url"]), feed.get("limit", limit))
         except Exception as e:
             msg = f"{feed['name']}: {str(e).splitlines()[0][:150]}"
             errors.append(msg)

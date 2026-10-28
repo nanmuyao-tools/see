@@ -2,6 +2,14 @@
 
 ## 未发布
 
+### 数据源：Bluesky、V2EX，恢复 Reddit
+
+- **`bluesky`（新）**：官方公开搜索接口，未登录，按短语（`is there an app`、`is there a tool`、`i wish there was an app`）搜最新帖子。调研里浓度最高（约 8/29），但量小，每周约 14 条。帖子没有标题，用正文开头当标题；热度取点赞数；作者信息不入库（链接里的 handle 只为能打开原帖）。只有 `api.bsky.app` 未登录可用，且翻页会 403，所以只取第一页；有游标时用 `since` 只要新的。真机试抓：3 个短语共 28 条。
+- **RSS 每个订阅可单独设 `limit`**，覆盖全局 `--limit`。V2EX 这类每天几十帖的订阅，全局取 10 条会漏掉大半。
+- **V2EX「问与答」**（中文）：`[[rss]] name = "v2ex/qna"`，`limit = 50`，公开 Atom feed。调研抽样约 5/30 是需求。V2EX 的条款页当时打不开（403），没读到原文；只读公开 feed，每天一次。真机试抓 50 条。
+- **恢复 Reddit**：`arctic_shift` 开启，四个 Reddit RSS 订阅取消注释。一周验收已结束。Reddit 的条款仍是灰色地带，见 `docs/arctic-shift.md`。
+- **没接**：Mastodon（社区普遍反感被抓取）、Product Hunt、Indie Hackers 等，见调研文档。
+
 ### 数据源：HN 加 Ask HN 和两个短语
 
 依据 `docs/research/2026-10-28-data-sources.md`（在分支 `worktree-agent-aee21136855d97d40`，未合并）。

@@ -35,6 +35,16 @@ queries = [
   'is:issue is:open "feature request" in:title reactions:>20',
 ]
 
+# Bluesky 帖子搜索（官方公开接口，无需 key）：量小但浓度高——调研（2026-10-28）里
+# "is there an app" 约每周 14 条、抽样约 8/29 是需求。只有 api.bsky.app 未登录可用，且只能取第一页
+[bluesky]
+enabled = true
+queries = [
+  "is there an app",
+  "is there a tool",
+  "i wish there was an app",
+]
+
 # Reddit（走 Arctic Shift 第三方归档 API，无需 key）：按版块拉最新帖子，关键词在本地筛。
 # 比 RSS 好在不限流、能回填历史、老帖带 score；但它是志愿者维护的免费服务、不保证可用，
 # 所以下面四个 Reddit RSS 订阅保留做兜底——同一帖子两边都抓到会按 id 去重，不会重复抽取。
@@ -67,6 +77,14 @@ url = "https://www.reddit.com/r/androidapps/search.rss?q=%22is+there+an+app%22&r
 [[rss]]
 name = "reddit/software"
 url = "https://www.reddit.com/r/software/search.rss?q=%22looking+for%22&restrict_sr=1&sort=new"
+
+# V2EX「问与答」节点（中文，公开 Atom feed）：每周约 240 帖，调研抽样约 5/30 是需求。
+# 每天读一次、同域名限速；条款页当时没能打开（403），接入前读过 robots 和 feed 的公开性。
+# limit 单独设成 50：全局的 --limit 10 会漏掉大半
+[[rss]]
+name = "v2ex/qna"
+url = "https://www.v2ex.com/feed/qna.xml"
+limit = 50
 
 # 应用商店低分评论：从别人 app 的 1–3 星评论里找「换个 app 就能解决」的痛点。
 # 默认关闭：两个商店都不是公开 API，苹果和 Google 的条款、robots.txt 都不鼓励自动抓取，

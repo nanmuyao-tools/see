@@ -79,9 +79,10 @@ docker compose exec mongo mongosh demand_radar --eval 'db.runs.find().sort({star
 |---|---|---|---|
 | `softwarerecs` | StackExchange 软件推荐站：「有没有能做 X 的软件」 | 投票数 | 300 次/天；设 `SE_API_KEY` 提到 1 万 |
 | `hn_algolia` | Hacker News 帖子和评论，按 "I wish there was" 等短语搜索 | 得分 | 宽松 |
+| `bluesky` | Bluesky 帖子，按 "is there an app" 等短语搜索（官方公开接口，量小但浓度高） | 点赞数 | 宽松 |
 | `github` | 点赞多的功能请求 issue | 👍 数 | 10 次/分钟；设 `GITHUB_TOKEN` 提到 30 |
 | `arctic_shift` | Reddit 帖子，走 [Arctic Shift](docs/arctic-shift.md) 第三方归档 API：按版块拉最新帖、关键词本地筛、能回填历史 | 点赞数（发帖 36 小时后才准） | 动态，每秒几次以内；免费服务无可用性承诺 |
-| `rss` | 任意 RSS / Atom 订阅，默认配了 Reddit 的 r/SomebodyMakeThis 和几个板块内搜索（和 `arctic_shift` 覆盖同样的版块，作它的兜底） | — | 视站点 |
+| `rss` | 任意 RSS / Atom 订阅，默认配了 Reddit 的 r/SomebodyMakeThis 和几个板块内搜索（和 `arctic_shift` 覆盖同样的版块，作它的兜底），以及 V2EX「问与答」节点；每个订阅可用 `limit` 单独设条数 | — | 视站点 |
 | `appstore` | App Store 上指定 app 的 1–3 星评论，走苹果的评论 RSS。**默认关闭** | 有用票数 | 同域名 5 秒一次；每个 app 每轮最多 `max_pages` 页 |
 | `googleplay` | Google Play 上指定 app 的 1–3 星评论，走 Play 网页用的内部接口。**默认关闭** | 点赞数 | 同上 |
 

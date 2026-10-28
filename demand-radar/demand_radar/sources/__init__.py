@@ -5,7 +5,7 @@ from __future__ import annotations
 import tomllib
 
 from ..models import SourceItem
-from . import appstore, arctic_shift, github, googleplay, hn_algolia, http, rss, softwarerecs
+from . import appstore, arctic_shift, bluesky, github, googleplay, hn_algolia, http, rss, softwarerecs
 
 # 源名 → 抓取函数(limit, 该源的配置, 游标) -> list[SourceItem]
 # arctic_shift 排在 rss 前面：同一条 Reddit 帖子两边都抓到时，fetch_all 保留先到的那条，
@@ -13,6 +13,7 @@ from . import appstore, arctic_shift, github, googleplay, hn_algolia, http, rss,
 REGISTRY = {
     "softwarerecs": softwarerecs.fetch,
     "hn_algolia": hn_algolia.fetch,
+    "bluesky": bluesky.fetch,
     "github": github.fetch,
     "arctic_shift": arctic_shift.fetch,
     "rss": rss.fetch,

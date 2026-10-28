@@ -10,7 +10,7 @@ from unittest import mock
 from harness import demand, item, mongomock
 
 from demand_radar import sources
-from demand_radar.sources import cursor, github, hn_algolia, rss, softwarerecs
+from demand_radar.sources import bluesky, cursor, github, hn_algolia, rss, softwarerecs
 
 HERE = os.path.dirname(__file__)
 
@@ -126,6 +126,56 @@ class AskHnTest(unittest.TestCase):
         conf = tomllib.loads((Path(__file__).parent.parent / "sources.toml").read_text(encoding="utf-8"))
         self.assertIn("keywords", conf["hn_algolia"]["ask_hn"])
         self.assertIn("wish someone would", conf["hn_algolia"]["queries"])
+
+
+def bsky_post(rkey, text, handle="a.bsky.social", likes=0, ts="2026-10-27T09:44:01.690Z"):
+    return {"uri": f"at://did:plc:x/app.bsky.feed.post/{rkey}", "author": {"handle": handle, "displayName": "不入库"},
+            "record": {"text": text, "createdAt": ts}, "likeCount": likes}
+
+
+class BlueskyTest(unittest.TestCase):
+    def test_parse_maps_fields_and_drops_author_info(self):
+        got = bluesky.parse({"posts": [bsky_post("3abc", "Is there an app that tracks parcels?", likes=4)]})
+        it = got[0]
+        self.assertEqual((it.source, it.external_id, it.score, it.kind), ("bluesky", "at://did:plc:x/app.bsky.feed.post/3abc", 4, "post"))
+        self.assertEqual(it.url, "https://bsky.app/profile/a.bsky.social/post/3abc")
+        self.assertEqual(it.text, "Is there an app that tracks parcels?")
+        self.assertEqual(it.created_at, cursor.epoch("2026-10-27T09:44:01.690Z"))
+        self.assertNotIn("不入库", repr(it))
+
+    def test_parse_skips_incomplete_posts(self):
+        self.assertEqual(bluesky.parse({"posts": [bsky_post("1", ""), {"uri": "x"}]}), [])
+
+    def test_request_phrase_sort_and_limit_cap(self):
+        with mock.patch.object(bluesky, "get_json", return_value={"posts": []}) as g:
+            bluesky.fetch(500, {"queries": ["is there an app"]})
+        url = g.call_args[0][0]
+        self.assertIn("q=%22is+there+an+app%22", url)
+        self.assertIn("sort=latest", url)
+        self.assertIn("limit=100", url)
+        self.assertNotIn("since", url)
+
+    def test_cursor_since_filter_and_advance(self):
+        newer = bsky_post("2", "Is there an app B", ts="2026-10-27T10:00:00Z")
+        older = bsky_post("1", "Is there an app A", ts="2026-10-27T08:00:00Z")  # 补录的旧帖
+        cur = {"is there an app": cursor.epoch("2026-10-27T09:20:00Z")}
+        with mock.patch.object(bluesky, "get_json", return_value={"posts": [newer, older]}) as g:
+            got = bluesky.fetch(10, {"queries": ["is there an app"]}, cur)
+        self.assertIn("since=2026-10-27T09%3A20%3A01Z", g.call_args[0][0])
+        self.assertEqual([i.title for i in got], ["Is there an app B"])
+        self.assertEqual(cur["is there an app"], cursor.epoch("2026-10-27T10:00:00Z"))
+
+
+class RssLimitTest(unittest.TestCase):
+    ATOM = ("<feed xmlns='http://www.w3.org/2005/Atom'>"
+            + "".join(f"<entry><id>{i}</id><title>t{i}</title><link href='https://x/{i}'/></entry>" for i in range(5))
+            + "</feed>").encode()
+
+    def test_per_feed_limit_overrides_global(self):
+        feeds = [{"name": "a", "url": "https://x/a"}, {"name": "b", "url": "https://x/b", "limit": 4}]
+        with mock.patch.object(rss, "get", return_value=self.ATOM):
+            got = rss.fetch(2, feeds)
+        self.assertEqual([(i.source) for i in got], ["a", "a", "b", "b", "b", "b"])
 
 
 class GithubCursorTest(unittest.TestCase):
