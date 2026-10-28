@@ -75,16 +75,23 @@ docker compose exec mongo mongosh demand_radar --eval 'db.runs.find().sort({star
 
 全部是公开接口，不需要注册。在 [`sources.toml`](sources.toml) 里配置，加源只改这个文件。
 
-| 源 | 内容 | 热度 | 限额 |
-|---|---|---|---|
-| `softwarerecs` | StackExchange 软件推荐站：「有没有能做 X 的软件」 | 投票数 | 300 次/天；设 `SE_API_KEY` 提到 1 万 |
-| `hn_algolia` | Hacker News 帖子和评论，按 "I wish there was" 等短语搜索 | 得分 | 宽松 |
-| `bluesky` | Bluesky 帖子，按 "is there an app" 等短语搜索（官方公开接口，量小但浓度高） | 点赞数 | 宽松 |
-| `github` | 点赞多的功能请求 issue | 👍 数 | 10 次/分钟；设 `GITHUB_TOKEN` 提到 30 |
-| `arctic_shift` | Reddit 帖子，走 [Arctic Shift](docs/arctic-shift.md) 第三方归档 API：按版块拉最新帖、关键词本地筛、能回填历史 | 点赞数（发帖 36 小时后才准） | 动态，每秒几次以内；免费服务无可用性承诺 |
-| `rss` | 任意 RSS / Atom 订阅，默认配了 Reddit 的 r/SomebodyMakeThis 和几个板块内搜索（和 `arctic_shift` 覆盖同样的版块，作它的兜底），以及 V2EX「问与答」节点；每个订阅可用 `limit` 单独设条数 | — | 视站点 |
-| `appstore` | App Store 上指定 app 的 1–3 星评论，走苹果的评论 RSS。**默认关闭** | 有用票数 | 同域名 5 秒一次；每个 app 每轮最多 `max_pages` 页 |
-| `googleplay` | Google Play 上指定 app 的 1–3 星评论，走 Play 网页用的内部接口。**默认关闭** | 点赞数 | 同上 |
+| 源 | 内容 | 热度 | 限额 | 风险 | 默认 |
+|---|---|---|---|---|---|
+| `softwarerecs` | StackExchange 软件推荐站：「有没有能做 X 的软件」 | 投票数 | 300 次/天；设 `SE_API_KEY` 提到 1 万 | 有条件 | 开 |
+| `hn_algolia` | Hacker News 帖子和评论，按 "I wish there was" 等短语搜索；另有 Ask HN 模式（本地关键词筛） | 得分 | 宽松 | 开放 | 开 |
+| `bluesky` | Bluesky 帖子，按 "is there an app" 等短语搜索（官方公开接口，量小但浓度高） | 点赞数 | 宽松 | 开放 | 开 |
+| `github` | 点赞多的功能请求 issue（单独一个榜，不和愿望混排） | 👍 数 | 10 次/分钟；设 `GITHUB_TOKEN` 提到 30 | 开放 | 开 |
+| `arctic_shift` | Reddit 帖子，走 [Arctic Shift](docs/arctic-shift.md) 第三方归档 API：按版块拉最新帖、关键词本地筛、能回填历史 | 点赞数（发帖 36 小时后才准） | 动态，每秒几次以内；免费服务无可用性承诺 | **灰色** | **关** |
+| `rss` | 任意 RSS / Atom 订阅；自带 Reddit 的几个版块订阅（`arctic_shift` 的兜底）和 V2EX「问与答」，**每个订阅有自己的 `enabled` 开关**，可用 `limit` 单独设条数 | — | 视站点 | 看订阅 | 自带的全关 |
+| `appstore` | App Store 上指定 app 的 1–3 星评论，走苹果的评论 RSS | 有用票数 | 同域名 5 秒一次；每个 app 每轮最多 `max_pages` 页 | **灰色** | **关** |
+| `googleplay` | Google Play 上指定 app 的 1–3 星评论，走 Play 网页用的内部接口 | 点赞数 | 同上 | **灰色** | **关** |
+
+**数据源由你自己选。** `demand-radar sources`（Docker 里 `docker compose run --rm app sources`）列出每个源是否启用、风险档、条款链接；开关在 `sources.toml`：整个源用 `enabled`，RSS 每个订阅单独用 `enabled`。
+
+- **开放**：官方公开接口，内容公开，守限速就行。
+- **有条件**：官方接口，但内容协议或条款有要遵守的地方（比如 StackExchange 内容是 CC BY-SA，要署名）。
+- **灰色**：官方不允许、不鼓励，或来源本身是第三方归档。**随包发行的默认配置里一个都不开**，想用请先读各源的条款链接，自己决定；开了之后每次运行都会提醒一句。
+- 这是我们对条款的理解，**不是法律意见**；平台条款会变（Reddit 2025 年底起收紧官方 API 就是例子）。你是在自己的机器上、用自己的网络访问公开内容，但仍要自己遵守各平台的条款。
 
 某个源失败（网络、限流）只跳过它，其他源照常跑。
 

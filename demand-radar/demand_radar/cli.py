@@ -88,6 +88,8 @@ def _grouped(coll, rows: list[dict], w: dict[str, float]) -> list[dict]:
 def run(cfg: Config) -> None:
     conf = sources.load_config(cfg.sources_file)
     names = sources.enabled(conf) if cfg.source == "all" else cfg.source.split(",")
+    for line in sources.notices(names):  # 用到了灰色或要自己判断的源，每次都提醒一句：这是用户自己开的
+        print(f"[提示] {line}", file=sys.stderr)
     coll = store.connect(cfg.mongo_uri, cfg.db_name)
     run_id = store.start_run(coll, "run", sources=names, limit=cfg.limit, provider=cfg.provider,
                              language=cfg.output_language)
@@ -274,8 +276,28 @@ def serve(cfg: Config) -> None:
     uvicorn.run(app, host=cfg.host, port=cfg.port)
 
 
+RISK_LABEL = {"open": "开放", "terms": "有条件", "gray": "灰色", "varies": "看订阅"}
+
+
+def list_sources(cfg: Config) -> None:
+    """列出所有数据源。开关在 sources.toml：整源用 enabled，RSS 每个订阅单独用 enabled。"""
+    conf = sources.load_config(cfg.sources_file)
+    print(f"数据源配置：{cfg.sources_file}（想开关哪个就改它的 enabled）\n")
+    for r in sources.describe(conf):
+        state = "启用" if r["enabled"] else "关闭"
+        print(f"  [{state}] {r['name']:<13} 风险：{RISK_LABEL[r['risk']]}  {r['note']}")
+        if r["terms"]:
+            print(f"{'':25}条款：{r['terms']}")
+        for name, on in r.get("feeds", []):
+            print(f"{'':25}- {name}  {'启用' if on else '关闭'}")
+    print("\n风险档是我们对条款的理解，不是法律意见；灰色的源默认关闭，开不开由你自己决定。")
+
+
 def main(argv: list[str] | None = None) -> None:
     cfg = Config.from_args(argv)
+    if cfg.command == "sources":
+        list_sources(cfg)
+        return
     if cfg.command == "eval":
         from . import evaluate
         raise SystemExit(evaluate.run(cfg))

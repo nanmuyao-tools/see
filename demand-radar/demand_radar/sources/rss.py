@@ -61,6 +61,8 @@ def fetch(limit: int, conf: list[dict], cursors: dict[str, int] | None = None) -
     items: list[SourceItem] = []
     errors: list[str] = []
     for feed in conf:  # 同一网站的订阅之间由 http 统一限速（Reddit 默认 3 秒）
+        if not feed.get("enabled", True):  # 订阅写 enabled = false 就跳过
+            continue
         try:
             items += parse(feed["name"], get(feed["url"]), feed.get("limit", limit))
         except Exception as e:

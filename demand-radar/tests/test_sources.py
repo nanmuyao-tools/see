@@ -235,11 +235,56 @@ class FetchAllTest(unittest.TestCase):
         with self.assertRaises(ValueError):
             sources.fetch_all(["weibo"], 5, {})
 
-    def test_default_config_enables_all_but_app_stores(self):
+    def test_default_config_enables_only_non_gray_sources(self):
         conf = sources.load_config(os.path.join(HERE, "..", "sources.toml"))
-        # 应用商店评论默认关闭（条款原因，见 sources.toml 注释）
-        self.assertEqual(set(sources.enabled(conf)), set(sources.REGISTRY) - {"appstore", "googleplay"})
-        self.assertTrue(all(f["name"] and f["url"].startswith("https://") for f in conf["rss"]))
+        # 灰色来源（Reddit 归档、应用商店、自带的 Reddit / V2EX 订阅）默认全关，用户自己决定开不开
+        self.assertEqual(set(sources.enabled(conf)), {"softwarerecs", "hn_algolia", "github", "bluesky"})
+        self.assertTrue(all(f["name"] and f["url"].startswith("https://") for f in conf.get("rss", [])))
+
+    def test_every_source_has_provider_metadata(self):
+        self.assertEqual(set(sources.PROVIDERS), set(sources.REGISTRY))
+        for name, meta in sources.PROVIDERS.items():
+            self.assertIn(meta["risk"], ("open", "terms", "gray", "varies"), name)
+            self.assertTrue(meta["note"], name)
+
+    def test_gray_sources_never_on_by_default(self):
+        """不变量：风险档是 gray 的源，随包发行的默认配置里一个都不能开；rss 的每个订阅也一样。"""
+        conf = sources.load_config(os.path.join(HERE, "..", "sources.toml"))
+        on = set(sources.enabled(conf))
+        for name, meta in sources.PROVIDERS.items():
+            if meta["risk"] == "gray":
+                self.assertNotIn(name, on, name)
+        self.assertFalse([f["name"] for f in conf.get("rss", []) if f.get("enabled", True)])
+
+    def test_rss_feed_level_switch(self):
+        off = {"rss": [{"name": "a", "url": "https://x/a", "enabled": False}]}
+        self.assertEqual(sources.enabled(off), [])
+        mixed = {"rss": [{"name": "a", "url": "https://x/a", "enabled": False}, {"name": "b", "url": "https://x/b"}]}
+        self.assertEqual(sources.enabled(mixed), ["rss"])
+
+    def test_disabled_rss_feed_is_not_fetched(self):
+        from unittest import mock
+
+        from demand_radar.sources import rss
+        feeds = [{"name": "a", "url": "https://x/a", "enabled": False}, {"name": "b", "url": "https://x/b"}]
+        with mock.patch.object(rss, "get", return_value=b"<feed xmlns='http://www.w3.org/2005/Atom'/>") as g:
+            rss.fetch(5, feeds)
+        self.assertEqual([c[0][0] for c in g.call_args_list], ["https://x/b"])
+
+    def test_notices_only_for_gray_and_varies(self):
+        self.assertEqual(sources.notices(["hn_algolia", "github", "softwarerecs", "bluesky"]), [])
+        got = sources.notices(["github", "arctic_shift", "rss"])
+        self.assertEqual(len(got), 2)
+        self.assertIn("arctic_shift（gray）", got[0])
+        self.assertIn("docs/arctic-shift.md", got[0])
+
+    def test_describe_lists_every_source_with_feed_switches(self):
+        conf = {"github": {"enabled": True}, "rss": [{"name": "a", "url": "https://x", "enabled": False}]}
+        rows = {r["name"]: r for r in sources.describe(conf)}
+        self.assertEqual(set(rows), set(sources.REGISTRY))
+        self.assertTrue(rows["github"]["enabled"])
+        self.assertFalse(rows["rss"]["enabled"])
+        self.assertEqual(rows["rss"]["feeds"], [("a", False)])
 
     def test_disabled_source(self):
         self.assertEqual(sources.enabled({"github": {"enabled": False}, "rss": []}), [])

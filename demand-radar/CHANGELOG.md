@@ -2,6 +2,15 @@
 
 ## 未发布
 
+### 数据源由用户自己选：按风险分档，灰色来源默认关闭
+
+- **每个源标风险档**（`sources.PROVIDERS`）：`open` 官方公开接口、`terms` 有条款要遵守、`gray` 官方不允许 / 不鼓励或来源是第三方归档、`varies` 看订阅哪个站点。这是我们对条款的理解，不是法律意见。
+- **灰色来源默认全关**：`arctic_shift`、`appstore`、`googleplay`，以及自带的 Reddit RSS 订阅和 V2EX 订阅。默认只开 `softwarerecs`、`hn_algolia`、`bluesky`、`github`。有测试保证以后新加的灰色源不会被默认打开。**撤销了上一条「恢复 Reddit」的默认开启**：Reddit 想用请自己在 `sources.toml` 里打开。
+- **RSS 每个订阅有自己的 `enabled` 开关**；订阅全关等于整个 rss 源关闭。
+- **新命令 `demand-radar sources`**：列出每个源是否启用、风险档、条款链接和每个 RSS 订阅的开关。
+- **开了灰色源会提醒**：每次 `run` 开始时，对用到的灰色 / 看订阅的源各打一行提示（写到 stderr），说明是谁开的、去读哪份条款。
+- **升级**：如果你以前依赖默认抓 Reddit，升级后需要自己把 `[arctic_shift]` 的 `enabled` 改回 `true`。`dr-weekly` 这类挂载了 `sources.toml` 的容器，下次运行就会按新配置跑（新代码要重建镜像）。
+
 ### 数据源：Bluesky、V2EX，恢复 Reddit
 
 - **`bluesky`（新）**：官方公开搜索接口，未登录，按短语（`is there an app`、`is there a tool`、`i wish there was an app`）搜最新帖子。调研里浓度最高（约 8/29），但量小，每周约 14 条。帖子没有标题，用正文开头当标题；热度取点赞数；作者信息不入库（链接里的 handle 只为能打开原帖）。只有 `api.bsky.app` 未登录可用，且翻页会 403，所以只取第一页；有游标时用 `since` 只要新的。真机试抓：3 个短语共 28 条。

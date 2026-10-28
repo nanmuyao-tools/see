@@ -117,6 +117,7 @@ class Config:
         cl = sub.add_parser("cluster", help="向量化并合并相似需求，重写清单；不调抽取模型")
 
         sv = sub.add_parser("serve", help="常驻：Web 看板，直接读库，不调模型")
+        so = sub.add_parser("sources", help="列出所有数据源：是否启用、使用风险、条款链接；开关在 sources.toml")
         rc = sub.add_parser("recommend", help="检测本机配置，推荐抽取模型和嵌入模型，可写进 .env")
 
         for sp in (run, sc):
@@ -183,7 +184,7 @@ class Config:
         for sp in (run, dg, bf, sc, cl):
             sp.add_argument("--mongo-uri", dest="mongo_uri", default=d.mongo_uri)
             sp.add_argument("--db-name", dest="db_name", default=d.db_name)
-        for sp in (run, ev, dg, bf, sc, cl):
+        for sp in (run, ev, dg, bf, sc, cl, so):
             sp.add_argument("--sources-file", dest="sources_file", default=d.sources_file)
             sp.add_argument("--lang", dest="output_language", choices=("zh", "en"),
                             default=d.output_language, help="输出语言")

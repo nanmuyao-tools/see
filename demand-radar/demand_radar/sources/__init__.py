@@ -30,6 +30,52 @@ BACKFILL = {
 }
 
 
+# 每个源的使用风险，给用户自己选源时看（`demand-radar sources` 列出）。这是我们对条款的理解，不是法律意见，
+# 具体以各平台当前条款为准；平台条款会变（Reddit 2025-11 起收紧官方 API 就是例子）。
+#   open    官方公开接口，内容公开，守限速就行
+#   terms   官方接口，但内容协议或条款有要遵守的地方
+#   gray    官方不允许、不鼓励，或来源本身是第三方归档：默认关闭，用户自己决定要不要开
+#   varies  取决于订阅哪个站点，每个订阅单独用 enabled 开关
+PROVIDERS = {
+    "softwarerecs": {"risk": "terms", "terms": "https://api.stackexchange.com/docs",
+                     "note": "内容是 CC BY-SA，要署名（清单里每条都附原帖链接）；条款对用内容训练模型有限制，我们只做抽取分析"},
+    "hn_algolia": {"risk": "open", "terms": "https://hn.algolia.com/api", "note": "官方公开搜索接口"},
+    "github": {"risk": "open", "terms": "https://docs.github.com/en/rest", "note": "官方 REST 接口，公开 issue"},
+    "bluesky": {"risk": "open", "terms": "https://bsky.social/about/support/tos",
+                "note": "开放协议的官方公开接口；未登录只有 api.bsky.app 可用"},
+    "arctic_shift": {"risk": "gray", "terms": "docs/arctic-shift.md",
+                     "note": "Reddit 官方 API 禁止商业使用，这里是志愿者维护的第三方归档，无可用性承诺；条款仍是灰色"},
+    "rss": {"risk": "varies", "terms": "", "note": "取决于订阅的站点；自带的 Reddit、V2EX 订阅默认关闭，"
+                                                   "V2EX 的条款页当时打不开，没读到原文"},
+    "appstore": {"risk": "gray", "terms": "docs/research/2026-10-20-app-store-reviews.md",
+                 "note": "苹果的条款和 robots.txt 都不鼓励自动抓取"},
+    "googleplay": {"risk": "gray", "terms": "docs/research/2026-10-20-app-store-reviews.md",
+                   "note": "Google 的条款和 robots.txt 都不鼓励自动抓取"},
+}
+
+
+def describe(conf: dict) -> list[dict]:
+    """每个源一行：名字、是否启用、风险档、条款链接、说明；rss 另附每个订阅的开关。"""
+    on = set(enabled(conf))
+    rows = []
+    for name in REGISTRY:
+        row = {"name": name, "enabled": name in on, **PROVIDERS[name]}
+        if name == "rss":
+            row["feeds"] = [(f.get("name", "?"), f.get("enabled", True)) for f in conf.get("rss") or []]
+        rows.append(row)
+    return rows
+
+
+def notices(names: list[str]) -> list[str]:
+    """本次要用的源里，风险档是 gray / varies 的，各给一行提示（谁开的、读哪里的条款）。"""
+    out = []
+    for n in names:
+        meta = PROVIDERS.get(n)
+        if meta and meta["risk"] in ("gray", "varies"):
+            out.append(f"{n}（{meta['risk']}）：{meta['note']}" + (f"。条款：{meta['terms']}" if meta["terms"] else ""))
+    return out
+
+
 def backfill_module(name: str):
     if name not in BACKFILL:
         raise ValueError(f"{name} 不支持回填（RSS 订阅和应用商店评论没有按时间翻页）；"
@@ -51,12 +97,12 @@ def load_config(path: str) -> dict:
 
 
 def enabled(conf: dict) -> list[str]:
-    """配置里启用的源；[[rss]] 有订阅即视为启用。"""
+    """配置里启用的源；[[rss]] 有一个没关掉的订阅即视为启用。"""
     names = []
     for name in REGISTRY:
         c = conf.get(name)
         if name == "rss":
-            if c:
+            if c and any(f.get("enabled", True) for f in c):  # 订阅各有开关，全关等于整源关闭
                 names.append(name)
         elif c and c.get("enabled", True):
             names.append(name)

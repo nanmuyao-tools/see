@@ -49,8 +49,10 @@ queries = [
 # 比 RSS 好在不限流、能回填历史、老帖带 score；但它是志愿者维护的免费服务、不保证可用，
 # 所以下面四个 Reddit RSS 订阅保留做兜底——同一帖子两边都抓到会按 id 去重，不会重复抽取。
 # 调研与条款见 docs/arctic-shift.md
+# 默认关闭（灰色来源：Reddit 官方 API 不允许商业使用，这里又是第三方归档）：想用请先读上面的调研和条款，
+# 自己决定后把 enabled 改成 true（下面的 Reddit RSS 订阅同理，各自有 enabled 开关）
 [arctic_shift]
-enabled = true
+enabled = false
 subreddits = ["SomebodyMakeThis", "macapps", "androidapps", "software"]
 
 # 本地关键词过滤：标题或正文含任一短语才保留（不区分大小写）；没列出的版块全部保留。
@@ -64,25 +66,30 @@ software = ["is there a", "looking for", "recommend", "alternative to"]
 # 下面四个 Reddit 订阅和 [arctic_shift] 覆盖同样的版块，是它的兜底；嫌 429 日志吵可以删掉
 [[rss]]
 name = "reddit/SomebodyMakeThis"
+enabled = false   # 灰色来源，默认关闭；自己判断后改 true
 url = "https://www.reddit.com/r/SomebodyMakeThis/new/.rss"
 
 [[rss]]
 name = "reddit/macapps"
+enabled = false   # 灰色来源，默认关闭；自己判断后改 true
 url = "https://www.reddit.com/r/macapps/search.rss?q=%22is+there+an+app%22&restrict_sr=1&sort=new"
 
 [[rss]]
 name = "reddit/androidapps"
+enabled = false   # 灰色来源，默认关闭；自己判断后改 true
 url = "https://www.reddit.com/r/androidapps/search.rss?q=%22is+there+an+app%22&restrict_sr=1&sort=new"
 
 [[rss]]
 name = "reddit/software"
+enabled = false   # 灰色来源，默认关闭；自己判断后改 true
 url = "https://www.reddit.com/r/software/search.rss?q=%22looking+for%22&restrict_sr=1&sort=new"
 
 # V2EX「问与答」节点（中文，公开 Atom feed）：每周约 240 帖，调研抽样约 5/30 是需求。
-# 每天读一次、同域名限速；条款页当时没能打开（403），接入前读过 robots 和 feed 的公开性。
+# 每天读一次、同域名限速；V2EX 的条款页和 robots 当时都打不开（403），没读到条款原文，所以默认关闭。
 # limit 单独设成 50：全局的 --limit 10 会漏掉大半
 [[rss]]
 name = "v2ex/qna"
+enabled = false   # 灰色来源，默认关闭；自己判断后改 true
 url = "https://www.v2ex.com/feed/qna.xml"
 limit = 50
 
