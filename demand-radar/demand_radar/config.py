@@ -67,6 +67,9 @@ class Config:
     domain: str = ""
     search_source: str = ""  # 只搜某个来源，如 hackernews
     search_days: int = 0  # 只搜最近 N 天抽取的，0 = 不限
+    retriever: str = "brute"  # brute 暴力检索（默认，不需要额外服务）/ qdrant 向量库（见 qdrant_backend.py）
+    qdrant_url: str = "http://localhost:6333"  # 容器里是 http://qdrant:6333；":memory:" 是进程内模式
+    index_rebuild: bool = False  # index 命令：丢掉集合重新建
     min_similarity: float = 0.5  # 相似度低于此值的不返回（0.5 只去掉最明显的噪声；强弱判断见 search.py）
 
     # recommend 命令：按本机配置从档位表推荐模型
@@ -106,6 +109,8 @@ class Config:
             cluster=_env("DR_CLUSTER", "0").lower() in ("1", "true", "yes"),
             embed_model=_env("DR_EMBED_MODEL", Config.embed_model),
             embed_base_url=_env("DR_EMBED_BASE_URL", Config.embed_base_url),
+            retriever=_env("DR_RETRIEVER", Config.retriever),
+            qdrant_url=_env("DR_QDRANT_URL", Config.qdrant_url),
             cluster_threshold=float(_env("DR_CLUSTER_THRESHOLD", str(Config.cluster_threshold))),
             eval_pairs=_env("DR_EVAL_PAIRS", Config.eval_pairs),
 
@@ -128,6 +133,7 @@ class Config:
         sv = sub.add_parser("serve", help="常驻：Web 看板，直接读库，不调模型")
         so = sub.add_parser("sources", help="列出所有数据源：是否启用、使用风险、条款链接；开关在 sources.toml")
         se = sub.add_parser("search", help="语义检索：用一句话在需求库里找最像的需求，不调抽取模型")
+        ix = sub.add_parser("index", help="把库里的向量同步进 Qdrant（可选的向量库后端）；幂等，可重复运行")
         mc = sub.add_parser("mcp", help="常驻：MCP 服务（stdio），让 Claude Code 等 agent 检索需求库，只读")
         rc = sub.add_parser("recommend", help="检测本机配置，推荐抽取模型和嵌入模型，可写进 .env")
 
@@ -156,6 +162,15 @@ class Config:
         se.add_argument("--source", dest="search_source", default=d.search_source, help="只搜某个来源")
         se.add_argument("--days", dest="search_days", type=int, default=d.search_days, help="只搜最近 N 天")
         se.add_argument("--json", dest="as_json", action="store_true", help="输出 JSON")
+        ix.add_argument("--rebuild", dest="index_rebuild", action="store_true", help="丢掉集合重新建")
+        for sp in (se, mc, ix):
+            sp.add_argument("--retriever", choices=("brute", "qdrant"), default=d.retriever,
+                            help="检索后端：brute 暴力检索（默认）/ qdrant 向量库")
+            sp.add_argument("--qdrant-url", dest="qdrant_url", default=d.qdrant_url, help="Qdrant 服务地址")
+        for sp in (se, mc, ix):
+            sp.add_argument("--mongo-uri", dest="mongo_uri", default=d.mongo_uri)
+            sp.add_argument("--db-name", dest="db_name", default=d.db_name)
+            sp.add_argument("--embed-model", dest="embed_model", default=d.embed_model)
         for sp in (se, mc):
             sp.add_argument("--board", choices=("wish", "project"), default=d.board or None,
                             help="wish 愿望榜 / project 功能请求榜；不传搜全部（mcp 里 agent 自己选）")
@@ -163,10 +178,7 @@ class Config:
             sp.add_argument("--min-similarity", dest="min_similarity", type=float, default=d.min_similarity,
                             help="相似度低于此值的不返回")
             sp.add_argument("--min-confidence", type=float, default=d.min_confidence)
-            sp.add_argument("--mongo-uri", dest="mongo_uri", default=d.mongo_uri)
-            sp.add_argument("--db-name", dest="db_name", default=d.db_name)
             sp.add_argument("--sources-file", dest="sources_file", default=d.sources_file)
-            sp.add_argument("--embed-model", dest="embed_model", default=d.embed_model)
             sp.add_argument("--embed-base-url", dest="embed_base_url", default=d.embed_base_url)
             sp.add_argument("--base-url", "--ollama-base-url", dest="ollama_base_url", default=d.ollama_base_url)
         cl.add_argument("--output", dest="output_path", default=d.output_path)
@@ -272,6 +284,9 @@ class Config:
             search_source=getattr(ns, "search_source", ""),
             search_days=getattr(ns, "search_days", 0),
             min_similarity=getattr(ns, "min_similarity", d.min_similarity),
+            retriever=getattr(ns, "retriever", d.retriever),
+            qdrant_url=getattr(ns, "qdrant_url", d.qdrant_url),
+            index_rebuild=getattr(ns, "index_rebuild", False),
 
             models_file=_bundled(getattr(ns, "models_file", d.models_file), Config.models_file),
             tier=getattr(ns, "tier", ""),

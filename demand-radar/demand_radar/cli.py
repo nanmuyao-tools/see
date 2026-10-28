@@ -294,14 +294,48 @@ def list_sources(cfg: Config) -> None:
     print("\n风险档是我们对条款的理解，不是法律意见；灰色的源默认关闭，开不开由你自己决定。")
 
 
+def _retriever(cfg: Config, coll):
+    """按 --retriever 选检索后端。选了 qdrant 却连不上就报错，不悄悄退回暴力检索：
+    那会掩盖「你以为在用向量库、其实没有」，教学时尤其容易误导。"""
+    if cfg.retriever == "qdrant":
+        from . import qdrant_backend
+        return qdrant_backend.QdrantRetriever(coll, qdrant_backend.connect(cfg.qdrant_url), cfg.embed_model,
+                                              cfg.min_confidence)
+    from .retriever import BruteForceRetriever
+    return BruteForceRetriever(coll, cfg.embed_model, cfg.min_confidence)
+
+
+def index_cmd(cfg: Config) -> None:
+    """把 MongoDB 里入选且有向量的需求同步进 Qdrant。只读 MongoDB，只写 Qdrant；幂等。"""
+    from . import qdrant_backend
+    coll = store.connect(cfg.mongo_uri, cfg.db_name)
+    try:
+        client = qdrant_backend.connect(cfg.qdrant_url)
+    except RuntimeError as e:
+        sys.exit(str(e))
+    stats = qdrant_backend.sync(coll, client, cfg.embed_model, cfg.index_rebuild)
+    coll.database.client.close()
+    if not stats["indexed"] and not stats["deleted"]:
+        print(f"没有可索引的需求：库里还没有 {cfg.embed_model} 的向量。先运行 `demand-radar cluster` 生成向量。")
+        return
+    print(f"集合 {stats['collection']}（{stats['dim']} 维）：写入 {stats['indexed']} 条，删除过期 {stats['deleted']} 条。"
+          f"之后用 `--retriever qdrant` 检索。")
+
+
 def search_cmd(cfg: Config) -> None:
     """语义检索：只读，不写库。库里还没向量的需求搜不到，会提示去跑 cluster。"""
     coll = store.connect(cfg.mongo_uri, cfg.db_name)
     try:
+        retriever = _retriever(cfg, coll)
+    except RuntimeError as e:  # Qdrant 连不上：提示已经写明怎么启动，不要再套上「嵌入服务」的话
+        sys.exit(str(e))
+    try:
         res = search.search(coll, _embedder(cfg), cfg.embed_model, cfg.query, k=cfg.k, board=cfg.board or None,
                             domain=cfg.domain or None, source=cfg.search_source or None,
                             days=cfg.search_days or None, min_confidence=cfg.min_confidence,
-                            min_similarity=cfg.min_similarity)
+                            min_similarity=cfg.min_similarity, retriever=retriever)
+    except RuntimeError as e:  # 如「Qdrant 里还没有集合，先 index」
+        sys.exit(str(e))
     except Exception as e:
         sys.exit(f"检索失败：{_reason(e)}\n嵌入服务 {cfg.embed_base_url or cfg.ollama_base_url} 可达吗？"
                  f"模型 {cfg.embed_model} 拉了吗？")
@@ -318,14 +352,21 @@ def mcp_cmd(cfg: Config) -> None:
     from . import mcp_server
     conf = sources.load_config(cfg.sources_file)
     coll = store.connect(cfg.mongo_uri, cfg.db_name)
+    try:
+        retriever = _retriever(cfg, coll)
+    except RuntimeError as e:
+        sys.exit(str(e))
     server = mcp_server.Server(coll, _embedder(cfg), cfg.embed_model, rank.weights(conf.get("ranking")),
-                               cfg.min_confidence, cfg.min_similarity)
-    print("demand-radar MCP 服务已启动（stdio）", file=sys.stderr)
+                               cfg.min_confidence, cfg.min_similarity, retriever)
+    print(f"demand-radar MCP 服务已启动（stdio，检索后端：{retriever.name}）", file=sys.stderr)
     mcp_server.serve(server)
 
 
 def main(argv: list[str] | None = None) -> None:
     cfg = Config.from_args(argv)
+    if cfg.command == "index":
+        index_cmd(cfg)
+        return
     if cfg.command == "search":
         search_cmd(cfg)
         return

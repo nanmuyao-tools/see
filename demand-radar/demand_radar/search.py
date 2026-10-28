@@ -12,7 +12,8 @@ from __future__ import annotations
 
 from datetime import UTC, datetime, timedelta
 
-from . import cluster, rank, store
+from . import rank, store
+from .retriever import BruteForceRetriever
 
 BOARD_NAME = {"wish": "愿望榜", "project": "功能请求榜"}
 
@@ -31,30 +32,28 @@ def strength(similarity: float) -> str:
 
 def search(coll, embed, model: str, query: str, *, k: int = 5, board: str | None = None,
            domain: str | None = None, source: str | None = None, days: int | None = None,
-           min_confidence: float = 0.5, min_similarity: float = 0.0) -> dict:
-    """返回 {"results": [...], "missing_embeddings": N, "searched": M}。
+           min_confidence: float = 0.5, min_similarity: float = 0.0, retriever=None) -> dict:
+    """返回 {"results": [...], "missing_embeddings": N, "searched": M, "notes": [...]}。
 
+    retriever 默认是暴力检索（BruteForceRetriever）；传 QdrantRetriever 就换成向量库，其余逻辑不变。
     结果按相似度降序；同一簇只留最像的一条（带上簇的规模），否则同一个需求会占满前几名。"""
     if not query.strip():
         raise ValueError("查询不能为空")
+    retriever = retriever or BruteForceRetriever(coll, model, min_confidence)
     since = datetime.now(UTC) - timedelta(days=days) if days else None
-    docs, missing = store.search_candidates(coll, model, min_confidence, domain=domain, source=source, since=since)
-    if board:
-        docs = [d for d in docs if rank.board(d) == board]
-    qv = cluster.unit(embed([query])[0])
-    scored = sorted(((cluster._dot(qv, cluster.unit(d["embedding"])), d) for d in docs),
-                    key=lambda t: t[0], reverse=True)
+    r = retriever.query(embed([query])[0], k=k, board=board, domain=domain, source=source, since=since,
+                        min_similarity=min_similarity)
+    docs = {h.id: h.doc for h in r.hits if h.doc}
+    todo = [h.id for h in r.hits if h.id not in docs]
+    if todo:
+        # 以 MongoDB 为准：再核对一遍「仍然入选」，索引里过期的、后来被转去待确认的一律丢掉
+        q = {**store.dashboard_query(min_confidence, held=False), "_id": {"$in": todo}}
+        docs.update({d["_id"]: d for d in coll.find(q, {"embedding": 0})})
     sizes = {c["_id"]: c["size"] for c in store.load_clusters(coll)}
-    out, seen = [], set()
-    for sim, d in scored:
-        if sim < min_similarity or len(out) >= k:
-            break
-        cid = d.get("cluster_id")
-        if cid and cid in seen:
-            continue
-        seen.add(cid)
-        out.append(_item(d, sim, sizes.get(cid, 1)))
-    return {"results": out, "missing_embeddings": missing, "searched": len(docs)}
+    out = [_item(docs[h.id], h.similarity, sizes.get(docs[h.id].get("cluster_id"), 1))
+           for h in r.hits if h.id in docs]
+    return {"results": out, "missing_embeddings": r.missing_embeddings, "searched": r.searched,
+            "notes": r.notes, "retriever": retriever.name}
 
 
 def _item(d: dict, similarity: float | None = None, cluster_size: int = 1) -> dict:
@@ -93,6 +92,8 @@ def render_results(res: dict) -> str:
         body = "没有找到足够相似的需求。"
     else:
         body = "\n\n".join(render(it, i) for i, it in enumerate(res["results"], 1))
+    for note in res.get("notes", []):
+        body += f"\n\n（{note}）"
     if res["missing_embeddings"]:
         body += (f"\n\n（注意：还有 {res['missing_embeddings']} 条入选需求没有向量，不在检索范围内；"
                  f"运行 `demand-radar cluster` 补齐后再搜。本次检索了 {res['searched']} 条。）")

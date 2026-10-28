@@ -51,8 +51,8 @@ TOOLS = [
 
 class Server:
     def __init__(self, coll, embed, model: str, weights: dict[str, float], min_confidence: float = 0.5,
-                 min_similarity: float = 0.5):
-        self.coll, self.embed, self.model = coll, embed, model
+                 min_similarity: float = 0.5, retriever=None):
+        self.coll, self.embed, self.model, self.retriever = coll, embed, model, retriever
         self.w, self.min_confidence, self.min_similarity = weights, min_confidence, min_similarity
 
     # ---- 协议 ----
@@ -101,7 +101,8 @@ class Server:
             raise ValueError("query 不能为空")
         res = search.search(self.coll, self.embed, self.model, query, k=self._k(args), board=args.get("board"),
                             domain=args.get("domain"), days=args.get("days"),
-                            min_confidence=self.min_confidence, min_similarity=self.min_similarity)
+                            min_confidence=self.min_confidence, min_similarity=self.min_similarity,
+                            retriever=self.retriever)
         return search.render_results(res)
 
     def get_demand(self, args: dict) -> str:
