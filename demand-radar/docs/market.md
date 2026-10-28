@@ -111,4 +111,5 @@ GummySearch 帮用户在 Reddit 上找目标用户的痛点，是这个领域最
 
 - GummySearch 的真实付费人数和收入（几个来源差距很大）
 - 中国独立开发者的规模，以及 V2EX、即刻等中文社区的可用数据源和条款
+  - 2026-10-28 部分核实（见 [research/2026-10-28-data-sources.md](research/2026-10-28-data-sources.md)）：V2EX 的 JSON API 被 Cloudflare 挡住，节点 Atom feed 可读（「问与答」每周约 240 帖），robots 和条款页都 403，条款仍未拿到；知乎、小红书的 robots 对 `*` 都是 `Disallow: /`；即刻要登录。独立开发者规模仍无数据
 - 各数据源平台对「用户自行运行的开源工具」的具体条款要求
