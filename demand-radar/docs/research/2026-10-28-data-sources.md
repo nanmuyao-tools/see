@@ -15,10 +15,14 @@
 1. **头部被 GitHub 占满，主因是排序公式，不是缺数据源。** 热度项是 `log1p(score)`：一个 1500 赞的 issue 拿 7.3 分，HN 评论、StackExchange 和 Reddit 帖几乎都是 0 分。分项打分每差一档才 1～1.5 分，所以清单前 12 名全部是 GitHub。**这件事先修，比加源见效快**：按来源类型分榜，或者热度在各源内部归一化。
 2. **增量少，是上游本身就少。** GitHub 源按设计不用游标，每天重抓同一份 19 条榜单，全是重复，8 天里只新增 1 条。softwarerecs 整个站最近 7 天只有 2 个新问题 `[一手]`。HN 现有 5 个短语 7 天合计只命中 12 条 `[一手]`。
 3. **StackExchange 扩站没有意义。** superuser 每周 39 个新问题，askubuntu 66 个，其余站点个位数，标题含「is there」的几乎为 0 `[一手]`。
-4. **推荐立刻做，零代码或小改动**：① 分榜 / 归一化热度；② HN 加 Ask HN（每周约 237 帖，先在本地按关键词筛）和两个短语；③ Mastodon `#askfedi` 和 V2EX「问与答」，这两个直接用现有 `rss` 源订阅就能接，只改 `sources.toml`。后两个的条款有不清楚的地方，要你确认。
-5. **有条件**：Reddit（Arctic Shift，已实现，在库里产出率最高，等你定条款）；Bluesky 搜索（未登录能用，但接口脆弱、条款页拿不到）；GitHub Discussions（必须带 token）。
+4. **推荐立刻做（零代码或小改动）**：① 分榜 / 归一化热度；② HN 加 Ask HN（每周约 237 帖，先在本地按关键词筛）和两个短语。
+5. **有条件**：
+   - V2EX「问与答」和 Mastodon `#askfedi`：现有 `rss` 源就能订阅，但条款不清楚，要你确认。另外 `rss` 要先支持按订阅设条数，`--limit 10` 下每天会漏掉大半。
+   - Reddit（Arctic Shift）：已实现。库内进清单率 54%，仅次于 softwarerecs 的 80%。等你定条款。
+   - Bluesky 搜索：未登录能用，但接口脆弱，条款页拿不到。
+   - GitHub Discussions：必须带 token。
 6. **不建议**：Product Hunt、Indie Hackers、Lobsters、AlternativeTo、Obsidian 论坛、知乎、小红书、即刻，以及 Canny / UserVoice 这类产品反馈站。原因是条款明确不允许、要 key，或者内容本质还是「给已有产品提需求」。
-7. 粗估：按建议全部接入后，每周进清单的「新产品类」需求从现在的约 5 条升到 **30～60 条**。其中 V2EX 和 Mastodon 贡献最多，但这是按样本密度外推的 `[推断]`。
+7. 粗估 `[推断]`：现在每周新进清单的新产品类需求约 5 条，这是模型抽取并过滤之后的数。按建议全部接入后，人工估计每周约有 **30～60 条候选需求**，这是样本密度 × 源头量，还没经过模型。模型会再筛掉一部分，参考 HN 抽取后的进清单率只有 28%。两个数口径不同，不能直接比。V2EX 和 Mastodon 贡献最多。
 
 ## 一、现状基线（MongoDB 实测，只读）
 
@@ -68,38 +72,40 @@
 
 ## 二、候选源总表
 
-「每周量」是源头的原始量，「需求浓度」是人工读 ≤30 条样本的粗估，「预计每周进清单」= 量 × 浓度 × 能接入的比例，属于 `[推断]`。
+「每周量」是源头的原始量。「需求浓度」是人工读 ≤30 条样本的粗估。「候选需求/周」= 量 × 浓度，是人工估计，**还没经过模型抽取**，并假设已放开每个订阅的条数，属于 `[推断]`。模型还会再筛掉一部分，参考 HN 的进清单率只有 28%。
 
-| 候选 | 内容类型 | 实测每周量 | 需求浓度 `[人工判断]` | 预计每周进清单 | 获取方式 | key | 热度信号 | 条款 / robots | 接入成本 | 结论 |
-|---|---|---|---|---|---|---|---|---|---|---|
-| **排序修正（非数据源）** | — | — | — | 让现有约 28 条新产品类需求浮上来 | 改 `rank.py` / 清单分组 | — | — | — | 小 | **立刻做** |
-| HN Ask HN 帖子 | 提问、求推荐、少量愿望 | 237 帖 `[一手]` | 约 3 / 30 | 10～20（先本地关键词筛） | Algolia `tags=ask_hn` | 否 | points、评论数 | 与现有 HN 源相同 | 小：`hn_algolia` 加一种查询模式 | **立刻接入** |
-| HN 加短语 `wish someone would`、`does anyone know of` | 评论里的愿望 | 6 + 4 条 `[一手]` | 约 5 / 30 | 约 2 | 现有源 | 否 | 评论无分数 | 同上 | 零：改 `sources.toml` | **立刻接入** |
-| HN 短语 `alternative to` | 产品发布、顺口提及 | 77 条 | **0 / 30** | 0 | — | — | — | — | — | 不建议 |
-| Mastodon `#askfedi` 标签 | 求推荐、求助、少量愿望 | 约 140 条（30 条跨 36 小时） | 约 4 / 30 | 约 10～18 | 标签 RSS `mastodon.social/tags/askfedi.rss`（实测 200） | 否 | 公开 API 有收藏数，RSS 没有 | robots 只禁 AI 爬虫名单和几个路径；ToS 只约束注册用户，无抓取条款 `[一手]` | 零：加一个 `[[rss]]` | **有条件**：社区普遍反感抓取，见第五节 |
-| V2EX「问与答」节点 | 中文求推荐、求助、吐槽 | 约 240 帖（50 条跨约 35 小时） | 约 5 / 30 | 约 20～40（中文） | Atom `v2ex.com/feed/qna.xml`（实测 200，一次 50 条） | 否 | 无（RSS 不含回复数） | JSON API 被 Cloudflare 挡（403）；robots.txt 和关于页都 403，**没拿到条款** | 零：加一个 `[[rss]]`，但每轮条数要放到 ≥50 | **有条件** |
-| Reddit（Arctic Shift） | 愿望帖、求 app | 未在本次测（遵照 10-21 暂停） | 库内实测：抽取 24 条进清单 13 条 | 5～15 `[推断]` | 已实现 `arctic_shift` 源 | 否 | score（36 小时后才准） | 灰色，见 `docs/arctic-shift.md` | 零：改 `enabled = true` | **有条件**（等你定） |
-| Bluesky 搜索 | 短帖愿望 | 「is there an app」约 14 条（29 条跨 14 天） | 约 8 / 29 | 每个短语约 3～4 | `api.bsky.app/xrpc/app.bsky.feed.searchPosts` | 否 | 点赞、回复数 | 官方限额页抓回为空，开发者指南 404；`public.api.bsky.app` 403；未登录翻页 403 `[一手]` | 中：新写源，约 80 行 | 有条件，优先级低 |
-| GitHub Discussions（Ideas 分类） | 对项目的想法 | 未测 | — | — | 只有 GraphQL | **要 token**（官方文档原文）`[一手]` | 有 | GitHub ToS 同现有源 | 中 | 有条件：只作带 `GITHUB_TOKEN` 时的可选项 |
-| StackExchange 其他站 | 技术问答 | softwarerecs 2、superuser 39、askubuntu 66、apple 10、android 9、unix 14、softwareengineering 4、webapps 3、hardwarerecs 3、ux 1 `[一手]` | — | ≈0 | 现有源加站 | 否 | 有 | 已在用 | 零 | 不建议：量太少 |
-| Lemmy（lemmy.world `selfhosted`） | 发布、求助、求推荐 | 约 31 帖 | 约 2 / 28 | ≈2 | `/api/v3/post/list`，公开 | 否 | score | robots `Crawl-delay: 60`；ToS 无抓取条款，要求「good faith」`[一手]` | 中 | 不建议：量小 |
-| Obsidian 论坛 `plugins-idea` | 插件愿望，几乎条条是需求 | 最新一帖 2026-07-07，**分类基本停更** | 约 25 / 30 | ≈0（存量 1772 帖） | Discourse JSON，robots 不禁 | 否 | 点赞、回复 | Obsidian ToS 禁止「spiders or other screen scraping … without the express consent」`[一手]` | 小 | 不建议 |
-| GitHub `open-source-ideas/ideas` | 点子仓库 | 半年 10 个 issue | 低，多为 AI 生成长文 | ≈0 | 现有源改查询 | 否 | 有 | 同现有源 | 零 | 不建议 |
-| Raycast 扩展请求（GitHub） | 扩展愿望 | 历史共 79 个标题含「extension request」 | — | ≈0 | 同上 | 否 | 有 | 同上 | 零 | 不建议：已不在 GitHub 收集 `[推断]` |
-| Product Hunt | 产品发布和评论 | 未测 | 低 `[推断]`：发布帖为主 | — | API v2 | **要 token** | 票数 | API 文档原文「must not be used for commercial purposes」；网站有 Cloudflare 质询 `[一手]` | 中 | 不建议 |
-| Indie Hackers | 创业讨论 | 未测 | — | — | 无公开 API | — | — | robots 禁 `/api/`，并按名字禁 ClaudeBot、GPTBot 等 AI 爬虫 `[一手]` | 高：要抓 HTML | 不建议 |
-| Lobsters | 技术链接和讨论 | 未测 | — | — | — | — | — | robots `User-agent: * Disallow: /`，另有 `Content-Signal: ai-input=no` `[一手]` | — | 不建议 |
-| AlternativeTo | 替代品目录 | 未测 | — | — | — | — | — | robots 禁 `/api/`、`/discussions/` `[一手]` | — | 不建议 |
-| Canny / UserVoice / featurebase | 已有产品的反馈板 | 未测 | 和 GitHub 功能请求同类 | — | Canny API 要板主 key（无 key 实测 400）`[一手]` | 要 | 投票 | 各站不同 | 中 | 不建议：本质是问题二 |
-| 应用商店、Chrome / VS Code 插件评论 | 已有产品的差评 | 见 App 评论调研 | 17% 说清了缺什么 | — | 非公开接口 | — | — | 苹果、Google 条款不利，见 `2026-10-20-app-store-reviews.md` | — | 维持默认关闭；插件市场没测 |
-| 知乎 / 小红书 | 中文问答、种草 | 未测 | — | — | — | — | — | robots 对 `*` 都是 `Disallow: /` `[一手]` | — | 不建议 |
-| 即刻 | 中文动态 | 未测 | — | — | 要登录 | — | — | — | — | 不建议 |
-| 少数派 | 文章 | 未测 | 低：文章不是愿望 | — | 有文章 RSS | 否 | — | robots 只禁部分路径 | 零 | 不建议：内容类型不对 |
-| YouTube / 播客评论 | 评论 | 未测 | — | — | YouTube Data API 要 key `[推断]` | 要 | 有 | 未查 | 中 | 不建议进默认路径 |
+| 候选 | 内容类型 | 实测每周量 | 需求浓度 `[人工判断]` | 候选需求/周 | 获取方式 | key | 限速 | 语言 | 热度信号 | 条款 / robots | 接入成本 | 结论 |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| **排序修正（非数据源）** | — | — | — | 让现有约 28 条新产品类需求浮上来 | 改 `rank.py` / 清单分组 | — | — | — | — | — | 小 | **立刻做** |
+| HN Ask HN 帖子 | 提问、求推荐、少量愿望 | 237 帖 `[一手]` | 约 3 / 30 | 10～20（先本地关键词筛） | Algolia `tags=ask_hn` | 否 | 约每小时 1 万次（项目代码注释，官方页未核实） | 英 | points、评论数 | 与现有 HN 源相同 | 小：`hn_algolia` 加一种查询模式 | **立刻接入** |
+| HN 加短语 `wish someone would`、`does anyone know of` | 评论里的愿望 | 6 + 4 条 `[一手]` | 约 5 / 30（只抽了 `wish someone would`） | 约 2 | 现有源 | 否 | 同上 | 英 | 评论无分数 | 同上 | 零：改 `sources.toml` | **立刻接入** |
+| HN 短语 `alternative to` | 产品发布、顺口提及 | 77 条 | **0 / 30** | 0 | — | — | — | 英 | — | — | — | 不建议 |
+| Mastodon `#askfedi` 标签 | 求推荐、求助、少量愿望 | 约 140 条（30 条跨 36 小时） | 约 3 / 30（可由个人做的） | 约 10～15 | 标签 RSS `mastodon.social/tags/askfedi.rss`（实测 200） | 否 | 未核实 | 英为主，夹杂德、波兰语 | 公开 API 有收藏数，RSS 没有 | robots 只禁 AI 爬虫名单和几个路径；ToS 只约束注册用户，无抓取条款 `[一手]` | 小：加一个 `[[rss]]`，但 `rss` 要先支持按订阅设条数 | **有条件**：社区普遍反感抓取，见第五节 |
+| V2EX「问与答」节点 | 求推荐、求助、吐槽 | 约 240 帖（30 条跨约 21 小时） | 约 5 / 30 | 约 20～40 | Atom `v2ex.com/feed/qna.xml`（实测 200，一次 50 条） | 否 | 未核实 | **中文** | 无（RSS 不含回复数） | JSON API 被 Cloudflare 挡（403）；robots.txt 和关于页都 403，**没拿到条款** | 小：同上，每轮条数要 ≥50 | **有条件** |
+| Reddit（Arctic Shift） | 愿望帖、求 app | 本次未测（遵照 10-21 暂停） | 库内实测：抽取 24 条进清单 13 条 | 5～15 `[推断]` | 已实现 `arctic_shift` 源 | 否 | 动态，见 `docs/arctic-shift.md` | 英 | score（36 小时后才准） | 灰色，见 `docs/arctic-shift.md` | 零：改 `enabled = true` | **有条件**（等你定） |
+| Bluesky 搜索 | 短帖愿望 | 「is there an app」约 14 条（29 条跨 14 天） | 约 8 / 29 | 每个短语约 3～4 | `api.bsky.app/xrpc/app.bsky.feed.searchPosts` | 否 | 未核实（官方页抓回为空） | 英（可用 `lang` 过滤） | 点赞、回复数 | 开发者指南 404；`public.api.bsky.app` 403；未登录翻页 403 `[一手]` | 中：新写源，约 80 行 | 有条件，优先级低 |
+| GitHub Discussions（Ideas 分类） | 对项目的想法 | 未测 | — | — | 只有 GraphQL | **要 token**（官方文档原文）`[一手]` | 未查 | 英 | 有 | GitHub ToS 同现有源 | 中 | 有条件：只作带 `GITHUB_TOKEN` 时的可选项 |
+| StackExchange 其他站 | 技术问答 | softwarerecs 2、superuser 39、askubuntu 66、apple 10、android 9、unix 14、softwareengineering 4、webapps 3、hardwarerecs 3、ux 1 `[一手]` | — | ≈0 | 现有源加站 | 否 | 匿名每天 300 次 | 英 | 有 | 已在用 | 零 | 不建议：量太少 |
+| Lemmy（lemmy.world `selfhosted`） | 发布、求助、求推荐 | 约 31 帖 | 约 2 / 28 | ≈2 | `/api/v3/post/list`，公开 | 否 | robots `Crawl-delay: 60` | 英 | score | ToS 无抓取条款，要求「good faith」`[一手]` | 中 | 不建议：量小 |
+| Obsidian 论坛 `plugins-idea` | 插件愿望，几乎条条是需求 | 最新一帖 2026-07-07，**分类基本停更** | 约 25 / 30 | ≈0（存量 1772 帖） | Discourse JSON，robots 不禁 | 否 | 未查 | 英 | 点赞、回复 | Obsidian ToS 禁止「spiders or other screen scraping … without the express consent」`[一手]` | 小 | 不建议 |
+| GitHub `open-source-ideas/ideas` | 点子仓库 | 半年 10 个 issue | 低，多为 AI 生成长文 | ≈0 | 现有源改查询 | 否 | 搜索匿名每分钟 10 次 | 英 | 有 | 同现有源 | 零 | 不建议 |
+| Raycast 扩展请求（GitHub） | 扩展愿望 | 历史共 79 个标题含「extension request」 | — | ≈0 | 同上 | 否 | 同上 | 英 | 有 | 同上 | 零 | 不建议：已不在 GitHub 收集 `[推断]` |
+| Product Hunt | 产品发布和评论 | 未测 | 低 `[推断]`：发布帖为主 | — | API v2 | **要 token** | 文档只说「fair-use」，无数字 | 英 | 票数 | API 文档原文「must not be used for commercial purposes」；网站有 Cloudflare 质询 `[一手]` | 中 | 不建议 |
+| Indie Hackers | 创业讨论 | 未测 | — | — | 无公开 API | — | — | 英 | — | robots 禁 `/api/`，并按名字禁 ClaudeBot、GPTBot 等 AI 爬虫 `[一手]` | 高：要抓 HTML | 不建议 |
+| Lobsters | 技术链接和讨论 | 未测 | — | — | — | — | `Crawl-delay: 1`，但对 `*` 全禁 | 英 | — | robots `User-agent: * Disallow: /`，另有 `Content-Signal: ai-input=no` `[一手]` | — | 不建议 |
+| AlternativeTo | 替代品目录 | 未测 | — | — | — | — | — | 英 | — | robots 禁 `/api/`、`/discussions/` `[一手]` | — | 不建议 |
+| Canny / UserVoice / featurebase | 已有产品的反馈板 | 未测 | 和 GitHub 功能请求同类 | — | Canny API 要板主 key（无 key 实测 400）`[一手]` | 要 | — | 英 | 投票 | 各站不同 | 中 | 不建议：本质是问题二 |
+| 应用商店、Chrome / VS Code 插件评论 | 已有产品的差评 | 见 App 评论调研 | 17% 说清了缺什么 | — | 非公开接口 | — | 见该调研 | 中英 | — | 苹果、Google 条款不利，见 `2026-10-20-app-store-reviews.md` | — | 维持默认关闭；插件市场没测 |
+| 知乎 / 小红书 | 中文问答、种草 | 未测 | — | — | — | — | — | 中 | — | robots 对 `*` 都是 `Disallow: /` `[一手]` | — | 不建议 |
+| 即刻 | 中文动态 | 未测 | — | — | 要登录 | — | — | 中 | — | — | — | 不建议 |
+| 少数派 | 文章 | 未测 | 低：文章不是愿望 | — | 有文章 RSS | 否 | — | 中 | — | robots 只禁部分路径 | 零 | 不建议：内容类型不对 |
+| YouTube / 播客评论 | 评论 | 未测 | — | — | YouTube Data API 要 key `[推断]` | 要 | 未查 | 中英 | 有 | 未查 | 中 | 不建议进默认路径 |
 
 ## 三、实测记录
 
 所有请求都是公开、未登录的只读请求。UA 用 `demand-radar-research/0.1`，每次间隔 1.2～3 秒。没有绕过任何 Cloudflare 质询或鉴权，被挡住的就记为挡住。脚本在 scratchpad，没有进仓库。
+
+出口说明：本机经代理出网，Bluesky 的 CDN 响应头显示请求国家是 VN。V2EX API、Product Hunt 的 Cloudflare 403 和 GitHub 的限流提示都可能和这个共享出口有关，换一个 IP 结果可能不同 `[推断]`。
 
 | 目标 | 请求数 | 结果 |
 |---|---|---|
@@ -110,7 +116,7 @@
 | Bluesky | 7 | `public.api` 403 两次；`api.bsky.app` 搜索 200；带 cursor 翻页 403；`since` 过滤可用 |
 | Mastodon | 4 | 全文搜索未登录返回空数组；标签时间线 200；ToS 接口 2 次 |
 | Obsidian 论坛（Discourse） | 3 | 分类列表，以及按创建时间排序的 `plugins-idea` |
-| GitHub | 6 | 查 Raycast 标签和搜索，查 open-source-ideas；GraphQL 未登录返回限流提示（匿名额度已被前几次用完），没测出鉴权结论，改以文档为准 |
+| GitHub | 6 | 查 Raycast 标签和搜索，查 open-source-ideas；GraphQL 未登录返回「API rate limit exceeded」。本次只发了约 6 次请求，远低于匿名每小时 60 次，更可能是出口 IP 和别人共用（经代理） `[推断]`。没测出鉴权结论，改以文档为准 |
 | V2EX | 6 | `/api/topics/latest.json` 403；`/feed/qna.xml` 200（50 条）；`/feed/ideas.xml` 200；robots、about 都 403 |
 | Canny | 1 | 无 key 调 `posts/list` 返回 400 |
 | **合计** | 约 96 | |
@@ -168,7 +174,7 @@
 
 ### 3.3 Mastodon `#askfedi`
 
-标签时间线 30 条，跨约 36 小时 → 每周约 140 条。约 4 条接近产品需求 `[人工判断]`：
+标签时间线 30 条，跨约 36 小时 → 每周约 140 条。约 4 条接近产品需求，去掉个人做不了的硬件约 3 条 `[人工判断]`：
 
 - 「What do y'all use for recipe organization? I copy and paste to Notes and the wife still uses Pinterest. You can't rely on links and AI slop recipes are everywhere.」
 - 「Anywone know a reliable way to bridge Mastodon dm's into Matrix? It's litteraly the only direct comunication thing we have to open another app for」
@@ -218,13 +224,13 @@ Atom feed 一次 50 条，30 条跨约 21 小时 → 每周约 240 帖。约 5 �
 
 打分是 1～3 的粗档 `[推断]`，越高越好；条款风险越低分越高。
 
-| 顺序 | 做什么 | 需求浓度 | 增量 | 条款 | 接入成本 | 预计每周进清单 | 分榜归属 |
+| 顺序 | 做什么 | 需求浓度 | 增量 | 条款 | 接入成本 | 候选需求/周（未经模型） | 分榜归属 |
 |---|---|---|---|---|---|---|---|
 | 1 | **分榜 + 热度按源归一化** | — | — | 3 | 3 | 不加数据，让现有新产品类需求进头部 | — |
 | 2 | HN 加两个短语 | 2 | 1 | 3 | 3 | 约 2 | 愿望 |
 | 3 | HN Ask HN + 本地关键词筛 | 1 | 3 | 3 | 2 | 10～20 | 愿望 / 求推荐 |
-| 4 | V2EX「问与答」RSS | 2 | 3 | 1（没拿到条款） | 3 | 20～40 | 愿望 / 求推荐（中文） |
-| 5 | Mastodon `#askfedi` RSS（可再加 `#askmastodon` 等，未测） | 1 | 2 | 2 | 3 | 10～18 | 愿望 / 求推荐 |
+| 4 | V2EX「问与答」RSS（先让 `rss` 支持按订阅设条数） | 2 | 3 | 1（没拿到条款） | 2 | 20～40 | 愿望 / 求推荐（中文） |
+| 5 | Mastodon `#askfedi` RSS（可再加 `#askmastodon` 等，未测） | 1 | 2 | 2 | 2 | 10～15 | 愿望 / 求推荐 |
 | 6 | Reddit（Arctic Shift，恢复） | 3 | 2 | 1 | 3 | 5～15 | 愿望 |
 | 7 | Bluesky 搜索（新源） | 2 | 2 | 1 | 1 | 每个短语 3～4 | 愿望 |
 | — | GitHub（保留） | 1（对「新产品」而言） | 1 | 3 | — | ≈0 | **单独一榜：已有项目的功能请求** |
