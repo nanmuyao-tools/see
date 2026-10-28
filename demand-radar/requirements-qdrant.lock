@@ -1,0 +1,13 @@
+# 可选的 Qdrant 向量库后端额外需要的包（精确版本）。只在 docker build --build-arg WITH_QDRANT=1 时安装，
+# 且用 --no-deps：核心锁文件 requirements.lock 里已有的包一个版本都不动，这里只列「核心里没有的」。
+# 在 Linux（python:3.12-slim）里生成：先装 ".[web,qdrant]" 再 pip freeze，扣掉 requirements.lock 里已有的包。
+grpcio==1.85.0
+h2==4.4.1
+hpack==4.2.0
+httpcore==1.0.9
+httpx==0.28.1
+hyperframe==6.1.0
+numpy==2.5.4
+portalocker==4.4.2
+protobuf==7.36.2
+qdrant-client==1.20.0

@@ -2,6 +2,16 @@
 
 ## 未发布
 
+### 向量库后端 Qdrant（可选，教学用）
+
+- **检索接口 `Retriever`，两个后端**：默认的 `BruteForceRetriever`（原来的暴力检索，行为不变）和可选的 `QdrantRetriever`。`search`、`mcp` 命令用 `--retriever brute|qdrant`（或 `DR_RETRIEVER`）选。选了 qdrant 却连不上或没建索引会直接报错并提示怎么做，**不会悄悄退回暴力检索**。
+- **`index` 命令**：把 MongoDB 里入选且有向量的需求同步进 Qdrant，幂等，会删掉不再入选的点。MongoDB 始终是唯一来源，Qdrant 只是可重建的派生索引。点 ID 用 `uuid5(需求 id)`；榜单、领域、来源、抽取时间、可信度、簇 key 放 payload 并建 payload 索引；距离用 Cosine，分数和暴力检索同一量纲；同一簇只留一条用 `group_by`；检索时对比条数提示索引是否过期，命中的 id 还会回 MongoDB 核对是否仍然入选。
+- **默认行为完全不变**：Qdrant 在独立的 compose profile `qdrant` 里，镜像固定 `v1.19.2`，数据放命名卷，端口只绑 `127.0.0.1`，`app` 不依赖它；`qdrant-client` 是可选依赖（`pip install 'demand-radar[qdrant]'`），只在 Qdrant 后端里懒导入；Docker 镜像默认**不带**客户端，`DR_WITH_QDRANT=1` 构建时才装（用单独的 `requirements-qdrant.lock`、`--no-deps`，核心锁一个版本都不动）。默认镜像 340MB，带客户端 471MB。`run` / `schedule` 不会自动同步，`dr-weekly` 不受影响。
+- **一致性测试** `tests/test_qdrant_parity.py`：同一批数据、同一个假嵌入，两个后端必须返回相同的 id、相同的顺序、相近的分数，覆盖榜单、领域、来源、天数、相似度下限、可信度、簇去重、待确认、别的模型的向量、没有向量、索引过期、幂等等 16 种情况。用 `QdrantClient(":memory:")`，不需要服务。客户端在 `[dev]` 里，CI 会跑；没装客户端时这 16 个测试跳过，其余 348 个照常。真实数据（47 条向量）上 4 条查询两个后端的结果完全一致。
+- **基准** `bench/vector_bench.py`（不在包里）：1k / 10k / 100k 条、1024 维，比较纯 Python、numpy、Qdrant HNSW 的延迟和 HNSW 的 recall。合成数据，只看趋势；10 万条上的纯 Python 是外推；空请求的 HTTP 开销单独量出来。超过 20 万条要 `--allow-large`。
+- **教学文档** `docs/lessons/`：第一课暴力检索，第二课向量库（含上面基准的一次结果和它的局限）。
+- **要知道的**：真实库里只有 47 条需求带向量（`DR_CLUSTER=0`），所以真实数据上的索引也只有这些；在我们的数据量下暴力检索完全够用，向量库没有收益，这是教学的结论之一。
+
 ### 给 agent 用：语义检索和 MCP 服务（只读）
 
 - **`search` 命令**：用一句话在已入库的需求里找最像的。向量就是 `cluster` 已经存在 `demands.embedding` 里的那份，内存里暴力算余弦，**不引入向量数据库**；同一簇只留最像的一条；只在 `embedding_model` 相同的文档里找；待人工确认区永远不返回。检索不写库、不替没有向量的需求补向量，而是在结果里提示还有几条没向量。

@@ -30,7 +30,8 @@ dependencies = [
 
 [project.optional-dependencies]
 web = ["fastapi>=0.110,<1", "uvicorn>=0.29,<1"]          # serve 命令（Web 看板）
-dev = ["demand-radar[web]", "mongomock>=4.1", "httpx>=0.27", "ruff>=0.6"]
+qdrant = ["qdrant-client>=1.19,<2"]                      # 可选的向量库后端（index 命令、--retriever qdrant）
+dev = ["demand-radar[web,qdrant]", "mongomock>=4.1", "httpx>=0.27", "ruff>=0.6"]
 
 [project.scripts]
 demand-radar = "demand_radar.cli:main"

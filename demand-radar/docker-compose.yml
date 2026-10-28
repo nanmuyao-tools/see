@@ -28,7 +28,11 @@ services:
     # 想用本机已装的 ollama 时可注释掉本服务，并把 app 的 OLLAMA_API 指向宿主机
 
   app:
-    build: .
+    build:
+      context: .
+      args:
+        # 可选：镜像里带上 Qdrant 客户端（向量库后端，见 README「向量库后端」）。默认 0，镜像和以前一样
+        WITH_QDRANT: "${DR_WITH_QDRANT:-0}"
     # app / scheduler / web 共用这一个镜像：构建一次三个都更新（以前各自构建，只 build app 不会更新另两个）
     image: demand-radar:local
     # 容器以 uid 1000 运行。Linux 上 ./out 属于别的用户时，入口脚本会提示；也可以直接改成自己的 uid:gid
@@ -54,6 +58,8 @@ services:
       DR_EMBED_MODEL: "${DR_EMBED_MODEL:-qwen3-embedding:0.6b}"   # 要懂中文；选型见 demand_radar/cluster.py
       DR_EMBED_BASE_URL: "${DR_EMBED_BASE_URL:-}"   # 空 = 用上面的 ollama；Mac GPU 路线指向 Mac 上原生的 Ollama
       DR_CLUSTER_THRESHOLD: "${DR_CLUSTER_THRESHOLD:-0.78}"
+      DR_RETRIEVER: "${DR_RETRIEVER:-brute}"        # 检索后端：brute 暴力检索（默认）/ qdrant 向量库
+      DR_QDRANT_URL: "http://qdrant:6333"           # 只有 --retriever qdrant / index 命令才用，没起 qdrant 也不影响其他命令
       # 可选：提高限额。不设也能用
       GITHUB_TOKEN: "${GITHUB_TOKEN:-}"            # GitHub 搜索：10 → 30 次/分钟
       SE_API_KEY: "${SE_API_KEY:-}"                # StackExchange：300 → 1 万次/天
@@ -78,6 +84,23 @@ services:
       DR_DIGEST_WEEKDAY: "${DR_DIGEST_WEEKDAY:-1}"  # ISO 周几出周报：1 周一 … 7 周日，0 不出
       DR_RUN_ON_START: "${DR_RUN_ON_START:-1}"      # 启动时先跑一次
 
+  # 可选的向量库后端（教学：检索的第二课）：docker compose --profile qdrant up -d qdrant
+  # 默认不启动（profile 为 qdrant），app 也不依赖它：不用它时一切照旧。要在 app 里用，镜像得带客户端：
+  #   DR_WITH_QDRANT=1 docker compose build app
+  # 然后：docker compose run --rm app index        # 把 MongoDB 里的向量同步进 Qdrant（幂等）
+  #       docker compose run --rm app search "…" --retriever qdrant
+  # 数据放命名卷 qdrant-data；它只是 MongoDB 的一份派生索引，丢了用 index --rebuild 重建
+  qdrant:
+    image: qdrant/qdrant:v1.19.2   # 固定版本，部署可复现；客户端 qdrant-client 1.20 与它兼容（同一大版本、小版本差 1）
+    profiles: ["qdrant"]
+    restart: unless-stopped
+    volumes:
+      - qdrant-data:/qdrant/storage
+    ports:
+      # 只绑本机回环地址：没有鉴权，不该对局域网开放。http://127.0.0.1:6333/dashboard 是它自带的网页控制台
+      - "127.0.0.1:${DR_QDRANT_PORT:-6333}:6333"
+      - "127.0.0.1:${DR_QDRANT_GRPC_PORT:-6334}:6334"   # gRPC：bench/ 里批量上传大量向量用，比 REST 的 JSON 省得多
+
   # 可选的 Web 看板：常驻，直接读 MongoDB、不需要模型，浏览器打开 http://localhost:8501
   # 默认不启动（profile 为 web）：docker compose --profile web up -d web
   # 配置、挂载继承 app，只改启动命令；只依赖 mongo（入口脚本看到 serve 也不会去等 ollama）
@@ -101,3 +124,4 @@ services:
 volumes:
   mongo-data:
   ollama-models:
+  qdrant-data:

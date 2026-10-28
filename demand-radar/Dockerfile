@@ -6,8 +6,12 @@ WORKDIR /app
 ENV PYTHONUNBUFFERED=1
 
 # 先只装依赖（按锁文件的精确版本），代码改动不会让这一层缓存失效
-COPY requirements.lock .
+COPY requirements.lock requirements-qdrant.lock ./
 RUN pip install --no-cache-dir -r requirements.lock
+# 可选：Qdrant 向量库后端的客户端。默认不装，镜像和以前完全一样；要用就 DR_WITH_QDRANT=1 重新构建。
+# --no-deps：只装 requirements-qdrant.lock 里列的包，绝不动上面核心依赖的版本
+ARG WITH_QDRANT=0
+RUN if [ "$WITH_QDRANT" = "1" ]; then pip install --no-cache-dir --no-deps -r requirements-qdrant.lock && pip check; fi
 
 COPY pyproject.toml README.md LICENSE ./
 COPY demand_radar ./demand_radar

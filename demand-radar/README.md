@@ -213,6 +213,20 @@ claude mcp add demand-radar --scope user -- docker compose \
 - **每条结果带相关度**：较相关（相似度 ≥ 0.7）、弱相关（0.55–0.7）、疑似无关（< 0.55），低于 `--min-similarity`（默认 0.5）的不返回。**这几个数是在 47 条数据、5 条查询上看出来的经验值**：库里有真正匹配的需求时它排第 1、相似度 0.72–0.91；没有匹配时最高也只有 0.55–0.58；但泛泛的短查询会把只是沾边的需求打到 0.7 以上，所以分数只是辅助，要读内容确认。
 - 库里的需求要点是模型归纳的，用户原话在「原话」一栏，以原话为准。待人工确认区的需求不会被检索到。
 
+### 向量库后端（可选，教学用）
+
+默认用暴力检索，**不需要向量库**：几千条需求在内存里算余弦只要几十毫秒。想对比或学习向量库，可以接 [Qdrant](https://qdrant.tech/)，两个后端用同一个接口，结果一致（有测试保证）：
+
+```bash
+docker compose --profile qdrant up -d qdrant          # 可选的 compose profile，默认不启动
+DR_WITH_QDRANT=1 docker compose build app             # 镜像里带客户端（默认不带，约 +130MB）
+docker compose run --rm app index                     # MongoDB → Qdrant，幂等
+docker compose run --rm app search "…" --retriever qdrant
+python bench/vector_bench.py                          # 量出暴力检索和 HNSW 的交叉点
+```
+
+不装它时一切照旧：默认镜像、依赖和测试都不变。教学文档见 [`docs/lessons/`](docs/lessons/README.md)。
+
 ## 评测
 
 改 prompt、改规则或换模型之后，用标注集量化效果，而不是凭感觉。标注集 [`eval/eval_set.json`](eval/eval_set.json) 有 61 条：46 条人工标注的真实样本，加 15 条构造样本（覆盖「追踪、曝光特定的人」这类有害需求和容易被误判的正常需求）。
