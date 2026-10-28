@@ -213,6 +213,22 @@ class GroupTest(unittest.TestCase):
         self.assertEqual([m["_id"] for m in got[0]["cluster_members"]], ["a"])
 
 
+class ClusterBoardTest(unittest.TestCase):
+    def test_mixed_cluster_goes_to_wish_board_with_wish_rep(self):
+        """簇里有愿望就进愿望榜；GitHub 那条热度再高也不抢代表。"""
+        rows = rank.sort([demand("g", "快递追踪", source="github", score=3000, cluster_id="c:a"),
+                          demand("h", "快递追踪", source="hackernews", cluster_id="c:a")])
+        cl = [{"_id": "c:a", "rep_id": "g", "members": ["g", "h"], "sources": ["github", "hackernews"], "size": 2}]
+        got = cluster.group(rows, cl, [])
+        self.assertEqual((got[0]["_id"], got[0]["board"]), ("h", "wish"))
+        self.assertEqual([m["_id"] for m in got[0]["cluster_members"]], ["g"])
+
+    def test_pure_github_cluster_stays_project(self):
+        rows = rank.sort([demand("g", "x", source="github", cluster_id="c:a")])
+        cl = [{"_id": "c:a", "rep_id": "g", "members": ["g"], "sources": ["github"], "size": 1}]
+        self.assertEqual(cluster.group(rows, cl, [])[0]["board"], "project")
+
+
 class ClusterRankTest(unittest.TestCase):
     def test_log_bonus(self):
         self.assertEqual(rank.cluster_score(10.0, 1), 10.0)

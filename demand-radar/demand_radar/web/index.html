@@ -148,6 +148,12 @@
           <option value="30" data-t="days_30"></option>
           <option value="90" data-t="days_90"></option>
         </select></div>
+      <div class="field"><label for="board" data-t="board"></label>
+        <select id="board">
+          <option value="wish" data-t="board_wish"></option>
+          <option value="project" data-t="board_project"></option>
+          <option value="" data-t="board_all"></option>
+        </select></div>
       <div class="field"><label for="source" data-t="source"></label>
         <select id="source"><option value="" data-t="source_all"></option></select></div>
       <div class="field"><label for="sort" data-t="sort"></label>
@@ -184,6 +190,7 @@
       never: "还没跑过",
       search: "搜索", search_ph: "需求描述或原帖标题", days: "时间范围", days_all: "全部时间",
       days_7: "最近 7 天", days_30: "最近 30 天", days_90: "最近 90 天",
+      board: "榜单", board_wish: "新产品愿望", board_project: "已有项目的功能请求", board_all: "全部（不同榜的排序分不可比）",
       source: "来源", source_all: "全部来源", sort: "排序", sort_rank: "排序分", sort_heat: "热度", sort_time: "最新",
       minconf: "可信度 ≥", domains: "领域", domain_all: "全部领域", other: "其他",
       total: "共 {n} 条", more: "加载更多", loading: "加载中…",
@@ -204,6 +211,8 @@
       never: "never",
       search: "Search", search_ph: "need or post title", days: "Time range", days_all: "All time",
       days_7: "Last 7 days", days_30: "Last 30 days", days_90: "Last 90 days",
+      board: "Board", board_wish: "Wishes for new products", board_project: "Feature requests on existing projects",
+      board_all: "All (rank scores differ across boards)",
       source: "Source", source_all: "All sources", sort: "Sort", sort_rank: "Rank", sort_heat: "Heat", sort_time: "Newest",
       minconf: "Confidence ≥", domains: "Domain", domain_all: "All domains", other: "Other",
       total: "{n} needs", more: "Load more", loading: "Loading…",
@@ -263,12 +272,12 @@
   }
 
   // ---- 状态 ----
-  var state = { tab: "demands", domain: "", days: "", source: "", q: "", sort: "rank", minconf: "", offset: 0,
+  var state = { tab: "demands", domain: "", days: "", board: "wish", source: "", q: "", sort: "rank", minconf: "", offset: 0,
     limit: 30, total: 0 };
   var PAGE = 30;
 
   function filterQuery(withDomain) {
-    var f = { days: state.days, source: state.source, q: state.q, min_confidence: state.minconf };
+    var f = { days: state.days, board: state.board, source: state.source, q: state.q, min_confidence: state.minconf };
     if (withDomain) f.domain = state.domain;
     return f;
   }
@@ -436,6 +445,7 @@
     timer = setTimeout(function () { state.q = e.target.value.trim(); refilter(); }, 300);
   });
   $("days").addEventListener("change", function (e) { state.days = e.target.value; refilter(); });
+  $("board").addEventListener("change", function (e) { state.board = e.target.value; refilter(); });
   $("source").addEventListener("change", function (e) { state.source = e.target.value; refilter(); });
   $("sort").addEventListener("change", function (e) { state.sort = e.target.value; loadList(true); });
   $("minconf").addEventListener("change", function (e) {

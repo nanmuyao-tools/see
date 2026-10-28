@@ -136,8 +136,10 @@ disabled = []
 supply_sources = ["producthunt"]
 
 # 综合排序的权重：排序分 = 各项打分(1–5)×权重 + log(1+热度)×heat 权重。说明见 demand_radar/rank.py
+# 分两个榜：GitHub 的功能请求单独一榜，其余来源是愿望榜，清单 / 周报 / 看板分开展示、各排各的
 [ranking]
 clarity = 1.0      # 需求描述得清不清楚
 intensity = 1.5    # 用户有多想要
 feasibility = 1.0  # 个人做起来容不容易
-heat = 1.0         # 原帖热度
+heat = 1.0         # 原帖热度：功能请求榜（GitHub）用，热度本来就是它的主要信号
+heat_wish = 0.3    # 原帖热度：愿望榜（其余来源）用；这些源基本没有热度信号，只作微调

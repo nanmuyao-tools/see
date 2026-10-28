@@ -20,7 +20,7 @@ WEB_DIR = Path(__file__).parent / "web"
 
 # 每条需求返回的字段：和 report._entry 展示的一致，另加 id / confidence / kind 便于前端
 ITEM_FIELDS = ("need", "domain", "pain_point", "excerpt", "clarity", "intensity", "feasibility",
-               "rank_score", "score", "confidence", "source", "kind", "url", "title", "review_cue")
+               "rank_score", "score", "confidence", "source", "kind", "url", "title", "review_cue", "board")
 
 
 def _aware(dt: datetime) -> datetime:
@@ -92,9 +92,12 @@ def create_app(coll, weights: dict[str, float] | None = None, default_min_confid
                 days: int | None = Query(None, ge=1, description="最近 N 天，按抽取时间算"),
                 min_confidence: float = Query(default_min_confidence, ge=0.0, le=1.0),
                 source: str | None = None,
-                q: str | None = Query(None, max_length=200, description="在需求描述和原帖标题里包含匹配")) -> dict:
+                q: str | None = Query(None, max_length=200, description="在需求描述和原帖标题里包含匹配"),
+                board: str | None = Query(None, pattern="^(wish|project)$",
+                                          description="wish 愿望榜 / project 已有项目的功能请求榜；不传是全部")) -> dict:
         since = datetime.now(UTC) - timedelta(days=days) if days else None
-        return {"min_confidence": min_confidence, "domain": domain, "source": source, "since": since, "q": q}
+        return {"min_confidence": min_confidence, "domain": domain, "source": source, "since": since, "q": q,
+                "board": board}
 
     def paging(sort: str = Query("rank", pattern="^(rank|heat|time)$"),
                limit: int = Query(50, ge=1, le=500),
@@ -111,9 +114,16 @@ def create_app(coll, weights: dict[str, float] | None = None, default_min_confid
         members = store.member_docs(coll, {i for c in clusters for i in c["members"]})
         return _resort(cluster.group(docs, clusters, members, w), sort)
 
+    def query(held: bool, f: dict) -> list[dict]:
+        """按看板条件取需求；board 不是库里的字段（由来源推出），取回后在内存里筛。"""
+        f = dict(f)
+        board = f.pop("board", None)
+        docs = store.query_demands(coll, held=held, **f)
+        return [d for d in docs if rank.board(d) == board] if board else docs
+
     def listing(held: bool, f: dict, p: dict) -> dict:
         # 排序分要全量算完才能分页；几千条在内存里排很快，不值得为此入库
-        docs = _order(store.query_demands(coll, held=held, **f), p["sort"], w)
+        docs = _order(query(held, f), p["sort"], w)
         if not held:  # 待确认区不合并，和清单一致
             docs = fold(docs, p["sort"])
         page = docs[p["offset"]:p["offset"] + p["limit"]]
@@ -131,12 +141,11 @@ def create_app(coll, weights: dict[str, float] | None = None, default_min_confid
 
     def facets(field: str, held: bool, f: dict) -> list[dict]:
         """各取值的条数。入选区按合并后的需求数：每个取值单独折叠一次，和选中它之后列表的「共 N 条」一致。"""
-        if held:
-            return store.facet_counts(coll, field, held=True, **f)
         groups: dict[str, list[dict]] = {}
-        for d in store.query_demands(coll, held=False, **f):
+        for d in query(held, f):
             groups.setdefault((d.get(field) or "").strip(), []).append(d)
-        counts = {k: len(fold(rank.sort(v, w), "rank")) for k, v in groups.items()}
+        # 待确认区不合并，和清单一致
+        counts = {k: len(v) if held else len(fold(rank.sort(v, w), "rank")) for k, v in groups.items()}
         return [{field: k, "count": n} for k, n in sorted(counts.items(), key=lambda kv: (-kv[1], kv[0]))]
 
     @app.get("/api/domains")

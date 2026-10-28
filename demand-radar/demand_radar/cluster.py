@@ -193,10 +193,14 @@ def group(rows: list[dict], clusters: list[dict], members: list[dict],
         for r in items:
             mem.setdefault(r["_id"], r)
         # 分数相同时让库里记的代表赢：成员是按完成顺序入库的，不然同分的代表每次运行可能不一样
-        rep = max(items, key=lambda r: (r.get("rank_score", rank.score(r, w)), r["_id"] == c.get("rep_id")))
+        # 簇里只要有一条愿望，整簇进愿望榜（有人在别处表达过「想要」就说明不只是给某个项目提的请求）；
+        # 代表也优先从这个榜的成员里选，否则 GitHub 那条的热度分会把代表抢走
+        board = "wish" if any(rank.board_of_source(s) == "wish" for s in c["sources"]) else "project"
+        pool = [r for r in items if rank.board(r) == board] or items
+        rep = max(pool, key=lambda r: (r.get("rank_score", rank.score(r, w)), r["_id"] == c.get("rep_id")))
         others = [mem[i] for i in c["members"] if i != rep["_id"] and i in mem]
         others.sort(key=lambda d: d.get("rank_score", rank.score(d, w)), reverse=True)
-        out.append({**rep, "cluster_size": c["size"], "cluster_sources": c["sources"],
+        out.append({**rep, "board": board, "cluster_size": c["size"], "cluster_sources": c["sources"],
                     "cluster_heat": c.get("total_score", 0), "cluster_members": others,
                     "rank_score": round(rank.cluster_score(rep.get("rank_score", rank.score(rep, w)),
                                                            c["size"], w), 2)})

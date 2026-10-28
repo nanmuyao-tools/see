@@ -9,6 +9,8 @@ import os
 from collections import defaultdict
 from datetime import datetime
 
+from . import rank
+
 _LABELS = {
     "zh": {
         "list_title": "需求雷达清单",
@@ -29,6 +31,9 @@ _LABELS = {
         "held_note": "以下需求提到了特定的他人，可能被用来追踪、监视、曝光、骚扰或欺骗别人，没有列入正文。"
                      "请人工确认后再决定是否发布。",
         "cue": "命中",
+        "board_project": "已有项目的功能请求（{n}）",
+        "board_project_note": "以下是给已有开源项目提的功能请求，不是「还不存在的新产品」。热度来自点赞数，"
+                              "这类需求单独排序，不和上面的愿望混排。",
         "cluster": "来自 {s} 个来源，共 {n} 条",
         "cluster_heat": "，总热度 {h}",
         "sep": "：",
@@ -52,6 +57,10 @@ _LABELS = {
         "held_note": "These needs mention specific other people and could be used to track, monitor, expose, "
                      "harass or deceive someone, so they are not in the list above. Check them before publishing.",
         "cue": "Matched",
+        "board_project": "Feature requests on existing projects ({n})",
+        "board_project_note": "These are feature requests filed on existing open-source projects, not wishes for "
+                              "products that don't exist yet. Heat comes from upvotes. Ranked separately from the "
+                              "wishes above.",
         "cluster": "From {s} sources, {n} posts",
         "cluster_heat": ", total heat {h}",
         "sep": ": ",
@@ -100,6 +109,23 @@ def _cluster_lines(r: dict, L: dict[str, str]) -> list[str]:
     return lines
 
 
+def _split(rows: list[dict]) -> tuple[list[dict], list[dict]]:
+    """分成（愿望榜, 功能请求榜），各自保持 rows 里的顺序。没有 board 字段的行按来源判断。"""
+    wish = [r for r in rows if (r.get("board") or rank.board(r)) != "project"]
+    project = [r for r in rows if (r.get("board") or rank.board(r)) == "project"]
+    return wish, project
+
+
+def _project_section(project: list[dict], L: dict[str, str]) -> list[str]:
+    """功能请求榜：只在有内容时输出，放在愿望榜之后、待确认区之前。条目重新编号。"""
+    if not project:
+        return []
+    lines = [f"## {L['board_project'].format(n=len(project))}", "", L["board_project_note"], ""]
+    for i, r in enumerate(project, 1):
+        lines += _entry(r, f"### {i}. {r.get('need') or r['title']}", L)
+    return lines
+
+
 def _write(path: str, lines: list[str]) -> None:
     os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
     with open(path, "w", encoding="utf-8") as f:
@@ -125,8 +151,10 @@ def write_markdown(rows: list[dict], output_path: str, lang: str = "zh",
         f"{L['generated']}: {datetime.now():%Y-%m-%d %H:%M} | {L['total'].format(n=len(rows))}",
         "",
     ]
-    for i, r in enumerate(rows, 1):
+    wish, project = _split(rows)
+    for i, r in enumerate(wish, 1):
         lines += _entry(r, f"## {i}. {r.get('need') or r['title']}", L)
+    lines += _project_section(project, L)
     lines += _held_section(held or [], L)
     _write(output_path, lines)
 
@@ -147,12 +175,14 @@ def write_digest(rows: list[dict], output_path: str, days: int, lang: str = "zh"
         lines += _held_section(held or [], L)
         _write(output_path, lines)
         return
+    wish, project = _split(rows)
     groups: dict[str, list[dict]] = defaultdict(list)
-    for r in rows:
+    for r in wish:
         groups[(r.get("domain") or "").strip() or L["other"]].append(r)
     for domain, items in sorted(groups.items(), key=lambda kv: -len(kv[1])):
         lines += [f"## {domain}（{len(items)}）" if lang == "zh" else f"## {domain} ({len(items)})", ""]
         for r in items:
             lines += _entry(r, f"### {r.get('need') or r['title']}", L)
+    lines += _project_section(project, L)
     lines += _held_section(held or [], L)
     _write(output_path, lines)

@@ -52,6 +52,25 @@ class ApiTest(unittest.TestCase):
         s = self.get("/api/stats")
         self.assertEqual((s["total"], s["listed"], s["held"], s["last_run"]), (0, 0, 0, None))
 
+    # ---- 榜单 ----
+
+    def test_board_filter_and_field(self):
+        self.coll.insert_many([doc("w1", source="hackernews"), doc("w2", source="stackexchange/softwarerecs"),
+                               doc("p1", source="github", score=3000, domain="开发工具")])
+        self.assertEqual(sorted(self.ids("/api/demands", board="wish")), ["w1", "w2"])
+        self.assertEqual(self.ids("/api/demands", board="project"), ["p1"])
+        self.assertEqual(len(self.ids("/api/demands")), 3)  # 不传 = 全部
+        items = {it["id"]: it for it in self.get("/api/demands")["items"]}
+        self.assertEqual((items["w1"]["board"], items["p1"]["board"]), ("wish", "project"))
+        # 筛选栏的计数跟着榜走
+        self.assertEqual(self.get("/api/domains", board="project"), [{"domain": "开发工具", "count": 1}])
+        self.assertEqual([r["source"] for r in self.get("/api/sources", board="project")], ["github"])
+
+    def test_board_filter_on_held_and_bad_value(self):
+        self.coll.insert_many([doc("hw", review_cue="x"), doc("hp", source="github", review_cue="x")])
+        self.assertEqual(self.ids("/api/held", board="project"), ["hp"])
+        self.assertEqual(self.client.get("/api/demands", params={"board": "nope"}).status_code, 422)
+
     # ---- 相似需求合并 ----
 
     def _seed_cluster(self):
