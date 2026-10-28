@@ -19,7 +19,7 @@ jobs:
         with:
           python-version: "3.12"
       - run: pip install "ruff>=0.6"
-      - run: ruff check demand_radar tests docker
+      - run: ruff check demand_radar tests docker bench
 
   test:
     runs-on: ubuntu-latest
