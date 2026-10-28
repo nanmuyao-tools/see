@@ -129,7 +129,7 @@ class GetTest(unittest.TestCase):
     def test_user_agent_has_contact(self):
         with mock.patch.object(http.urllib.request, "urlopen", return_value=self._resp()) as u:
             http.get("https://x.com/a")
-        self.assertIn("github.com/nanmuyao/see", u.call_args[0][0].get_header("User-agent"))
+        self.assertIn("github.com/nanmuyao-tools/see", u.call_args[0][0].get_header("User-agent"))
 
 
 if __name__ == "__main__":
