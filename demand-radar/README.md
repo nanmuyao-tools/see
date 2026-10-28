@@ -396,7 +396,7 @@ GitHub 上已有一些同类项目，比如 [Reddit_Scrapper](https://github.com
 | [`docs/tech-plan.md`](docs/tech-plan.md) | 技术路线规划 |
 | [`CONTRIBUTING.md`](CONTRIBUTING.md) | **参与贡献**：开发环境、怎么加数据源、改动要过的检查 |
 | [`CHANGELOG.md`](CHANGELOG.md) | 版本更新记录（当前 v1.0.0） |
-| [`docs/architecture.md`](docs/architecture.md) | **系统架构图**：部署、处理流水线、代码模块、数据存储 |
+| [`docs/architecture.md`](docs/architecture.md) | **系统架构**：部署、写入流水线、读取侧（排序 / 合并 / 检索 / 输出）、代码模块、数据存储（纯 Markdown） |
 | [`docs/landscape.md`](docs/landscape.md) | 同类项目调研 |
 | [`docs/market.md`](docs/market.md) | 市场调研与潜力分析 |
 | [`docs/model-selection.md`](docs/model-selection.md) | 模型选型（含 Mac GPU） |
