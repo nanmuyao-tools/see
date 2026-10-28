@@ -191,6 +191,28 @@ python -m demand_radar cluster --threshold 0.8 --rebuild   # 调了阈值，丢�
 
 嵌入服务默认和模型服务同一个地址（`--base-url`）。**Mac GPU 路线的 mlx-lm 不提供嵌入接口**，这时让嵌入单独走本机 Ollama：`--embed-base-url http://localhost:11434/v1`（容器里是 `http://host.docker.internal:11434/v1`）。**嵌入模型必须懂中文**（默认输出就是中文）：23 对标注样本上 `nomic-embed-text` 准确率只有 43.5%（中文 16 对只对 5 对），`qwen3-embedding:0.6b` 和 `bge-m3` 在各自最佳阈值下都是 87.0%，默认取更小、Apache-2.0 的前者；换模型后第一次运行会重算全部向量，换数据后用 `cluster --eval` 复核阈值。
 
+## 给 agent 用（语义检索 + MCP）
+
+库里每条需求的向量已经存在 MongoDB（`embedding` 字段，见上一节），不需要另装向量数据库。两种用法，都只读：
+
+```bash
+# 命令行：用一句话找最像的需求
+docker compose run --rm app search "能追踪快递包裹的工具" -k 5 --board wish
+```
+
+**接到 Claude Code**（MCP，stdio）：Mongo 和 Ollama 没映射宿主机端口，所以让 MCP 服务在容器里跑，绕过入口脚本（它会往 stdout 打印，会污染协议）。把路径换成你的：
+
+```bash
+claude mcp add demand-radar --scope user -- docker compose \
+  -f /path/to/demand-radar/docker-compose.yml run --rm -i -T --entrypoint python app -m demand_radar mcp
+```
+
+提供三个工具：`search_demands`（语义检索，带用户原话和原帖链接）、`get_demand`（一条的详情和同一需求的其他原帖）、`list_top`（按榜单列排序靠前的）。
+
+- **只在已有向量的需求里搜。** 向量由 `cluster` 命令或 `run --cluster` 生成；`DR_CLUSTER=0`（默认）的定时任务不会生成。没有向量的入选需求搜不到，结果末尾会提示条数，运行 `docker compose run --rm app cluster` 补齐。
+- **每条结果带相关度**：较相关（相似度 ≥ 0.7）、弱相关（0.55–0.7）、疑似无关（< 0.55），低于 `--min-similarity`（默认 0.5）的不返回。**这几个数是在 47 条数据、5 条查询上看出来的经验值**：库里有真正匹配的需求时它排第 1、相似度 0.72–0.91；没有匹配时最高也只有 0.55–0.58；但泛泛的短查询会把只是沾边的需求打到 0.7 以上，所以分数只是辅助，要读内容确认。
+- 库里的需求要点是模型归纳的，用户原话在「原话」一栏，以原话为准。待人工确认区的需求不会被检索到。
+
 ## 评测
 
 改 prompt、改规则或换模型之后，用标注集量化效果，而不是凭感觉。标注集 [`eval/eval_set.json`](eval/eval_set.json) 有 61 条：46 条人工标注的真实样本，加 15 条构造样本（覆盖「追踪、曝光特定的人」这类有害需求和容易被误判的正常需求）。

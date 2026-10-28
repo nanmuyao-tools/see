@@ -2,11 +2,12 @@
 
 from __future__ import annotations
 
+import json
 import sys
 import time
 from datetime import UTC, datetime, timedelta
 
-from . import cluster, filters, rank, report, sources, store
+from . import cluster, filters, rank, report, search, sources, store
 from .config import Config
 from .extract import build_client, extract_many
 from .models import SourceItem
@@ -293,8 +294,44 @@ def list_sources(cfg: Config) -> None:
     print("\n风险档是我们对条款的理解，不是法律意见；灰色的源默认关闭，开不开由你自己决定。")
 
 
+def search_cmd(cfg: Config) -> None:
+    """语义检索：只读，不写库。库里还没向量的需求搜不到，会提示去跑 cluster。"""
+    coll = store.connect(cfg.mongo_uri, cfg.db_name)
+    try:
+        res = search.search(coll, _embedder(cfg), cfg.embed_model, cfg.query, k=cfg.k, board=cfg.board or None,
+                            domain=cfg.domain or None, source=cfg.search_source or None,
+                            days=cfg.search_days or None, min_confidence=cfg.min_confidence,
+                            min_similarity=cfg.min_similarity)
+    except Exception as e:
+        sys.exit(f"检索失败：{_reason(e)}\n嵌入服务 {cfg.embed_base_url or cfg.ollama_base_url} 可达吗？"
+                 f"模型 {cfg.embed_model} 拉了吗？")
+    finally:
+        coll.database.client.close()
+    if cfg.as_json:
+        print(json.dumps(res, ensure_ascii=False, indent=2))
+    else:
+        print(search.render_results(res))
+
+
+def mcp_cmd(cfg: Config) -> None:
+    """MCP 服务（stdio）。stdout 只能放协议消息：日志都走 stderr，启动不打印任何东西到 stdout。"""
+    from . import mcp_server
+    conf = sources.load_config(cfg.sources_file)
+    coll = store.connect(cfg.mongo_uri, cfg.db_name)
+    server = mcp_server.Server(coll, _embedder(cfg), cfg.embed_model, rank.weights(conf.get("ranking")),
+                               cfg.min_confidence, cfg.min_similarity)
+    print("demand-radar MCP 服务已启动（stdio）", file=sys.stderr)
+    mcp_server.serve(server)
+
+
 def main(argv: list[str] | None = None) -> None:
     cfg = Config.from_args(argv)
+    if cfg.command == "search":
+        search_cmd(cfg)
+        return
+    if cfg.command == "mcp":
+        mcp_cmd(cfg)
+        return
     if cfg.command == "sources":
         list_sources(cfg)
         return

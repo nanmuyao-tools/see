@@ -60,6 +60,15 @@ class Config:
     cluster_eval: bool = False  # cluster 命令：不动库，在标注对上评测合并判断
     eval_pairs: str = "eval/cluster_pairs.json"  # cluster --eval 用的标注对
 
+    # search / mcp 命令：语义检索（见 search.py）
+    query: str = ""
+    k: int = 5
+    board: str = ""  # wish / project；空 = 两个榜都搜
+    domain: str = ""
+    search_source: str = ""  # 只搜某个来源，如 hackernews
+    search_days: int = 0  # 只搜最近 N 天抽取的，0 = 不限
+    min_similarity: float = 0.5  # 相似度低于此值的不返回（0.5 只去掉最明显的噪声；强弱判断见 search.py）
+
     # recommend 命令：按本机配置从档位表推荐模型
     models_file: str = "models.toml"
     tier: str = ""  # 手动指定档位 id
@@ -118,6 +127,8 @@ class Config:
 
         sv = sub.add_parser("serve", help="常驻：Web 看板，直接读库，不调模型")
         so = sub.add_parser("sources", help="列出所有数据源：是否启用、使用风险、条款链接；开关在 sources.toml")
+        se = sub.add_parser("search", help="语义检索：用一句话在需求库里找最像的需求，不调抽取模型")
+        mc = sub.add_parser("mcp", help="常驻：MCP 服务（stdio），让 Claude Code 等 agent 检索需求库，只读")
         rc = sub.add_parser("recommend", help="检测本机配置，推荐抽取模型和嵌入模型，可写进 .env")
 
         for sp in (run, sc):
@@ -140,6 +151,24 @@ class Config:
                             help="嵌入服务地址，默认同 --base-url")
             sp.add_argument("--threshold", dest="cluster_threshold", type=float, default=d.cluster_threshold,
                             help="余弦相似度 ≥ 此值视为同一需求")
+        se.add_argument("query", help="要找的需求，一句话，中英文都行")
+        se.add_argument("-k", type=int, default=d.k, help="返回几条")
+        se.add_argument("--source", dest="search_source", default=d.search_source, help="只搜某个来源")
+        se.add_argument("--days", dest="search_days", type=int, default=d.search_days, help="只搜最近 N 天")
+        se.add_argument("--json", dest="as_json", action="store_true", help="输出 JSON")
+        for sp in (se, mc):
+            sp.add_argument("--board", choices=("wish", "project"), default=d.board or None,
+                            help="wish 愿望榜 / project 功能请求榜；不传搜全部（mcp 里 agent 自己选）")
+            sp.add_argument("--domain", default=d.domain)
+            sp.add_argument("--min-similarity", dest="min_similarity", type=float, default=d.min_similarity,
+                            help="相似度低于此值的不返回")
+            sp.add_argument("--min-confidence", type=float, default=d.min_confidence)
+            sp.add_argument("--mongo-uri", dest="mongo_uri", default=d.mongo_uri)
+            sp.add_argument("--db-name", dest="db_name", default=d.db_name)
+            sp.add_argument("--sources-file", dest="sources_file", default=d.sources_file)
+            sp.add_argument("--embed-model", dest="embed_model", default=d.embed_model)
+            sp.add_argument("--embed-base-url", dest="embed_base_url", default=d.embed_base_url)
+            sp.add_argument("--base-url", "--ollama-base-url", dest="ollama_base_url", default=d.ollama_base_url)
         cl.add_argument("--output", dest="output_path", default=d.output_path)
         cl.add_argument("--rebuild", action="store_true", default=False, help="丢掉已有簇重新归")
         cl.add_argument("--eval", dest="cluster_eval", action="store_true", default=False,
@@ -235,6 +264,14 @@ class Config:
             rebuild=getattr(ns, "rebuild", False),
             cluster_eval=getattr(ns, "cluster_eval", False),
             eval_pairs=_bundled(getattr(ns, "eval_pairs", d.eval_pairs), Config.eval_pairs),
+
+            query=getattr(ns, "query", ""),
+            k=getattr(ns, "k", d.k),
+            board=getattr(ns, "board", None) or "",
+            domain=getattr(ns, "domain", ""),
+            search_source=getattr(ns, "search_source", ""),
+            search_days=getattr(ns, "search_days", 0),
+            min_similarity=getattr(ns, "min_similarity", d.min_similarity),
 
             models_file=_bundled(getattr(ns, "models_file", d.models_file), Config.models_file),
             tier=getattr(ns, "tier", ""),

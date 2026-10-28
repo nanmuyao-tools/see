@@ -314,6 +314,16 @@ def query_demands(coll, min_confidence: float, **filters) -> list[dict]:
     return list(coll.find(dashboard_query(min_confidence, **filters), {"embedding": 0}))
 
 
+def search_candidates(coll, model: str, min_confidence: float, **filters) -> tuple[list[dict], int]:
+    """语义检索的候选：入选的需求里已经有这个模型向量的（带 embedding）。
+
+    返回 (候选, 入选但还没向量的条数)；后者让调用方提示「先跑 cluster」，别让人以为搜不到就是没有。
+    只读，不会为了检索去算向量、写库。"""
+    base = dashboard_query(min_confidence, held=False, **filters)
+    have = list(coll.find({**base, "embedding_model": model, "embedding": {"$exists": True}}))
+    return have, coll.count_documents(base) - len(have)
+
+
 def facet_counts(coll, field: str, min_confidence: float, **filters) -> list[dict]:
     """某字段（domain / source）各取值的条数，按数量降序，给看板的筛选栏用。
 
