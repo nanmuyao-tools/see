@@ -212,12 +212,11 @@ class RegistryTest(unittest.TestCase):
         self.assertEqual(errors, {})
         self.assertEqual([(i.external_id, i.score) for i in items], [("t3_1", 5)])
 
-    def test_default_config_keeps_reddit_off_for_now(self):
+    def test_default_config_covers_same_subreddits_as_rss(self):
         conf = sources.load_config(os.path.join(HERE, "..", "sources.toml"))
-        # 暂时不抓 Reddit：arctic_shift 关闭，Reddit RSS 订阅注释掉；版块和关键词配置保留，恢复时直接打开
-        self.assertNotIn("arctic_shift", sources.enabled(conf))
-        self.assertFalse([f for f in conf.get("rss", []) if f["name"].startswith("reddit/")])
-        self.assertTrue(conf["arctic_shift"]["subreddits"])
+        self.assertIn("arctic_shift", sources.enabled(conf))
+        rss_subs = {f["name"] for f in conf["rss"] if f["name"].startswith("reddit/")}
+        self.assertEqual({f"reddit/{s}" for s in conf["arctic_shift"]["subreddits"]}, rss_subs)  # 互为兜底
         self.assertTrue(set(conf["arctic_shift"]["keywords"]) <= set(conf["arctic_shift"]["subreddits"]))
 
     def test_disabled(self):
